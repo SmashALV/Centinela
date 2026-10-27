@@ -33,6 +33,8 @@ var hud: Label
 var notice: Label
 var pause_panel: PanelContainer
 var result_panel: PanelContainer
+var music_button: Button
+var effects_button: Button
 var effective_damage := [0.0, 0.0]
 var navigation: AStarGrid2D
 var window_guard_layer: CanvasLayer
@@ -62,10 +64,14 @@ func _ready() -> void:
 	notice.add_theme_font_size_override("font_size", _font_size(24))
 	layer.add_child(notice)
 	pause_panel = _create_panel("PAUSA", "Continuar", _resume_match)
+	_add_audio_controls()
 	pause_panel.visible = false
 	result_panel = _create_panel("Resultado", "Continuar", _return_to_story)
 	result_panel.visible = false
 	window_guard_layer = DisplayGuardScript.make_overlay(self)
+	AudioManager.apply_preferences()
+	if GameState.phase == "moba":
+		AudioManager.enter_context("arena")
 	_check_window_size()
 
 func _font_size(base: int) -> int:
@@ -96,6 +102,7 @@ func _create_panel(title: String, button_text: String, action: Callable) -> Pane
 	label.add_theme_font_size_override("font_size", _font_size(23))
 	box.add_child(label)
 	var button := Button.new()
+	button.name = "Continue"
 	button.text = button_text
 	button.custom_minimum_size.y = 42
 	button.add_theme_font_size_override("font_size", _font_size(18))
@@ -107,8 +114,42 @@ func _create_panel(title: String, button_text: String, action: Callable) -> Pane
 func _resume_match() -> void:
 	if window_too_small:
 		return
-	paused = false
-	pause_panel.visible = false
+	_set_paused(false)
+
+func _set_paused(value: bool) -> void:
+	paused = value
+	pause_panel.visible = value
+	AudioManager.set_music_paused(value)
+	if value:
+		pause_panel.get_node("Content/Continue").grab_focus()
+	else:
+		pause_panel.get_node("Content/Continue").release_focus()
+
+func _add_audio_controls() -> void:
+	pause_panel.position = Vector2(200, 78)
+	pause_panel.size = Vector2(368, 280)
+	var box: VBoxContainer = pause_panel.get_node("Content")
+	music_button = Button.new()
+	music_button.name = "Music"
+	music_button.custom_minimum_size.y = 38
+	music_button.pressed.connect(func(): _cycle_audio("music"))
+	box.add_child(music_button)
+	effects_button = Button.new()
+	effects_button.name = "Effects"
+	effects_button.custom_minimum_size.y = 38
+	effects_button.pressed.connect(func(): _cycle_audio("effects"))
+	box.add_child(effects_button)
+	_refresh_audio_labels()
+
+func _refresh_audio_labels() -> void:
+	music_button.text = "Música: %d %%" % GameState.music_volume
+	effects_button.text = "Efectos: %d %%" % GameState.effects_volume
+
+func _cycle_audio(which: String) -> void:
+	if await AudioManager.cycle_level(which):
+		_refresh_audio_labels()
+	else:
+		notice.text = "No se pudo guardar el audio"
 
 func _create_entities() -> void:
 	var ally_names := ["Mateo", "Bruno", "Sofi", "Camila", "Sebas"]
@@ -192,24 +233,21 @@ func _hero(name: String, side: int, pos: Vector2) -> Dictionary:
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("pause_game") or event.is_action_pressed("ui_cancel"):
 		if not ended:
-			paused = not paused if not window_too_small else true
-			pause_panel.visible = paused
+			_set_paused(not paused if not window_too_small else true)
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("ability") and not paused and countdown <= 0 and not ended:
 		_use_player_q()
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_APPLICATION_FOCUS_OUT and not ended:
-		paused = true
 		if is_instance_valid(pause_panel):
-			pause_panel.visible = true
+			_set_paused(true)
 
 func _check_window_size() -> void:
 	window_too_small = DisplayGuardScript.too_small(DisplayGuardScript.window_size())
 	window_guard_layer.visible = window_too_small
 	if window_too_small and not ended:
-		paused = true
-		pause_panel.visible = true
+		_set_paused(true)
 
 func _process(delta: float) -> void:
 	window_check_elapsed += delta
@@ -263,6 +301,7 @@ func _move_player(delta: float) -> void:
 		var vector: Vector2 = (aim - hero.pos).normalized()
 		if vector.length() > 0:
 			shots.append(_shot(hero.pos, vector, 0, 12.0, 384.0, 192.0, false, false))
+			AudioManager.play_effect("interact")
 			basic_cd = 1.0
 			hero.immune_until = 0.0
 			hero.last_combat = elapsed
@@ -606,6 +645,8 @@ func _use_player_q() -> void:
 				if hero.pos.distance_to(heroes[i].pos) <= 96:
 					heroes[i].buff_until = elapsed + 5.0
 			q_cd = 9.0
+	if q_cd > 0:
+		AudioManager.play_effect("ability")
 
 func _timeout_result() -> String:
 	var allies := 0
@@ -623,6 +664,8 @@ func _timeout_result() -> String:
 func _finish(result: String) -> void:
 	if ended: return
 	ended = true
+	AudioManager.set_music_paused(true)
+	AudioManager.play_effect("result")
 	GameState.moba_result = result
 	GameState.phase = "result"
 	var raw_id := _crypto.generate_random_bytes(16).hex_encode()
@@ -637,6 +680,7 @@ func _finish(result: String) -> void:
 		return
 	result_panel.get_node("Content/Title").text = "Resultado: " + result if result_saved else "Error al guardar; reintenta"
 	result_panel.visible = true
+	result_panel.get_node("Content/Continue").grab_focus()
 
 func _return_to_story() -> void:
 	if not result_saved:

@@ -51,6 +51,8 @@ func _run() -> void:
 	GameState.new_game(2)
 	GameState.flags.alarm = true
 	GameState.text_size = "large"
+	GameState.music_volume = 25
+	GameState.effects_volume = 100
 	GameState.player_position = Vector2(123, 234)
 	var saved := GameState.snapshot()
 	_check(SaveManager.save_slot(), "guardado de ranura")
@@ -70,6 +72,15 @@ func _run() -> void:
 	old_text_save.erase("text_size")
 	_check(GameState.restore(old_text_save) and GameState.text_size == "normal", "guardado anterior sin preferencia usa tamaño mediano")
 	GameState.restore(saved)
+	var old_audio_save := saved.duplicate(true)
+	old_audio_save.erase("music_volume")
+	old_audio_save.erase("effects_volume")
+	_check(GameState.restore(old_audio_save) and GameState.music_volume == 50 and GameState.effects_volume == 75, "guardado anterior usa niveles de audio predeterminados")
+	GameState.restore(saved)
+	var bad_audio := saved.duplicate(true)
+	bad_audio.effects_volume = 30
+	_check(not GameState.restore(bad_audio) and GameState.snapshot() == saved, "nivel de audio inválido rechazado sin alterar partida")
+	_check(ResourceLoader.exists("res://assets/audio/explore_loop.wav") and ResourceLoader.exists("res://assets/audio/ability.wav"), "audio provisional importado")
 	var bad_modal := saved.duplicate(true)
 	bad_modal.ui_modal = "class"
 	_check(not GameState.restore(bad_modal) and GameState.snapshot() == saved, "panel incompatible con fase rechazado sin alterar partida")
@@ -83,9 +94,10 @@ func _run() -> void:
 		_finish_tests()
 		return
 	_check(arena.heroes.size() == 10, "MOBA 5v5")
+	_check(arena.pause_panel.get_node("Content/Music") is Button and arena.pause_panel.get_node("Content/Effects") is Button, "pausa MOBA incluye ajustes de audio")
 	_check(arena.result_panel.has_node("Content/Title"), "panel de resultado tiene título accesible")
-	arena.paused = true
-	arena.pause_panel.visible = true
+	arena._set_paused(true)
+	_check(arena.get_viewport().gui_get_focus_owner() == arena.pause_panel.get_node("Content/Continue"), "pausa MOBA enfoca continuar para teclado")
 	arena.window_too_small = true
 	arena._resume_match()
 	_check(arena.paused and arena.pause_panel.visible, "MOBA no reanuda con ventana insuficiente")
@@ -290,7 +302,11 @@ func _run() -> void:
 	main._show_pause()
 	await main._cycle_text_size()
 	_check(GameState.text_size == "large" and main.modal_kind == "pause", "tamaño de texto grande se guarda desde pausa")
+	await main._cycle_audio("music")
+	await main._cycle_audio("effects")
+	_check(GameState.music_volume == 75 and GameState.effects_volume == 100, "volúmenes cambiados desde pausa")
 	_check(SaveManager.load_slot(1) and GameState.text_size == "large", "preferencia de texto sobrevive recarga")
+	_check(GameState.music_volume == 75 and GameState.effects_volume == 100, "volúmenes sobreviven recarga")
 	main.window_too_small = true
 	main._resume_pause()
 	_check(main.modal_kind == "pause", "diálogo no reanuda con ventana insuficiente")
@@ -361,10 +377,15 @@ func _run() -> void:
 	_finish_tests()
 
 func _finish_tests() -> void:
+	var focused: Control = get_viewport().gui_get_focus_owner()
+	if focused != null:
+		focused.release_focus()
+	AudioManager.stop_all()
 	for test_slot in [1, 2]:
 		if SaveManager.slot_exists(test_slot):
 			var test_save := ProjectSettings.globalize_path(SaveManager.slot_path(test_slot))
 			_check(DirAccess.remove_absolute(test_save) == OK, "guardado de prueba %d eliminado" % test_slot)
 	SaveManager.storage_prefix = SaveManager.SAVE_PREFIX
 	print("Pruebas terminadas. Fallos: ", failures)
+	await get_tree().process_frame
 	get_tree().quit(1 if failures > 0 else 0)

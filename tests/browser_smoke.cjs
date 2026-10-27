@@ -268,6 +268,19 @@ async function main() {
     const arrowSelected = await waitForStore("save_snapshots", 1, (record) =>
       record?.snapshot?.preview_choices?.D2_03_A === "B");
     assert.equal(arrowSelected.snapshot.preview_step, 10);
+    await page.keyboard.press("p");
+    await page.waitForTimeout(200);
+    await page.keyboard.press("ArrowDown");
+    await page.keyboard.press("ArrowDown");
+    await page.keyboard.press("Enter");
+    await waitForStore("save_snapshots", 1, (record) => record?.snapshot?.music_volume === 75);
+    await page.keyboard.press("ArrowDown");
+    await page.keyboard.press("ArrowDown");
+    await page.keyboard.press("ArrowDown");
+    await page.keyboard.press("Enter");
+    await waitForStore("save_snapshots", 1, (record) => record?.snapshot?.effects_volume === 100);
+    await page.screenshot({ path: "build/web/audio_settings.png" });
+    await page.keyboard.press("p");
     await page.setViewportSize({ width: 600, height: 360 });
     await page.waitForTimeout(800);
     await page.screenshot({ path: "build/web/window_too_small.png" });

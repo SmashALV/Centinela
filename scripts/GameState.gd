@@ -23,6 +23,8 @@ var dialogue_position: int = 0
 var dialogue_choice: String = ""
 var ui_modal: String = ""
 var hint_level: int = 0
+var music_volume: int = 50
+var effects_volume: int = 75
 
 func new_game(chosen_slot: int) -> void:
 	slot = chosen_slot
@@ -42,6 +44,8 @@ func new_game(chosen_slot: int) -> void:
 	dialogue_choice = ""
 	ui_modal = ""
 	hint_level = 0
+	music_volume = 50
+	effects_volume = 75
 
 func snapshot() -> Dictionary:
 	return {"schema_version": SCHEMA_VERSION, "narrative_version": NARRATIVE_VERSION,
@@ -55,7 +59,8 @@ func snapshot() -> Dictionary:
 		"preview_choices": preview_choices.duplicate(true), "text_size": text_size,
 		"dialogue_key": dialogue_key, "dialogue_position": dialogue_position,
 		"dialogue_choice": dialogue_choice, "ui_modal": ui_modal,
-		"hint_level": hint_level}
+		"hint_level": hint_level, "music_volume": music_volume,
+		"effects_volume": effects_volume}
 
 func restore(data: Dictionary) -> bool:
 	if data.get("schema_version") != SCHEMA_VERSION or data.get("narrative_version") != NARRATIVE_VERSION:
@@ -81,6 +86,8 @@ func restore(data: Dictionary) -> bool:
 	var active_choice: Variant = data.get("dialogue_choice", "")
 	var saved_modal: Variant = data.get("ui_modal", "")
 	var saved_hint: Variant = data.get("hint_level", 0)
+	var saved_music: Variant = data.get("music_volume", 50)
+	var saved_effects: Variant = data.get("effects_volume", 75)
 	if typeof(scene) != TYPE_STRING or typeof(step) not in [TYPE_FLOAT, TYPE_INT] or typeof(choices) != TYPE_DICTIONARY:
 		return false
 	if typeof(size_setting) != TYPE_STRING or size_setting not in ["small", "normal", "large"]:
@@ -97,6 +104,9 @@ func restore(data: Dictionary) -> bool:
 	if typeof(saved_modal) != TYPE_STRING or saved_modal not in ["", "phone", "objective", "class"] or \
 		typeof(saved_hint) not in [TYPE_FLOAT, TYPE_INT] or int(saved_hint) < 0 or int(saved_hint) > 2:
 		return false
+	for level in [saved_music, saved_effects]:
+		if typeof(level) not in [TYPE_INT, TYPE_FLOAT] or int(level) not in [0, 25, 50, 75, 100] or float(level) != float(int(level)):
+			return false
 	if (not active_dialogue.is_empty() and not saved_modal.is_empty()) or \
 		(saved_modal == "class" and data.get("phase") != "computer") or \
 		(saved_modal in ["phone", "objective"] and data.get("phase") not in ["bedroom", "courtyard", "computer"]):
@@ -134,4 +144,6 @@ func restore(data: Dictionary) -> bool:
 	dialogue_choice = active_choice
 	ui_modal = saved_modal
 	hint_level = int(saved_hint)
+	music_volume = int(saved_music)
+	effects_volume = int(saved_effects)
 	return true

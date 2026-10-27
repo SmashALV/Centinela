@@ -54,7 +54,7 @@ def pack(scenes: list[dict], filename: str) -> None:
     payload = {"schema_version": 1, "preview_version": VERSION, "provisional": True,
                "ready_for_publication": False, "source_document": SOURCE.name,
                "scenes": scenes}
-    (OUT / filename).write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    (OUT / filename).write_bytes((json.dumps(payload, ensure_ascii=False, indent=2) + "\n").encode("utf-8"))
 
 
 def build() -> None:

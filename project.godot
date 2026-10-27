@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="Centinela 2.0"
-config/version="0.7.0-preview"
+config/version="0.8.0-preview"
 run/main_scene="res://scenes/Main.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 config/icon="res://icon.svg"
@@ -22,6 +22,7 @@ GameState="*res://scripts/GameState.gd"
 WebBridge="*res://scripts/WebBridge.gd"
 SaveManager="*res://scripts/SaveManager.gd"
 SyncManager="*res://scripts/SyncManager.gd"
+AudioManager="*res://scripts/AudioManager.gd"
 
 [display]
 

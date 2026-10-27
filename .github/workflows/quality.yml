@@ -28,6 +28,7 @@ jobs:
       - name: Verify literal preview and release guards
         run: |
           python3 tests/verify_recovered_script.py
+          python3 scripts/generate_audio.py --check
           python3 scripts/release.py check --channel preview
       - name: Test storage, backend, dashboard and synchronization
         run: |
@@ -54,6 +55,7 @@ jobs:
           echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
       - name: Test Godot and export Web
         run: |
+          godot --headless --editor --import --path . --quit
           godot --headless --path . --scene res://tests/RunTests.tscn
           mkdir -p build/web
           godot --headless --path . --export-debug 'Web Development' build/web/index.html

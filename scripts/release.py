@@ -21,7 +21,8 @@ CANONICAL_FILES = tuple(f"data/narrative/day_{day}.json" for day in range(5)) + 
 )
 SOURCE_FILES = (
     "project.godot", "export_presets.cfg", "package-lock.json", "scripts/release.py",
-    ".github/workflows/quality.yml", "web/backend_config.json", "dashboard/config.json",
+    "scripts/generate_audio.py", ".github/workflows/quality.yml",
+    "web/backend_config.json", "dashboard/config.json",
 )
 
 
@@ -106,6 +107,7 @@ def source_hashes() -> dict[str, str]:
     paths += sorted((ROOT / "supabase/migrations").glob("*.sql"))
     paths += sorted((ROOT / "supabase/functions").rglob("*.ts"))
     paths += sorted((ROOT / "data/narrative").glob("*.json"))
+    paths += sorted((ROOT / "assets/audio").glob("*.wav"))
     paths.append(ROOT / "icon.svg")
     return {path.relative_to(ROOT).as_posix(): sha256(path) for path in paths}
 
@@ -116,6 +118,7 @@ def export_inputs() -> list[Path]:
                             ("data/narrative", "*.json"), ("web", "*.js")):
         paths += list((ROOT / folder).rglob(pattern))
     paths.append(ROOT / "web/backend_config.json")
+    paths += list((ROOT / "assets/audio").glob("*.wav"))
     return paths
 
 

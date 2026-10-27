@@ -13,6 +13,7 @@ Controles: **WASD** movimiento, **F** interacción, **E** celular, **Tab** objet
 Para ejecutar las pruebas sin abrir la ventana:
 
 ```powershell
+& 'C:\Users\fabri\Downloads\Godot_v4.4.1-stable_win64.exe\Godot_v4.4.1-stable_win64_console.exe' --headless --editor --import --path 'E:\GODOT\grooming-2' --quit
 & 'C:\Users\fabri\Downloads\Godot_v4.4.1-stable_win64.exe\Godot_v4.4.1-stable_win64_console.exe' --headless --path 'E:\GODOT\grooming-2' --scene 'res://tests/RunTests.tscn'
 ```
 
@@ -61,7 +62,7 @@ npm run test:dashboard-browser
 
 ## QA técnico
 
-La [matriz P7 con evidencia por caso](docs/P7_QA_2026-10-27.md) registra qué funciona localmente y qué sigue bloqueado por el guion/rúbrica definitivos, Supabase de desarrollo y staging. El build local es `0.7.0-preview`. El menú de pausa permite cambiar entre texto pequeño, mediano y grande; una ventana menor de 768×448 pausa el juego y exige pulsar **Continuar** después de ampliarla. Los diálogos D0 guardan el nodo activo antes de avanzar y se reanudan tras recargar. También se recuperan el celular, el objetivo, la selección de clase y el nivel de pista si estaban abiertos.
+La [matriz P7 con evidencia por caso](docs/P7_QA_2026-10-27.md) registra qué funcionó en `0.7.0-preview` y qué sigue bloqueado por el guion/rúbrica definitivos, Supabase de desarrollo y staging. El build local actual es `0.8.0-preview`. El menú de pausa permite cambiar entre texto pequeño, mediano y grande; una ventana menor de 768×448 pausa el juego y exige pulsar **Continuar** después de ampliarla. Los diálogos D0 guardan el nodo activo antes de avanzar y se reanudan tras recargar. También se recuperan el celular, el objetivo, la selección de clase y el nivel de pista si estaban abiertos.
 
 ## Entrega P8
 
@@ -72,6 +73,7 @@ El [procedimiento de construcción, staging y operación](docs/P8_OPERATIONS.md)
 - Recorrido técnico de Día 0 hasta el resultado del MOBA, tres ranuras locales y tests de narrativa y mecánicas básicas. Despertar, patio y chat grupal usan texto literal del [guion recuperado v0.2](docs/recovered/Guion_Literal_Recuperado_Ampliado_D0_D4_v0_2.md) en una **vista previa provisional**. La opción elegida se conserva en el guardado y el chat puede releerse en el celular.
 - P5 permite leer seis fragmentos D1–D4, elegir sus opciones literales y explorar cuatro extractos de finales desde un índice manual. Se guardan escena, línea y opción para reanudar la lectura. Las [lagunas de la fuente y requisitos de sustitución](docs/P5_SOURCE_GAPS.md) están documentados; este recorrido no asigna finales ni puntuación educativa.
 - Los objetos y personajes usan formas dibujadas por código como recursos provisionales; las especificaciones para sustituirlos están en [`docs/ASSETS.md`](docs/ASSETS.md).
+- La música y cuatro efectos provisionales se generan de forma reproducible con `python scripts/generate_audio.py`; en Pausa se ajustan por separado y se guardan por ranura, también durante el MOBA. Los archivos y requisitos de reemplazo están en [`docs/ASSETS.md`](docs/ASSETS.md).
 - El archivo recuperado **no es el guion original exhaustivo**: faltan conectores, ramas, posiciones originales, nueve reacciones de Camila y fórmulas exactas de finales. Su [mapa de IDs](docs/recovered/Mapa_IDs_Narrativos_Propuesto_v0_1.json) es provisional. El juego no usa esos IDs para migrar partidas ni para puntuación educativa. Todos los JSON recuperados tienen `ready_for_publication: false`; `data/narrative/day_0_TEST_ONLY.json` se usa solo en pruebas.
 - El guardado Web usa IndexedDB con transacciones, bloqueo entre pestañas e idempotencia de solicitudes. El servicio tiene la operación atómica de snapshot más evento de decisión, pero las decisiones educativas aún no se conectan a ella porque sus IDs y ramas son provisionales. La integración Supabase está implementada y probada con servicio simulado y PostgreSQL embebido; falta comprobarla contra un proyecto real de desarrollo. No utilizar este prototipo para sesiones de investigación ni tratar sus guardados como datos definitivos.
 - El MOBA incluye un obstáculo central con rutas laterales, proyectiles y visión bloqueados por sólidos, ruinas de 2×2, Q de IA y escudos con expiraciones independientes. Las clases y estados activos se distinguen mediante figuras y anillos provisionales dibujados por código. La suite simula una partida de 180 s y comprueba victoria, derrota y desempates; aún faltan pruebas de equilibrio con jugadores reales y pulido visual para cerrar la fase P2.

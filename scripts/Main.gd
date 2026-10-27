@@ -54,6 +54,9 @@ func _ready() -> void:
 	modal.add_child(modal_box)
 	window_guard_layer = DisplayGuardScript.make_overlay(self)
 	_show_menu()
+	if not GameState.code.is_empty():
+		AudioManager.apply_preferences()
+		AudioManager.enter_context("explore")
 	_check_window_size()
 
 func _process(delta: float) -> void:
@@ -217,6 +220,7 @@ func _button(value: String, callback: Callable) -> Button:
 	return button
 
 func _show_menu() -> void:
+	AudioManager.set_music_paused(false)
 	dialogue_key = ""
 	modal_kind = "menu"
 	_clear_modal()
@@ -296,6 +300,9 @@ func _start_slot(chosen: int) -> void:
 				return
 	slot_loading = false
 	SyncManager.on_slot_opened()
+	AudioManager.apply_preferences()
+	if GameState.phase != "moba":
+		AudioManager.enter_context("explore")
 	_refresh_static_fonts()
 	if GameState.phase == "moba":
 		get_tree().change_scene_to_file("res://scenes/moba/MOBAArena.tscn")
@@ -385,6 +392,7 @@ func _transition(next_phase: String, position: Vector2) -> void:
 		if not is_inside_tree():
 			return
 		_load_phase()
+		AudioManager.play_effect("confirm")
 		world.enabled = true
 	else:
 		GameState.phase = old_phase
@@ -401,6 +409,7 @@ func _commit_flag(flag: String, message: String) -> void:
 		if not is_inside_tree():
 			return
 		_update_hud()
+		AudioManager.play_effect("interact")
 		world.enabled = true
 		_toast(message)
 	else:
@@ -496,6 +505,7 @@ func _advance_hint() -> void:
 
 func _show_pause() -> void:
 	modal_before_pause = modal_kind
+	AudioManager.set_music_paused(true)
 	_render_pause()
 
 func _render_pause() -> void:
@@ -510,6 +520,8 @@ func _render_pause() -> void:
 	continue_button.grab_focus()
 	var size_label: String = {"small": "Pequeño", "normal": "Mediano", "large": "Grande"}[GameState.text_size]
 	_preview_button(body, "Tamaño de texto: " + size_label, _cycle_text_size)
+	_preview_button(body, "Música: %d %%" % GameState.music_volume, func(): _cycle_audio("music"))
+	_preview_button(body, "Efectos: %d %%" % GameState.effects_volume, func(): _cycle_audio("effects"))
 	_preview_button(body, "Guardar", _manual_save)
 	_preview_button(body, "Menú", _return_to_menu)
 
@@ -531,6 +543,18 @@ func _cycle_text_size() -> void:
 		_toast("No se pudo guardar el tamaño de texto")
 	save_in_progress = false
 
+func _cycle_audio(which: String) -> void:
+	if save_in_progress:
+		return
+	save_in_progress = true
+	var saved: bool = await AudioManager.cycle_level(which)
+	save_in_progress = false
+	if saved:
+		if is_inside_tree():
+			_render_pause()
+	else:
+		_toast("No se pudo guardar el ajuste de audio")
+
 func _return_to_menu() -> void:
 	SyncManager.on_slot_closed()
 	await SaveManager.release_slot_async()
@@ -540,6 +564,7 @@ func _return_to_menu() -> void:
 func _resume_pause() -> void:
 	if window_too_small:
 		return
+	AudioManager.set_music_paused(false)
 	match modal_before_pause:
 		"phone": _render_phone()
 		"objective": _render_objective()
@@ -630,6 +655,7 @@ func _advance_dialogue() -> void:
 	GameState.dialogue_position = dialogue_story.position
 	if await SaveManager.save_slot_async():
 		if is_inside_tree():
+			AudioManager.play_effect("confirm")
 			_render_dialogue()
 	else:
 		dialogue_story.position = previous_position
@@ -649,6 +675,7 @@ func _choose_dialogue(choice_id: String) -> void:
 	if await SaveManager.save_slot_async():
 		dialogue_choice = choice_id
 		if is_inside_tree():
+			AudioManager.play_effect("confirm")
 			_render_dialogue()
 	else:
 		dialogue_story.position = previous_position
