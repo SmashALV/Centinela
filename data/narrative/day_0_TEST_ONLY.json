@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "narrative_version": "TEST_ONLY-1",
+  "test_only": true,
+  "nodes": [
+    {"position": 0, "speaker": "SISTEMA", "text": "TEST_ONLY: estructura de diálogo de prueba.", "next": 1},
+    {"position": 1, "speaker": "SISTEMA", "text": "TEST_ONLY: elegir una ruta.", "decision_id": "TEST_ONLY_D0_01", "choices": [
+      {"choice_id": "TEST_A", "text": "Opción de prueba A", "next": 2},
+      {"choice_id": "TEST_B", "text": "Opción de prueba B", "next": 2}
+    ]},
+    {"position": 2, "speaker": "SISTEMA", "text": "TEST_ONLY: fin de la prueba."}
+  ]
+}

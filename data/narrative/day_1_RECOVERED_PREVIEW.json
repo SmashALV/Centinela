@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "preview_version": "RECOVERED_PREVIEW_D0_D4_v0.2",
+  "provisional": true,
+  "ready_for_publication": false,
+  "source_document": "Guion_Literal_Recuperado_Ampliado_D0_D4_v0_2.md",
+  "scenes": [
+    {
+      "scene_id": "D1_02_A",
+      "title": "Presentación de Kairo en lobby",
+      "day": 1,
+      "lines": [
+        {
+          "speaker": "Mateo",
+          "text": "Oe, gente, ya le mandé la invitación. Ahorita entra"
+        },
+        {
+          "speaker": "Kairo",
+          "text": "¡Buenas! Mateo me dijo que podía pasar a saludar, jajaja"
+        },
+        {
+          "speaker": "Sebas",
+          "text": "¡Oeee! ¿Tú eres el pro del que tanto habla Mateo?"
+        },
+        {
+          "speaker": "Mateo",
+          "text": "JAJAJA, tampoco exageres, pe"
+        },
+        {
+          "speaker": "Kairo",
+          "text": "Qué pro ni qué nada, jajaja. Ayer Mateo también jugó bien"
+        },
+        {
+          "speaker": "Camila",
+          "text": "Holaa, ¿qué tal?"
+        },
+        {
+          "speaker": "Kairo",
+          "text": "¡Todo bien! Gracias por recibirme"
+        },
+        {
+          "speaker": "Bruno",
+          "text": "Buenas. ¿Entonces se conocieron ayer en una partida?"
+        },
+        {
+          "speaker": "Mateo",
+          "text": "Sí, nos tocó en el mismo equipo"
+        },
+        {
+          "speaker": "Kairo",
+          "text": "Sí, estuvo chévere. Nos coordinamos bastante bien"
+        }
+      ],
+      "choices": [
+        {
+          "key": "A",
+          "text": "¡Hola! Mateo ya nos habló de ti, jajaja"
+        },
+        {
+          "key": "B",
+          "text": "Oe, ¿y qué tal les fue ayer jugando?"
+        },
+        {
+          "key": "C",
+          "text": "Hola, qué bueno que hayas pasado a saludar"
+        }
+      ],
+      "unplaced_lines": [
+        {
+          "speaker": "Mateo",
+          "text": "Oe, ¿y te quedas a jugar?"
+        },
+        {
+          "speaker": "Kairo",
+          "text": "¡De una! Nos vemos, gente"
+        }
+      ]
+    }
+  ]
+}

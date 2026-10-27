@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "narrative_version": "RECOVERED_PREVIEW_D0_v0.2",
+  "provisional": true,
+  "ready_for_publication": false,
+  "source_document": "Guion_Literal_Recuperado_Ampliado_D0_D4_v0_2.md",
+  "entry_points": {"wakeup": 0, "courtyard": 3, "group_chat": 14},
+  "nodes": [
+    {"position": 0, "speaker": "Sofi", "text": "Ay, nooo... ¿Ya es hora?", "next": 1},
+    {"position": 1, "speaker": "Sofi", "text": "Asu, qué sueño tengo... Cinco minutitos más", "next": 2},
+    {"position": 2, "speaker": "Sofi", "text": "Ya, mentira. Mejor me levanto o llego tarde"},
+    {"position": 3, "speaker": "Camila", "text": "¡Sofi! ¡Oe, ven! Estos dos ya empezaron, jajaja", "next": 4},
+    {"position": 4, "speaker": "Sofi", "text": "¿Ahora qué pasó?", "next": 5},
+    {"position": 5, "speaker": "Mateo", "text": "Nada, Bruno que dice que me gana fácil en el juego", "next": 6},
+    {"position": 6, "speaker": "Bruno", "text": "Yo dije que si dejaras de mandarte solo, jugaríamos mejor", "next": 7},
+    {"position": 7, "speaker": "Mateo", "text": "¡Ya pe, tampoco exageres!", "next": 8},
+    {"position": 8, "speaker": "Sebas", "text": "Yo estoy con Mateo. Ese man sabe jugar", "next": 9},
+    {"position": 9, "speaker": "Bruno", "text": "Claro, porque tú haces todo lo que él hace", "next": 10},
+    {"position": 10, "speaker": "Sebas", "text": "JAJAJA, no todo. A veces juego peor", "next": 11},
+    {"position": 11, "speaker": "Camila", "text": "Ya, basta, jajaja. Ni empezaron las clases y están hablando de jugar", "next": 12},
+    {"position": 12, "speaker": "Sofi", "text": "En serio, ustedes nunca cambian", "next": 13},
+    {"position": 13, "speaker": "Mateo", "text": "Bueno, ¿y si jugamos más tarde?"},
+    {"position": 14, "speaker": "Mateo", "text": "Oe gente, ¿ya están? Hay que jugar de una", "next": 15},
+    {"position": 15, "speaker": "Sebas", "text": "Yo estoy desde hace rato JAJAJA", "next": 16},
+    {"position": 16, "speaker": "Bruno", "text": "Ya, pero esta vez jueguen con cabeza, pe", "next": 17},
+    {"position": 17, "speaker": "Mateo", "text": "Oe, Bruno, recién vamos a empezar y ya estás renegando", "next": 18},
+    {"position": 18, "speaker": "Camila", "text": "JAJAJA, ya chicos. Falta Sofi nomás", "next": 19},
+    {"position": 19, "speaker": "", "text": "", "decision_id": "D0_05_A_PREVIEW", "choices": [
+      {"choice_id": "D0_05_A_OPT_A", "text": "Ya estoy, gente. ¿Le damos?", "next": 20},
+      {"choice_id": "D0_05_A_OPT_B", "text": "Oe, tranquilos, recién entro y ya están peleando JAJAJA", "next": 21},
+      {"choice_id": "D0_05_A_OPT_C", "text": "Ya llegué. Mateo, espero que hoy sí nos hagas ganar", "next": 22}
+    ]},
+    {"position": 20, "speaker": "Sofi", "text": "Ya estoy, gente. ¿Le damos?"},
+    {"position": 21, "speaker": "Sofi", "text": "Oe, tranquilos, recién entro y ya están peleando JAJAJA"},
+    {"position": 22, "speaker": "Sofi", "text": "Ya llegué. Mateo, espero que hoy sí nos hagas ganar"}
+  ]
+}

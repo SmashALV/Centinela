@@ -1,0 +1,134 @@
+const assert = require("node:assert/strict");
+const { readFileSync } = require("node:fs");
+const { test } = require("node:test");
+const { randomUUID } = require("node:crypto");
+const vm = require("node:vm");
+const { indexedDB } = require("fake-indexeddb");
+
+const source = readFileSync("web/centinela_storage.js", "utf8");
+let now = 1000000;
+
+function tab(storage = new Map(), navigationType = "navigate") {
+  const sessionStorage = { getItem: (key) => storage.get(key) || null,
+    setItem: (key, value) => storage.set(key, value) };
+  const performance = { getEntriesByType: () => [{ type: navigationType }] };
+  const context = vm.createContext({ indexedDB, crypto: { randomUUID }, Date: { now: () => now },
+    sessionStorage, performance });
+  vm.runInContext(source, context);
+  return context.CentinelaStorage;
+}
+
+let requestNumber = 0;
+function send(client, operation, payload = {}, requestId = `TEST_ONLY_${++requestNumber}`) {
+  return new Promise((resolve) => {
+    client.request(JSON.stringify({ protocol_version: 1, request_id: requestId, operation, payload }),
+      (raw) => resolve(JSON.parse(raw)));
+  });
+}
+
+function snapshot(slot, phase = "bedroom") {
+  return { schema_version: 1, narrative_version: "TEST_ONLY", slot,
+    code: `CTN-TEST-${slot}`, phase, flags: {}, player_position: [1, 2], phone_messages: [] };
+}
+
+async function outboxCount() {
+  const db = await new Promise((resolve, reject) => {
+    const request = indexedDB.open("centinela_2_local_v1");
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+  const count = await new Promise((resolve, reject) => {
+    const request = db.transaction("event_outbox").objectStore("event_outbox").count();
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+  db.close();
+  return count;
+}
+
+test("ranuras, bloqueo, transacción de decisión e idempotencia", async () => {
+  const firstSession = new Map();
+  const first = tab(firstSession);
+  const second = tab();
+  assert.equal((await send(first, "list_slots")).result.length, 0);
+
+  const acquired = await send(first, "acquire_lock", { slot: 1 });
+  assert.equal(acquired.success, true);
+  assert.equal(acquired.result.generation, 1);
+  const firstWrite = { slot: 1, generation: 1, snapshot: snapshot(1) };
+  const committed = await send(first, "save_snapshot", firstWrite, "TEST_ONLY_save_1");
+  assert.equal(committed.success, true);
+  assert.equal((await send(first, "load_slot", { slot: 1 })).result.phase, "bedroom");
+  assert.deepEqual((await send(first, "save_snapshot", firstWrite, "TEST_ONLY_save_1")).result, committed.result);
+  assert.equal((await send(first, "save_snapshot", { ...firstWrite, snapshot: snapshot(1, "courtyard") }, "TEST_ONLY_save_1")).error.code, "INVALID_REQUEST");
+  const reloaded = tab(firstSession, "reload");
+  assert.equal((await send(reloaded, "acquire_lock", { slot: 1 })).result.generation, 1);
+  assert.equal((await send(second, "acquire_lock", { slot: 1 })).error.code, "LOCK_HELD");
+
+  now += 31000;
+  const takeover = await send(second, "acquire_lock", { slot: 1 });
+  assert.equal(takeover.result.generation, 2);
+  assert.equal((await send(first, "save_snapshot", { ...firstWrite, snapshot: snapshot(1, "courtyard") })).error.code, "LOCK_LOST");
+  const newWrite = await send(second, "save_snapshot", { slot: 1, generation: 2, snapshot: snapshot(1, "courtyard") });
+  assert.equal(newWrite.success, true);
+  assert.equal((await send(second, "load_slot", { slot: 1 })).result.phase, "courtyard");
+
+  const slotTwo = await send(first, "acquire_lock", { slot: 2 });
+  assert.equal(slotTwo.result.generation, 1);
+  assert.equal((await send(first, "save_snapshot", { slot: 2, generation: 1, snapshot: snapshot(2) })).success, true);
+  assert.equal((await send(second, "list_slots")).result.length, 2);
+
+  const decision = { slot: 1, generation: 2, snapshot: snapshot(1, "computer"),
+    event: { event_id: "TEST_ONLY_event_1", decision_id: "TEST_ONLY_D0",
+      choice_id: "TEST_ONLY_choice", kind: "decision", sequence: 1 } };
+  const decisionResult = await send(second, "save_decision_atomic", decision, "TEST_ONLY_decision_1");
+  assert.equal(decisionResult.success, true);
+  assert.equal(decisionResult.result.sequence, 1);
+  assert.equal(await outboxCount(), 1);
+  assert.equal((await send(second, "save_decision_atomic", decision, "TEST_ONLY_decision_1")).result.sequence, 1);
+  assert.equal(await outboxCount(), 1);
+
+  const invalidSequence = { ...decision, snapshot: snapshot(1, "result"),
+    event: { ...decision.event, event_id: "TEST_ONLY_event_2", sequence: 3 } };
+  assert.equal((await send(second, "save_decision_atomic", invalidSequence)).error.code, "INVALID_REQUEST");
+  assert.equal((await send(second, "load_slot", { slot: 1 })).result.phase, "computer");
+  assert.equal(await outboxCount(), 1);
+
+  const reusedEvent = { ...decision, snapshot: snapshot(1, "result"),
+    event: { ...decision.event, sequence: 2 } };
+  assert.equal((await send(second, "save_decision_atomic", reusedEvent)).error.code, "INVALID_REQUEST");
+  assert.equal(await outboxCount(), 1);
+
+  const credential = { registration_id: "TEST_ONLY_registration", save_id: "TEST_ONLY_save",
+    recovery_secret: "TEST_ONLY_secret" };
+  assert.equal((await send(second, "put_credential", { slot: 1, generation: 2, credential })).success, true);
+  assert.deepEqual((await send(second, "get_credential", { slot: 1, generation: 2 })).result, credential);
+  assert.equal((await send(first, "get_credential", { slot: 1, generation: 1 })).error.code, "LOCK_LOST");
+  const queued = await send(second, "peek_outbox", { slot: 1, generation: 2 });
+  assert.equal(queued.result.length, 1);
+  assert.equal(queued.result[0].event_id, decision.event.event_id);
+  assert.equal((await send(second, "ack_outbox", { slot: 1, generation: 2,
+    receipts: [{ event_id: decision.event.event_id, status: "missing_sequence" }] })).result.acknowledged, 0);
+  assert.equal((await send(second, "peek_outbox", { slot: 1, generation: 2 })).result.length, 1);
+  assert.equal((await send(second, "ack_outbox", { slot: 1, generation: 2,
+    receipts: [{ event_id: decision.event.event_id, status: "accepted" }] })).result.acknowledged, 1);
+  assert.equal((await send(second, "peek_outbox", { slot: 1, generation: 2 })).result.length, 0);
+  assert.equal((await send(second, "set_sync_status", { slot: 1, generation: 2,
+    status: { last_sequence: 1, sync_completed: false } })).success, true);
+  assert.equal((await send(second, "get_sync_status", { slot: 1, generation: 2 })).result.last_sequence, 1);
+
+  const descriptive = { slot: 1, generation: 2, snapshot: snapshot(1, "result"),
+    event: { event_id: "TEST_ONLY_moba", kind: "moba_result", sequence: 2 } };
+  assert.equal((await send(second, "save_event_atomic", descriptive, "TEST_ONLY_moba_request")).success, true);
+  assert.equal((await send(second, "peek_outbox", { slot: 1, generation: 2 })).result[0].kind, "moba_result");
+  assert.equal((await send(second, "ack_outbox", { slot: 1, generation: 2,
+    receipts: [{ event_id: "TEST_ONLY_moba", status: "accepted" }] })).result.acknowledged, 1);
+  assert.equal((await send(second, "save_event_atomic", descriptive, "TEST_ONLY_moba_request")).success, true);
+  assert.equal((await send(second, "peek_outbox", { slot: 1, generation: 2 })).result.length, 0);
+
+  assert.equal((await send(second, "release_lock", { slot: 1, generation: 2 })).success, true);
+  assert.equal((await send(second, "acquire_lock", { slot: 1 })).result.generation, 3);
+  assert.equal((await send(second, "save_snapshot", { slot: 1, generation: 2, snapshot: snapshot(1, "result") })).error.code, "LOCK_LOST");
+  assert.equal((await send(second, "renew_lock", { slot: 1, generation: 3 })).success, true);
+  assert.equal((await send(second, "unknown")).error.code, "INVALID_REQUEST");
+});

@@ -1,0 +1,298 @@
+{
+  "project": "Centinela 2.0",
+  "schema": "recovered_script_index.v0.1",
+  "status": "PROVISIONAL_NOT_CANONICAL",
+  "source": "fragments recovered from prior design conversations",
+  "ready_for_publication": false,
+  "warning": "Estas NO son posiciones ni IDs originales del proyecto. No sirven para migrar partidas ni vincular rúbricas oficiales. Conteo de posiciones basado solo en frases recuperadas.",
+  "entries": [
+    {
+      "scene_id_historical_label": "D0-03-A",
+      "json_file_proposed": "day_0.json",
+      "proposed_conversation_key": "D0_03_A",
+      "local_positions_proposed": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "choice_anchor_proposed": 11,
+      "choice_ids_proposed": {},
+      "original_positions_verified": false,
+      "original_option_ids_verified": false,
+      "branch_destinations_verified": false,
+      "full_dialogue_recovered": false,
+      "notes": "Posiciones ilustrativas sobre fragmentos recuperados; no reemplazan el texto ni la ruta de guion original."
+    },
+    {
+      "scene_id_historical_label": "D0-05-A",
+      "json_file_proposed": "day_0.json",
+      "proposed_conversation_key": "D0_05_A",
+      "local_positions_proposed": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "choice_anchor_proposed": 5,
+      "choice_ids_proposed": {
+        "A": "D0_05_A_OPT_A",
+        "B": "D0_05_A_OPT_B",
+        "C": "D0_05_A_OPT_C"
+      },
+      "original_positions_verified": false,
+      "original_option_ids_verified": false,
+      "branch_destinations_verified": false,
+      "full_dialogue_recovered": false,
+      "notes": "Posiciones ilustrativas sobre fragmentos recuperados; no reemplazan el texto ni la ruta de guion original."
+    },
+    {
+      "scene_id_historical_label": "D1-02-A",
+      "json_file_proposed": "day_1.json",
+      "proposed_conversation_key": "D1_02_A",
+      "local_positions_proposed": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "choice_anchor_proposed": 10,
+      "choice_ids_proposed": {
+        "A": "D1_02_A_OPT_A",
+        "B": "D1_02_A_OPT_B",
+        "C": "D1_02_A_OPT_C"
+      },
+      "original_positions_verified": false,
+      "original_option_ids_verified": false,
+      "branch_destinations_verified": false,
+      "full_dialogue_recovered": false,
+      "notes": "Posiciones ilustrativas sobre fragmentos recuperados; no reemplazan el texto ni la ruta de guion original."
+    },
+    {
+      "scene_id_historical_label": "D2-03-A",
+      "json_file_proposed": "day_2.json",
+      "proposed_conversation_key": "D2_03_A",
+      "local_positions_proposed": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "choice_anchor_proposed": 9,
+      "choice_ids_proposed": {
+        "A": "D2_03_A_OPT_A",
+        "B": "D2_03_A_OPT_B",
+        "C": "D2_03_A_OPT_C"
+      },
+      "original_positions_verified": false,
+      "original_option_ids_verified": false,
+      "branch_destinations_verified": false,
+      "full_dialogue_recovered": false,
+      "notes": "Posiciones ilustrativas sobre fragmentos recuperados; no reemplazan el texto ni la ruta de guion original."
+    },
+    {
+      "scene_id_historical_label": "D3-01-A",
+      "json_file_proposed": "day_3.json",
+      "proposed_conversation_key": "D3_01_A",
+      "local_positions_proposed": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "choice_anchor_proposed": 7,
+      "choice_ids_proposed": {
+        "A": "D3_01_A_OPT_A",
+        "B": "D3_01_A_OPT_B",
+        "C": "D3_01_A_OPT_C"
+      },
+      "original_positions_verified": false,
+      "original_option_ids_verified": false,
+      "branch_destinations_verified": false,
+      "full_dialogue_recovered": false,
+      "notes": "Posiciones ilustrativas sobre fragmentos recuperados; no reemplazan el texto ni la ruta de guion original."
+    },
+    {
+      "scene_id_historical_label": "D4-01-A",
+      "json_file_proposed": "day_4.json",
+      "proposed_conversation_key": "D4_01_A",
+      "local_positions_proposed": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "choice_anchor_proposed": 8,
+      "choice_ids_proposed": {
+        "A": "D4_01_A_OPT_A",
+        "B": "D4_01_A_OPT_B",
+        "C": "D4_01_A_OPT_C"
+      },
+      "original_positions_verified": false,
+      "original_option_ids_verified": false,
+      "branch_destinations_verified": false,
+      "full_dialogue_recovered": false,
+      "notes": "Posiciones ilustrativas sobre fragmentos recuperados; no reemplazan el texto ni la ruta de guion original."
+    },
+    {
+      "scene_id_historical_label": "D4-02-A",
+      "json_file_proposed": "day_4.json",
+      "proposed_conversation_key": "D4_02_A",
+      "local_positions_proposed": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "choice_anchor_proposed": 4,
+      "choice_ids_proposed": {
+        "A": "D4_02_A_OPT_A",
+        "B": "D4_02_A_OPT_B",
+        "C": "D4_02_A_OPT_C"
+      },
+      "original_positions_verified": false,
+      "original_option_ids_verified": false,
+      "branch_destinations_verified": false,
+      "full_dialogue_recovered": false,
+      "notes": "Posiciones ilustrativas sobre fragmentos recuperados; no reemplazan el texto ni la ruta de guion original."
+    },
+    {
+      "scene_id_historical_label": "D4-03-A",
+      "json_file_proposed": "day_4.json",
+      "proposed_conversation_key": "D4_03_A",
+      "local_positions_proposed": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "choice_anchor_proposed": 4,
+      "choice_ids_proposed": {
+        "A": "D4_03_A_OPT_A",
+        "B": "D4_03_A_OPT_B",
+        "C": "D4_03_A_OPT_C"
+      },
+      "original_positions_verified": false,
+      "original_option_ids_verified": false,
+      "branch_destinations_verified": false,
+      "full_dialogue_recovered": false,
+      "notes": "Posiciones ilustrativas sobre fragmentos recuperados; no reemplazan el texto ni la ruta de guion original."
+    },
+    {
+      "scene_id_historical_label": "F01-A",
+      "json_file_proposed": "endings.json",
+      "proposed_conversation_key": "F01_A",
+      "local_positions_proposed": [
+        0
+      ],
+      "choice_anchor_proposed": 1,
+      "choice_ids_proposed": {},
+      "original_positions_verified": false,
+      "original_option_ids_verified": false,
+      "branch_destinations_verified": false,
+      "full_dialogue_recovered": false,
+      "notes": "Posiciones ilustrativas sobre fragmentos recuperados; no reemplazan el texto ni la ruta de guion original."
+    },
+    {
+      "scene_id_historical_label": "F01-B",
+      "json_file_proposed": "endings.json",
+      "proposed_conversation_key": "F01_B",
+      "local_positions_proposed": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "choice_anchor_proposed": 7,
+      "choice_ids_proposed": {},
+      "original_positions_verified": false,
+      "original_option_ids_verified": false,
+      "branch_destinations_verified": false,
+      "full_dialogue_recovered": false,
+      "notes": "Posiciones ilustrativas sobre fragmentos recuperados; no reemplazan el texto ni la ruta de guion original."
+    },
+    {
+      "scene_id_historical_label": "F02",
+      "json_file_proposed": "endings.json",
+      "proposed_conversation_key": "F02",
+      "local_positions_proposed": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "choice_anchor_proposed": 9,
+      "choice_ids_proposed": {},
+      "original_positions_verified": false,
+      "original_option_ids_verified": false,
+      "branch_destinations_verified": false,
+      "full_dialogue_recovered": false,
+      "notes": "Posiciones ilustrativas sobre fragmentos recuperados; no reemplazan el texto ni la ruta de guion original."
+    },
+    {
+      "scene_id_historical_label": "F03",
+      "json_file_proposed": "endings.json",
+      "proposed_conversation_key": "F03",
+      "local_positions_proposed": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "choice_anchor_proposed": 11,
+      "choice_ids_proposed": {},
+      "original_positions_verified": false,
+      "original_option_ids_verified": false,
+      "branch_destinations_verified": false,
+      "full_dialogue_recovered": false,
+      "notes": "Posiciones ilustrativas sobre fragmentos recuperados; no reemplazan el texto ni la ruta de guion original."
+    }
+  ],
+  "needs_original_source": [
+    "Nodos o secuencias originales completas por día",
+    "Reacciones de cada opción y destinos",
+    "Predicados exactos de finales",
+    "ID de decisiones educativas de la rúbrica"
+  ]
+}

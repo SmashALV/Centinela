@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "preview_version": "RECOVERED_PREVIEW_D0_D4_v0.2",
+  "provisional": true,
+  "ready_for_publication": false,
+  "source_document": "Guion_Literal_Recuperado_Ampliado_D0_D4_v0_2.md",
+  "scenes": [
+    {
+      "scene_id": "D3_01_A",
+      "title": "Presión emocional y secreto",
+      "day": 3,
+      "lines": [
+        {
+          "speaker": "Sofi",
+          "text": "Oe, Mateo, ¿todo bien? Hoy estás bien callado"
+        },
+        {
+          "speaker": "Mateo",
+          "text": "Ah, sí... bueno, más o menos"
+        },
+        {
+          "speaker": "Mateo",
+          "text": "Es que... ¿te acuerdas de lo que te conté de Kairo y la skin?"
+        },
+        {
+          "speaker": "Mateo",
+          "text": "Le dije que no entendía por qué tenía que ser secreto"
+        },
+        {
+          "speaker": "Mateo",
+          "text": "Y me respondió que si de verdad confiara en él, no tendría que estar contándoles nuestras cosas a los demás"
+        },
+        {
+          "speaker": "Mateo",
+          "text": "Sí, pe. Dice que me quiere regalar algo especial y que yo no estoy valorando su confianza"
+        },
+        {
+          "speaker": "Mateo",
+          "text": "Pucha, no sé... No quiero que se moleste conmigo. Me cae bien y tampoco quiero perder su amistad"
+        }
+      ],
+      "choices": [
+        {
+          "key": "A",
+          "text": "Oe, Mateo, no tienes que demostrarle tu amistad guardando algo que te incomoda"
+        },
+        {
+          "key": "B",
+          "text": "Capaz solo se molestó un rato. Yo no le daría tanta importancia"
+        },
+        {
+          "key": "C",
+          "text": "Pucha, entiendo que te preocupe. ¿Quieres que pensemos juntos cómo responderle o con quién hablar?"
+        }
+      ],
+      "unplaced_lines": [
+        {
+          "speaker": "Mateo",
+          "text": "Oe, Sofi... gracias por escucharme también el otro día. Me hace bien poder hablar contigo"
+        },
+        {
+          "speaker": "Mateo",
+          "text": "¿Te acuerdas que me dijiste que le preguntara por el secreto? Eso hice, pe... y mira cómo se puso"
+        },
+        {
+          "speaker": "Mateo",
+          "text": "También me quedé pensando en lo que dijiste el otro día. No tengo por qué aceptar la skin, y si sigue así, mejor pido ayuda"
+        }
+      ]
+    }
+  ]
+}

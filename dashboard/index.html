@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https: http://127.0.0.1:* http://localhost:*; script-src 'self'; style-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>Centinela · Panel de investigación</title>
+  <link rel="stylesheet" href="styles.css">
+  <script type="module" src="app.mjs"></script>
+</head>
+<body>
+  <div class="shell">
+    <aside class="rail">
+      <div class="brand"><span class="brand-mark">C</span><div><strong>CENTINELA</strong><small>Panel de investigación</small></div></div>
+      <div class="rail-note">Datos seudónimos<br>Hora de Lima (UTC−05:00)</div>
+      <div class="rail-bottom">P6 · desarrollo<br><span>Acceso administrativo</span></div>
+    </aside>
+    <main>
+      <header class="topbar"><div><p class="eyebrow">INVESTIGACIÓN · CENTINELA 2.0</p><h1>Sesiones y reportes</h1></div><button id="logout" class="quiet" hidden>Cerrar sesión</button></header>
+      <div id="notice" class="notice" role="status" aria-live="polite"></div>
+      <section id="auth" class="card auth-card" hidden>
+        <p class="eyebrow">ACCESO RESTRINGIDO</p><h2>Cuenta administrativa</h2>
+        <p>Ingresa con la cuenta aprobada. Las credenciales permanecen en memoria durante esta visita.</p>
+        <form id="login-form">
+          <label>Correo electrónico<input name="email" type="email" autocomplete="username" required></label>
+          <label>Contraseña<input name="password" type="password" autocomplete="current-password" required></label>
+          <button type="submit">Ingresar</button>
+        </form>
+      </section>
+      <section id="workspace" hidden>
+        <div class="section-heading"><div><p class="eyebrow">COHORTES</p><h2>Sesiones</h2></div><button id="refresh" class="quiet">Actualizar</button></div>
+        <div id="overview" class="card"></div>
+        <details class="card create-card"><summary>Crear sesión SES</summary>
+          <form id="create-form" class="form-grid">
+            <label>Código SES<input name="code" pattern="SES-[0-9]{3,6}" placeholder="SES-001" required></label>
+            <label>Inicio · Lima<input name="starts_at" type="datetime-local" required></label>
+            <label>Fin · Lima<input name="ends_at" type="datetime-local" required></label>
+            <label>Versión del juego<input name="game_version" placeholder="dev-0.1" required></label>
+            <label>Versión narrativa<input name="narrative_version" placeholder="provisional-d0-1" required></label>
+            <label>Versión rúbrica<input name="rubric_version" placeholder="TEST_ONLY_P4_v1" required></label>
+            <button type="submit">Crear sesión</button>
+          </form>
+        </details>
+        <div id="detail"></div>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

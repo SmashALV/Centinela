@@ -1,0 +1,18 @@
+{
+  "private": true,
+  "scripts": {
+    "test:web-storage": "node --test tests/web_storage.test.cjs",
+    "test:browser": "node tests/browser_smoke.cjs",
+    "test:backend-sql": "node --test tests/backend_sql.test.cjs",
+    "test:research-sql": "node --test tests/research_sql.test.cjs",
+    "test:dashboard-export": "node --test tests/dashboard_export.test.mjs",
+    "test:dashboard-browser": "node tests/dashboard_browser.test.cjs",
+    "test:web-sync": "node --test tests/web_sync.test.cjs",
+    "test:backend-e2e": "node tests/backend_e2e.cjs"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.12",
+    "fake-indexeddb": "^6.2.6",
+    "playwright-core": "^1.64.1"
+  }
+}

@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "preview_version": "RECOVERED_PREVIEW_D0_D4_v0.2",
+  "provisional": true,
+  "ready_for_publication": false,
+  "source_document": "Guion_Literal_Recuperado_Ampliado_D0_D4_v0_2.md",
+  "scenes": [
+    {
+      "scene_id": "D2_03_A",
+      "title": "Regalo de skin",
+      "day": 2,
+      "lines": [
+        {
+          "speaker": "Mateo",
+          "text": "Oe, Sofi, mira lo que me escribió Kairo, jajaja"
+        },
+        {
+          "speaker": "Sofi",
+          "text": "A ver, ¿qué pasó?"
+        },
+        {
+          "speaker": "Kairo (mensaje)",
+          "text": "Oe, ¿te acuerdas de la skin que me dijiste que querías?"
+        },
+        {
+          "speaker": "Mateo (mensaje)",
+          "text": "Siii jajaja, está bravaza."
+        },
+        {
+          "speaker": "Kairo (mensaje)",
+          "text": "Creo que puedo regalarte una. Tengo una de sobra."
+        },
+        {
+          "speaker": "Mateo (mensaje)",
+          "text": "¿En serio? Oe, no tienes que hacerlo."
+        },
+        {
+          "speaker": "Kairo (mensaje)",
+          "text": "Tranqui, mano, normal. Después vemos cómo te la paso."
+        },
+        {
+          "speaker": "Mateo",
+          "text": "Asu, si me la regala, sería bravazo. Esa skin me gusta un montón"
+        },
+        {
+          "speaker": "Mateo",
+          "text": "¿Qué dices, Sofi?"
+        }
+      ],
+      "choices": [
+        {
+          "key": "A",
+          "text": "¡Asu, qué chévere! Esa era la skin que querías, ¿no?"
+        },
+        {
+          "key": "B",
+          "text": "Oe, ¿y por qué quiere regalártela? ¿Te contó?"
+        },
+        {
+          "key": "C",
+          "text": "Está chévere, pero igual recién lo estás conociendo, Mateo"
+        }
+      ],
+      "after_choice": [
+        {
+          "speaker": "Sofi",
+          "text": "Ya, me cuentas qué pasa"
+        },
+        {
+          "speaker": "Mateo",
+          "text": "Dale, jajaja"
+        }
+      ]
+    }
+  ]
+}

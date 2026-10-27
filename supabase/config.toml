@@ -1,0 +1,19 @@
+project_id = "centinela-2-development"
+
+[auth]
+enable_anonymous_sign_ins = true
+
+[functions.register_save]
+verify_jwt = true
+
+[functions.claim_save]
+verify_jwt = true
+
+[functions.ingest_events]
+verify_jwt = true
+
+[functions.finalize_sync]
+verify_jwt = true
+
+[functions.research_admin]
+verify_jwt = true

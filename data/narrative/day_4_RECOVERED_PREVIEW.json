@@ -1,0 +1,136 @@
+{
+  "schema_version": 1,
+  "preview_version": "RECOVERED_PREVIEW_D0_D4_v0.2",
+  "provisional": true,
+  "ready_for_publication": false,
+  "source_document": "Guion_Literal_Recuperado_Ampliado_D0_D4_v0_2.md",
+  "scenes": [
+    {
+      "scene_id": "D4_01_A",
+      "title": "Propuesta de encuentro",
+      "day": 4,
+      "lines": [
+        {
+          "speaker": "Mateo",
+          "text": "Oe, Sofi... ¿puedes ver algo? Kairo me escribió y no sé qué pensar"
+        },
+        {
+          "speaker": "Kairo (mensaje)",
+          "text": "Oe, Mateo, un día podríamos vernos en persona, ¿qué dices?"
+        },
+        {
+          "speaker": "Kairo (mensaje)",
+          "text": "Tranqui, sería un rato nomás. Mejor que quede entre nosotros, ¿ya?"
+        },
+        {
+          "speaker": "Mateo (mensaje)",
+          "text": "¿Y por qué no podría contarlo?"
+        },
+        {
+          "speaker": "Kairo (mensaje)",
+          "text": "Porque tus amigos se meten en todo. Pensé que confiabas en mí"
+        },
+        {
+          "speaker": "Mateo",
+          "text": "No le respondí después de eso. Me dio cosa, la verdad"
+        },
+        {
+          "speaker": "Mateo",
+          "text": "Es que me cae bien, pero ya no sé. Primero lo de la skin, después el secreto y ahora esto..."
+        },
+        {
+          "speaker": "Mateo",
+          "text": "¿Tú qué crees que debería hacer?"
+        }
+      ],
+      "choices": [
+        {
+          "key": "A",
+          "text": "Mateo, no tienes por qué ir ni ocultarlo. Mejor hablemos con un adulto de confianza y guardemos esos mensajes"
+        },
+        {
+          "key": "B",
+          "text": "Yo le diría que no quieres verlo. Si te incomoda, no tiene por qué seguir insistiendo"
+        },
+        {
+          "key": "C",
+          "text": "Capaz solo quiere conocerte, pero igual está raro. Podrías seguir conversando antes de decidir"
+        }
+      ]
+    },
+    {
+      "scene_id": "D4_02_A",
+      "title": "Estoy contigo",
+      "day": 4,
+      "lines": [
+        {
+          "speaker": "Mateo",
+          "text": "Pucha, Sofi... no pensé que esto se iba a poner así"
+        },
+        {
+          "speaker": "Mateo",
+          "text": "No quiero encontrarme con él, pero tampoco sé cómo manejar todo esto"
+        },
+        {
+          "speaker": "Sofi",
+          "text": "Ya, entiendo. No tienes que resolverlo todo solo"
+        },
+        {
+          "speaker": "Mateo",
+          "text": "¿Y ahora qué hacemos?"
+        }
+      ],
+      "choices": [
+        {
+          "key": "A",
+          "text": "Oe, podemos hablarlo con alguien de confianza. Si quieres, te acompaño"
+        },
+        {
+          "key": "B",
+          "text": "Si quieres, te ayudo a escribirle que no vas a encontrarte con él"
+        },
+        {
+          "key": "C",
+          "text": "Podemos dejarlo ahí por ahora y ver si Kairo deja de insistir"
+        }
+      ]
+    },
+    {
+      "scene_id": "D4_03_A",
+      "title": "¿Qué hacemos ahora?",
+      "day": 4,
+      "lines": [
+        {
+          "speaker": "Mateo",
+          "text": "Pucha... todavía tengo sus mensajes acá"
+        },
+        {
+          "speaker": "Sofi",
+          "text": "Ya, por lo menos sabemos qué te ha dicho"
+        },
+        {
+          "speaker": "Mateo",
+          "text": "Sí, pero me sigue preocupando que vuelva a insistir"
+        },
+        {
+          "speaker": "Mateo",
+          "text": "Entonces... ¿qué hacemos ahorita?"
+        }
+      ],
+      "choices": [
+        {
+          "key": "A",
+          "text": "Guardemos los mensajes y hablemos con un adulto de confianza. Yo te acompaño, y no tienes que ir a verlo"
+        },
+        {
+          "key": "B",
+          "text": "Primero dejémosle claro que no vas a ir y cortemos el contacto. Guardemos el chat por si necesitamos ayuda"
+        },
+        {
+          "key": "C",
+          "text": "Mejor no hagamos nada por ahora. No le respondas y veamos si deja de insistir"
+        }
+      ]
+    }
+  ]
+}

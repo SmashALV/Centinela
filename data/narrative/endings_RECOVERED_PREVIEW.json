@@ -1,0 +1,151 @@
+{
+  "schema_version": 1,
+  "preview_version": "RECOVERED_PREVIEW_D0_D4_v0.2",
+  "provisional": true,
+  "ready_for_publication": false,
+  "source_document": "Guion_Literal_Recuperado_Ampliado_D0_D4_v0_2.md",
+  "scenes": [
+    {
+      "scene_id": "F01_A",
+      "title": "F01 · tutor",
+      "day": null,
+      "lines": [
+        {
+          "speaker": "Tutor",
+          "text": "Gracias por contármelo, Mateo. Hiciste bien en buscar apoyo"
+        }
+      ]
+    },
+    {
+      "scene_id": "F01_B",
+      "title": "F01 · madre de Mateo",
+      "day": null,
+      "lines": [
+        {
+          "speaker": "Mateo",
+          "text": "Ma... hay algo que quería contarte"
+        },
+        {
+          "speaker": "Madre",
+          "text": "Dime, hijo. ¿Qué pasó?"
+        },
+        {
+          "speaker": "Mateo",
+          "text": "Es que conocí a alguien jugando por internet. Al comienzo todo normal, pero después empezó a pedirme cosas raras"
+        },
+        {
+          "speaker": "Madre",
+          "text": "¿Qué tipo de cosas?"
+        },
+        {
+          "speaker": "Mateo",
+          "text": "Me ofreció una skin, me dijo que no les contara a mis amigos y después quiso que nos viéramos sin decirle a nadie"
+        },
+        {
+          "speaker": "Mateo",
+          "text": "Me dio roche contarlo antes... pensé que te ibas a molestar"
+        },
+        {
+          "speaker": "Madre",
+          "text": "Mateo, gracias por confiar en mí. Lo importante es que estás hablando de esto y podemos ayudarte"
+        }
+      ]
+    },
+    {
+      "scene_id": "F02",
+      "title": "F02 · Hasta aquí",
+      "day": null,
+      "lines": [
+        {
+          "speaker": "Mateo",
+          "text": "Ya, Sofi... creo que sí tengo que decirle que no"
+        },
+        {
+          "speaker": "Sofi",
+          "text": "Si no quieres ir, no tienes por qué hacerlo"
+        },
+        {
+          "speaker": "Mateo",
+          "text": "Sí, pe. Ya me está incomodando todo esto"
+        },
+        {
+          "speaker": "Mateo (mensaje dirigido a Kairo)",
+          "text": "Oe, Kairo, lo estuve pensando y no quiero que nos veamos. Tampoco me gustó que me pidieras guardar secretos. Prefiero dejarlo acá"
+        },
+        {
+          "speaker": "Mateo",
+          "text": "Ya está... no voy a ir"
+        },
+        {
+          "speaker": "Sofi",
+          "text": "Hiciste bien en decir lo que querías, Mateo"
+        },
+        {
+          "speaker": "Mateo",
+          "text": "Sí... pero igual me quedé pensando en todo esto"
+        },
+        {
+          "speaker": "Sofi",
+          "text": "¿Por lo que te dijo?"
+        },
+        {
+          "speaker": "Mateo",
+          "text": "Sí, pe. Al comienzo parecía buena onda. No pensé que después me iba a presionar así"
+        }
+      ]
+    },
+    {
+      "scene_id": "F03",
+      "title": "F03 · Esto todavía no termina",
+      "day": null,
+      "lines": [
+        {
+          "speaker": "Mateo",
+          "text": "Ya... mejor lo dejamos ahí por ahora"
+        },
+        {
+          "speaker": "Sofi",
+          "text": "¿Estás seguro? Se te ve preocupado"
+        },
+        {
+          "speaker": "Mateo",
+          "text": "Es que no sé qué hacer, pe. Capaz si no le respondo, deja de insistir"
+        },
+        {
+          "speaker": "Sofi",
+          "text": "Bueno... pero si sigue molestándote, me cuentas, ¿ya?"
+        },
+        {
+          "speaker": "Mateo",
+          "text": "Sí, Sofi. Gracias"
+        }
+      ],
+      "later_chat": [
+        {
+          "speaker": "Mateo (chat)",
+          "text": "Oe, Sofi... Kairo me volvió a escribir."
+        },
+        {
+          "speaker": "Mateo (chat)",
+          "text": "Sigue con que quiere que nos veamos."
+        },
+        {
+          "speaker": "Mateo (chat)",
+          "text": "Dice que no entiende por qué lo estoy evitando."
+        },
+        {
+          "speaker": "Sofi (chat)",
+          "text": "Pucha, Mateo... ¿y qué vas a hacer?"
+        },
+        {
+          "speaker": "Mateo (chat)",
+          "text": "No sé, la verdad. Ya no me siento tranquilo con esto."
+        },
+        {
+          "speaker": "Sofi (pensamiento)",
+          "text": "Asu... Mateo sigue preocupado. Creo que esto necesita más ayuda"
+        }
+      ]
+    }
+  ]
+}
