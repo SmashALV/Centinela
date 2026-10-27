@@ -21,6 +21,8 @@ var dialogue_story: RefCounted
 var preview_catalog: RefCounted
 var dialogue_key := ""
 var dialogue_choice := ""
+var dialogue_text_label: Label
+var dialogue_visible := 0.0
 var slot_loading := false
 var save_in_progress := false
 var window_guard_layer: CanvasLayer
@@ -60,6 +62,14 @@ func _ready() -> void:
 	_check_window_size()
 
 func _process(delta: float) -> void:
+	if modal_kind == "dialogue" and is_instance_valid(dialogue_text_label):
+		var text_length: int = dialogue_text_label.text.length()
+		if dialogue_visible < text_length:
+			var chars_per_second: float = {"slow": 18.0, "normal": 36.0, "fast": 72.0}[GameState.dialogue_speed]
+			dialogue_visible = minf(float(text_length), dialogue_visible + delta * chars_per_second)
+			dialogue_text_label.visible_characters = int(dialogue_visible)
+			if dialogue_visible >= text_length:
+				_render_dialogue(true)
 	window_check_elapsed += delta
 	if window_check_elapsed >= 0.25:
 		window_check_elapsed = 0.0
@@ -91,9 +101,11 @@ func _unhandled_input(event: InputEvent) -> void:
 			_show_pause()
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("ui_cancel"):
-		if ["phone", "objective", "pause", "class"].has(modal_kind):
+		if ["phone", "objective", "pause", "class", "dialogue_history"].has(modal_kind):
 			if modal_kind == "pause":
 				_resume_pause()
+			elif modal_kind == "dialogue_history":
+				_render_dialogue(true)
 			else:
 				_close_modal()
 			get_viewport().set_input_as_handled()
@@ -113,6 +125,10 @@ func _unhandled_input(event: InputEvent) -> void:
 				_commit_preview(GameState.preview_scene, GameState.preview_step + 1, str(preview_choices[preview_index].key))
 				get_viewport().set_input_as_handled()
 	elif modal_kind == "dialogue" and event is InputEventKey and event.pressed and not event.echo:
+		if dialogue_visible < dialogue_story.current_node().get("text", "").length() and event.keycode in [KEY_1, KEY_2, KEY_3, KEY_ENTER, KEY_KP_ENTER]:
+			_reveal_dialogue()
+			get_viewport().set_input_as_handled()
+			return
 		var choice_index := -1
 		match event.keycode:
 			KEY_1: choice_index = 0
@@ -522,6 +538,8 @@ func _render_pause() -> void:
 	_preview_button(body, "Tamaño de texto: " + size_label, _cycle_text_size)
 	_preview_button(body, "Música: %d %%" % GameState.music_volume, func(): _cycle_audio("music"))
 	_preview_button(body, "Efectos: %d %%" % GameState.effects_volume, func(): _cycle_audio("effects"))
+	var speed_label: String = {"slow": "Lenta", "normal": "Normal", "fast": "Rápida"}[GameState.dialogue_speed]
+	_preview_button(body, "Velocidad de diálogo: " + speed_label, _cycle_dialogue_speed)
 	_preview_button(body, "Guardar", _manual_save)
 	_preview_button(body, "Menú", _return_to_menu)
 
@@ -555,6 +573,23 @@ func _cycle_audio(which: String) -> void:
 	else:
 		_toast("No se pudo guardar el ajuste de audio")
 
+func _cycle_dialogue_speed() -> void:
+	if save_in_progress:
+		return
+	save_in_progress = true
+	var previous: String = GameState.dialogue_speed
+	match previous:
+		"slow": GameState.dialogue_speed = "normal"
+		"normal": GameState.dialogue_speed = "fast"
+		_: GameState.dialogue_speed = "slow"
+	if await SaveManager.save_slot_async():
+		if is_inside_tree():
+			_render_pause()
+	else:
+		GameState.dialogue_speed = previous
+		_toast("No se pudo guardar la velocidad de diálogo")
+	save_in_progress = false
+
 func _return_to_menu() -> void:
 	SyncManager.on_slot_closed()
 	await SaveManager.release_slot_async()
@@ -569,7 +604,8 @@ func _resume_pause() -> void:
 		"phone": _render_phone()
 		"objective": _render_objective()
 		"class": _render_class()
-		"dialogue": _render_dialogue()
+		"dialogue": _render_dialogue(true)
+		"dialogue_history": _render_dialogue_history()
 		"result": _show_result()
 		"preview": _render_preview()
 		"preview_unplaced": _render_unplaced_preview()
@@ -602,9 +638,11 @@ func _show_dialogue(key: String) -> void:
 	GameState.dialogue_key = key
 	GameState.dialogue_position = dialogue_story.position
 	GameState.dialogue_choice = ""
+	GameState.dialogue_history = []
 	if await SaveManager.save_slot_async():
 		dialogue_key = key
 		dialogue_choice = ""
+		dialogue_visible = 0.0
 		if is_inside_tree():
 			_render_dialogue()
 	else:
@@ -619,21 +657,30 @@ func _resume_saved_dialogue() -> bool:
 	dialogue_story.position = GameState.dialogue_position
 	dialogue_key = GameState.dialogue_key
 	dialogue_choice = GameState.dialogue_choice
+	dialogue_visible = 0.0
 	_render_dialogue()
 	return true
 
-func _render_dialogue() -> void:
+func _render_dialogue(preserve_reveal: bool = false) -> void:
 	modal_kind = "dialogue"
 	_clear_modal()
 	var node: Dictionary = dialogue_story.current_node()
+	if not preserve_reveal:
+		dialogue_visible = 0.0
 	_modal_text("TEXTO RECUPERADO · VISTA PREVIA", 16)
 	var body := _preview_content()
 	if not str(node.get("speaker", "")).is_empty():
 		_preview_text(body, str(node.speaker), 21)
-	if not str(node.get("text", "")).is_empty():
-		_preview_text(body, str(node.text), 18)
+	var message: String = str(node.get("text", ""))
+	dialogue_text_label = null
+	if not message.is_empty():
+		dialogue_text_label = _preview_text(body, message, 18)
+		dialogue_text_label.visible_characters = int(dialogue_visible)
+	var revealing: bool = dialogue_visible < message.length()
 	var choices: Array = node.get("choices", [])
-	if not choices.is_empty():
+	if revealing:
+		_preview_button(body, "Mostrar texto", _reveal_dialogue).grab_focus()
+	elif not choices.is_empty():
 		_preview_text(body, "Elige una respuesta (1–3). Identificadores provisionales.", 14)
 		for i in choices.size():
 			var choice_id: String = str(choices[i].choice_id)
@@ -644,15 +691,39 @@ func _render_dialogue() -> void:
 		_preview_button(body, "Continuar", _advance_dialogue).grab_focus()
 	else:
 		_preview_button(body, "Continuar", _complete_dialogue).grab_focus()
+	_preview_button(body, "Historial de esta conversación", _render_dialogue_history)
+
+func _reveal_dialogue() -> void:
+	dialogue_visible = float(str(dialogue_story.current_node().get("text", "")).length())
+	_render_dialogue(true)
+
+func _render_dialogue_history() -> void:
+	modal_kind = "dialogue_history"
+	_clear_modal()
+	_modal_text("HISTORIAL · conversación actual", 20)
+	var body := _preview_content()
+	var positions: Array = GameState.dialogue_history.duplicate()
+	if positions.is_empty():
+		_preview_text(body, "Todavía no hay líneas anteriores en esta conversación.", 16)
+	for position in positions:
+		if int(position) < 0 or int(position) >= dialogue_story.data.get("nodes", []).size():
+			continue
+		var line: Dictionary = dialogue_story.data.nodes[int(position)]
+		if str(line.get("text", "")).is_empty():
+			continue
+		_preview_text(body, "%s: %s" % [line.get("speaker", ""), line.get("text", "")], 17)
+	_preview_button(body, "Volver al diálogo", func(): _render_dialogue(true)).grab_focus()
 
 func _advance_dialogue() -> void:
 	if save_in_progress:
 		return
 	var previous_position: int = dialogue_story.position
+	var previous_history: Array = GameState.dialogue_history.duplicate()
 	if not dialogue_story.advance():
 		return
 	save_in_progress = true
 	GameState.dialogue_position = dialogue_story.position
+	GameState.dialogue_history.append(previous_position)
 	if await SaveManager.save_slot_async():
 		if is_inside_tree():
 			AudioManager.play_effect("confirm")
@@ -660,6 +731,7 @@ func _advance_dialogue() -> void:
 	else:
 		dialogue_story.position = previous_position
 		GameState.dialogue_position = previous_position
+		GameState.dialogue_history = previous_history
 		_toast("No se pudo guardar el avance; reintenta")
 	save_in_progress = false
 
@@ -667,11 +739,13 @@ func _choose_dialogue(choice_id: String) -> void:
 	if save_in_progress:
 		return
 	var previous_position: int = dialogue_story.position
+	var previous_history: Array = GameState.dialogue_history.duplicate()
 	if not dialogue_story.advance(choice_id):
 		return
 	save_in_progress = true
 	GameState.dialogue_position = dialogue_story.position
 	GameState.dialogue_choice = choice_id
+	GameState.dialogue_history.append(previous_position)
 	if await SaveManager.save_slot_async():
 		dialogue_choice = choice_id
 		if is_inside_tree():
@@ -681,6 +755,7 @@ func _choose_dialogue(choice_id: String) -> void:
 		dialogue_story.position = previous_position
 		GameState.dialogue_position = previous_position
 		GameState.dialogue_choice = dialogue_choice
+		GameState.dialogue_history = previous_history
 		_toast("No se pudo guardar la opción; reintenta")
 	save_in_progress = false
 
@@ -707,6 +782,7 @@ func _complete_dialogue() -> void:
 	GameState.dialogue_key = ""
 	GameState.dialogue_position = 0
 	GameState.dialogue_choice = ""
+	GameState.dialogue_history = []
 	if not await SaveManager.save_slot_async():
 		save_in_progress = false
 		GameState.restore(previous)
@@ -783,7 +859,7 @@ func _preview_content() -> VBoxContainer:
 	scroll.add_child(body)
 	return body
 
-func _preview_text(parent: VBoxContainer, value: String, size: int = 16, width: int = 545) -> void:
+func _preview_text(parent: VBoxContainer, value: String, size: int = 16, width: int = 545) -> Label:
 	var label := Label.new()
 	label.text = value
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -791,6 +867,7 @@ func _preview_text(parent: VBoxContainer, value: String, size: int = 16, width: 
 	label.add_theme_font_size_override("font_size", _scaled_text_size(size))
 	label.add_theme_color_override("font_color", Color("fff3df"))
 	parent.add_child(label)
+	return label
 
 func _preview_button(parent: VBoxContainer, value: String, callback: Callable) -> Button:
 	var button := Button.new()

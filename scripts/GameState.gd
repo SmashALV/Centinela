@@ -21,6 +21,8 @@ var text_size: String = "normal"
 var dialogue_key: String = ""
 var dialogue_position: int = 0
 var dialogue_choice: String = ""
+var dialogue_history: Array = []
+var dialogue_speed: String = "normal"
 var ui_modal: String = ""
 var hint_level: int = 0
 var music_volume: int = 50
@@ -42,6 +44,8 @@ func new_game(chosen_slot: int) -> void:
 	dialogue_key = ""
 	dialogue_position = 0
 	dialogue_choice = ""
+	dialogue_history = []
+	dialogue_speed = "normal"
 	ui_modal = ""
 	hint_level = 0
 	music_volume = 50
@@ -58,7 +62,8 @@ func snapshot() -> Dictionary:
 		"preview_scene": preview_scene, "preview_step": preview_step,
 		"preview_choices": preview_choices.duplicate(true), "text_size": text_size,
 		"dialogue_key": dialogue_key, "dialogue_position": dialogue_position,
-		"dialogue_choice": dialogue_choice, "ui_modal": ui_modal,
+		"dialogue_choice": dialogue_choice, "dialogue_history": dialogue_history.duplicate(),
+		"dialogue_speed": dialogue_speed, "ui_modal": ui_modal,
 		"hint_level": hint_level, "music_volume": music_volume,
 		"effects_volume": effects_volume}
 
@@ -84,6 +89,8 @@ func restore(data: Dictionary) -> bool:
 	var active_dialogue: Variant = data.get("dialogue_key", "")
 	var active_position: Variant = data.get("dialogue_position", 0)
 	var active_choice: Variant = data.get("dialogue_choice", "")
+	var saved_history: Variant = data.get("dialogue_history", [])
+	var saved_speed: Variant = data.get("dialogue_speed", "normal")
 	var saved_modal: Variant = data.get("ui_modal", "")
 	var saved_hint: Variant = data.get("hint_level", 0)
 	var saved_music: Variant = data.get("music_volume", 50)
@@ -95,10 +102,25 @@ func restore(data: Dictionary) -> bool:
 	if typeof(active_dialogue) != TYPE_STRING or active_dialogue not in ["", "wakeup", "courtyard", "group_chat"] or \
 		typeof(active_position) not in [TYPE_FLOAT, TYPE_INT] or typeof(active_choice) != TYPE_STRING:
 		return false
+	if typeof(saved_history) != TYPE_ARRAY or saved_history.size() > 100 or \
+		typeof(saved_speed) != TYPE_STRING or saved_speed not in ["slow", "normal", "fast"]:
+		return false
+	for visited in saved_history:
+		if typeof(visited) not in [TYPE_INT, TYPE_FLOAT] or int(visited) < 0 or int(visited) > 100 or float(visited) != float(int(visited)):
+			return false
 	if int(active_position) < 0 or int(active_position) > 100 or \
 		(not active_dialogue.is_empty() and data.get("phase") not in ["bedroom", "courtyard", "computer"]) or \
-		(active_dialogue.is_empty() and (int(active_position) != 0 or not active_choice.is_empty())):
+		(active_dialogue.is_empty() and (int(active_position) != 0 or not active_choice.is_empty() or not saved_history.is_empty())):
 		return false
+	if not active_dialogue.is_empty():
+		var bounds: Array = {"wakeup": [0, 2], "courtyard": [3, 13], "group_chat": [14, 22]}[active_dialogue]
+		if int(active_position) < bounds[0] or int(active_position) > bounds[1] or float(active_position) != float(int(active_position)):
+			return false
+		var last_visited: int = int(bounds[0]) - 1
+		for visited in saved_history:
+			if int(visited) < bounds[0] or int(visited) >= int(active_position) or int(visited) <= last_visited:
+				return false
+			last_visited = int(visited)
 	if not active_choice.is_empty() and active_choice not in ["D0_05_A_OPT_A", "D0_05_A_OPT_B", "D0_05_A_OPT_C"]:
 		return false
 	if typeof(saved_modal) != TYPE_STRING or saved_modal not in ["", "phone", "objective", "class"] or \
@@ -142,6 +164,10 @@ func restore(data: Dictionary) -> bool:
 	dialogue_key = active_dialogue
 	dialogue_position = int(active_position)
 	dialogue_choice = active_choice
+	dialogue_history = []
+	for visited in saved_history:
+		dialogue_history.append(int(visited))
+	dialogue_speed = saved_speed
 	ui_modal = saved_modal
 	hint_level = int(saved_hint)
 	music_volume = int(saved_music)

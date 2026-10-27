@@ -74,12 +74,23 @@ async function main() {
     };
     const initialDialogue = await waitForStore("save_snapshots", 1,
       (record) => record?.snapshot?.dialogue_key === "wakeup");
-    await page.keyboard.press("Enter");
-    const saved = await waitForStore("save_snapshots", 1,
-      (record) => record?.snapshot?.dialogue_key === "wakeup" &&
-        record.snapshot.dialogue_position > initialDialogue.snapshot.dialogue_position);
+    await page.waitForTimeout(300);
+    let saved = null;
+    for (let attempt = 0; attempt < 3 && !saved; attempt++) {
+      await page.keyboard.press("Enter");
+      await page.waitForTimeout(250);
+      const current = await readStore("save_snapshots", 1);
+      if (current?.snapshot?.dialogue_key === "wakeup" &&
+          current.snapshot.dialogue_position > initialDialogue.snapshot.dialogue_position) saved = current;
+    }
+    assert(saved, "dialogue did not advance after revealing its line");
     assert.equal(saved.snapshot.slot, 1);
     assert.equal(saved.snapshot.phase, "bedroom");
+    await page.waitForTimeout(300);
+    await page.mouse.click(canvas.x + canvas.width * 0.5, canvas.y + canvas.height * 0.58);
+    await page.waitForTimeout(150);
+    await page.screenshot({ path: "build/web/dialogue_history.png" });
+    await page.keyboard.press("Escape");
     const firstLock = await readStore("locks", 1);
     assert(firstLock?.generation > 0, "slot lock missing");
     const competing = await context.newPage();
@@ -146,6 +157,7 @@ async function main() {
             record.snapshot.dialogue_key = "";
             record.snapshot.dialogue_position = 0;
             record.snapshot.dialogue_choice = "";
+            record.snapshot.dialogue_history = [];
             record.snapshot.flags.wakeup_seen = true;
             record.snapshot.ui_modal = "phone";
             record.snapshot.hint_level = 1;
@@ -186,6 +198,7 @@ async function main() {
             record.snapshot.dialogue_key = "";
             record.snapshot.dialogue_position = 0;
             record.snapshot.dialogue_choice = "";
+            record.snapshot.dialogue_history = [];
             store.put(record);
           };
           transaction.oncomplete = resolve;
@@ -269,16 +282,21 @@ async function main() {
       record?.snapshot?.preview_choices?.D2_03_A === "B");
     assert.equal(arrowSelected.snapshot.preview_step, 10);
     await page.keyboard.press("p");
-    await page.waitForTimeout(200);
+    await page.waitForTimeout(350);
     await page.keyboard.press("ArrowDown");
     await page.keyboard.press("ArrowDown");
     await page.keyboard.press("Enter");
     await waitForStore("save_snapshots", 1, (record) => record?.snapshot?.music_volume === 75);
+    await page.waitForTimeout(250);
     await page.keyboard.press("ArrowDown");
     await page.keyboard.press("ArrowDown");
     await page.keyboard.press("ArrowDown");
     await page.keyboard.press("Enter");
     await waitForStore("save_snapshots", 1, (record) => record?.snapshot?.effects_volume === 100);
+    await page.waitForTimeout(250);
+    for (let i = 0; i < 4; i++) await page.keyboard.press("ArrowDown");
+    await page.keyboard.press("Enter");
+    await waitForStore("save_snapshots", 1, (record) => record?.snapshot?.dialogue_speed === "fast");
     await page.screenshot({ path: "build/web/audio_settings.png" });
     await page.keyboard.press("p");
     await page.setViewportSize({ width: 600, height: 360 });
