@@ -19,6 +19,14 @@ class ReleaseTests(unittest.TestCase):
         inputs = {path.relative_to(release.ROOT).as_posix() for path in release.export_inputs()}
         self.assertTrue(expected.issubset(inputs))
 
+    def test_generated_world_maps_are_tracked(self):
+        names = ("day1_lobby_generated", "day2_school_exterior_generated",
+                 "day3_corridor_generated", "day4_courtyard_generated")
+        expected = {f"assets/world/{name}.png" for name in names}
+        self.assertTrue(expected.issubset(release.source_hashes()))
+        inputs = {path.relative_to(release.ROOT).as_posix() for path in release.export_inputs()}
+        self.assertTrue(expected.issubset(inputs))
+
     def test_stale_web_export_is_rejected(self):
         with tempfile.TemporaryDirectory(dir=release.ROOT / "build") as temporary:
             newer = Path(temporary) / "changed.gd"

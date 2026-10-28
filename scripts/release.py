@@ -112,6 +112,7 @@ def source_hashes() -> dict[str, str]:
     paths += sorted((ROOT / "data/narrative").glob("*.json"))
     paths += sorted((ROOT / "assets/audio").glob("*.wav*"))
     paths += sorted((ROOT / "assets/portraits").glob("*.png*"))
+    paths += sorted((ROOT / "assets/world").glob("*.png*"))
     paths.append(ROOT / "icon.svg")
     return {path.relative_to(ROOT).as_posix(): sha256(path) for path in paths}
 
@@ -124,6 +125,7 @@ def export_inputs() -> list[Path]:
     paths.append(ROOT / "web/backend_config.json")
     paths += list((ROOT / "assets/audio").glob("*.wav*"))
     paths += list((ROOT / "assets/portraits").glob("*.png*"))
+    paths += list((ROOT / "assets/world").glob("*.png*"))
     return paths
 
 

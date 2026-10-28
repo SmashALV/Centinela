@@ -52,6 +52,11 @@ func _run() -> void:
 	courtyard_world._physics_process(0.0)
 	_check(courtyard_world.nearby == "friends", "grupo interactuable junto a Mateo")
 	_check(courtyard_world.target_label("friends") == "Grupo" and courtyard_world.target_label("exit") == "Salida", "interacciones de exploración etiquetadas en español")
+	for map_key in ["draft_d1", "draft_d2", "draft_d3", "draft_d4"]:
+		var background: Texture2D = WorldScript.DRAFT_BACKGROUNDS[map_key]
+		_check(background != null and background.get_width() >= 768 and background.get_height() >= 448, "fondo generado importado: " + map_key)
+		courtyard_world.configure(map_key, Vector2(180, 315))
+		_check(courtyard_world.objective_target() == "mateo" and courtyard_world.objects.has("mateo"), "Mateo interactuable sobre fondo: " + map_key)
 	var saved_flags := GameState.flags.duplicate(true)
 	GameState.flags = {}
 	courtyard_world.configure("bedroom", Vector2(384, 280))

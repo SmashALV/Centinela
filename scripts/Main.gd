@@ -1001,7 +1001,7 @@ func _commit_preview(next_scene: String, next_step: int, choice_key: String = ""
 	if GameState.flags.get("draft_mode", false):
 		GameState.flags.draft_exploring = explore
 		if explore:
-			GameState.player_position = Vector2(90, 315)
+			GameState.player_position = Vector2(180, 315)
 			GameState.hint_level = 0
 	if not choice_key.is_empty():
 		GameState.preview_choices[next_scene] = choice_key

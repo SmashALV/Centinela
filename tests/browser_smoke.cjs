@@ -553,6 +553,42 @@ async function main() {
       record?.snapshot?.flags?.draft_exploring === false &&
       record?.snapshot?.preview_scene === "D1_02_A" && record.snapshot.preview_step === 0);
     await page.screenshot({ path: "build/web/draft_d1_scene.png" });
+    for (const [sceneId, filename] of [
+      ["D2_03_A", "draft_exploration_d2.png"],
+      ["D3_01_A", "draft_exploration_d3.png"],
+      ["D4_01_A", "draft_exploration_d4.png"]
+    ]) {
+      await page.evaluate(async (nextScene) => {
+        const db = await new Promise((resolve, reject) => {
+          const request = indexedDB.open("centinela_2_local_v1");
+          request.onsuccess = () => resolve(request.result);
+          request.onerror = () => reject(request.error);
+        });
+        try {
+          await new Promise((resolve, reject) => {
+            const transaction = db.transaction("save_snapshots", "readwrite");
+            const store = transaction.objectStore("save_snapshots");
+            const request = store.get(1);
+            request.onsuccess = () => {
+              const record = request.result;
+              Object.assign(record.snapshot, { phase: "preview", preview_scene: nextScene,
+                preview_step: 0, player_position: [180, 315], ui_modal: "",
+                flags: { ...record.snapshot.flags, draft_exploring: true } });
+              store.put(record);
+            };
+            transaction.oncomplete = resolve;
+            transaction.onerror = () => reject(transaction.error);
+          });
+        } finally { db.close(); }
+      }, sceneId);
+      await page.reload();
+      await page.waitForFunction(() => !!globalThis.CentinelaStorage);
+      await page.waitForTimeout(1000);
+      await page.mouse.click(canvas.x + canvas.width * 0.5, canvas.y + canvas.height * 0.41);
+      await page.waitForTimeout(500);
+      assert.equal((await readStore("save_snapshots", 1)).snapshot.flags.draft_exploring, true);
+      await page.screenshot({ path: `build/web/${filename}` });
+    }
     console.log("Canvas:", canvas);
     console.log("Browser:", path.basename(executablePath));
     console.log("Persisted slot:", { slot: saved.snapshot.slot, phase: saved.snapshot.phase });

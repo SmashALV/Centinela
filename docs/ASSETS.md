@@ -1,12 +1,12 @@
 # Recursos visuales provisionales y reemplazo
 
-`scripts/World.gd::_draw()` dibuja habitación, patio, computadora, iconos de objetos y personajes con colores, peinados y nombres provisionales distintos; `scripts/moba/MOBAArena.gd::_draw()` dibuja arena, héroes con marcas propias para los cinco aliados y una X para rivales, torres y bases rotuladas, y proyectiles. Estas formas son provisionales. Los cinco retratos neutros de diálogo fueron generados con imagegen y están incluidos en el proyecto. Se reemplazarán por arte definitivo sin cambiar los IDs de interacción, la marca del siguiente objetivo ni las reglas del combate.
+`scripts/World.gd::_draw()` dibuja habitación, patio inicial, computadora, iconos de objetos y personajes con colores, peinados y nombres provisionales distintos. Los [cuatro fondos D1–D4 generados](WORLD_ASSET_PROMPTS.md) ya se usan en la exploración. `scripts/moba/MOBAArena.gd::_draw()` dibuja arena, héroes con marcas propias para los cinco aliados y una X para rivales, torres y bases rotuladas, y proyectiles. Estas formas son provisionales. Los cinco retratos neutros de diálogo fueron generados con imagegen y están incluidos en el proyecto. Se reemplazarán por arte definitivo sin cambiar los IDs de interacción, la marca del siguiente objetivo ni las reglas del combate.
 
 | Recurso a entregar | Formato y tamaño sugeridos | Uso y ubicación futura |
 |---|---|---|
 | Sofi y amistades en exploración | PNG transparente, 4 direcciones, fotogramas de 32×32 px; una hoja por personaje | `assets/characters/`; reemplaza círculos de `World.gd` |
 | Habitación, patio y computadora | Tiles PNG de 32×32 px, capas suelo/objetos/colisión; tamaños según escenas 768×448 | `assets/world/`; reemplaza fondos y muebles de `World.gd` |
-| Escenarios D1–D4 | Tiles PNG de 32×32 px para lobby, exterior del colegio con árbol, pasillo y patio; capas de suelo, mobiliario y colisión | `assets/world/`; reemplaza `World.gd::_draw_draft_environment()` conservando la posición e interacción de Mateo |
+| Escenarios D1–D4 | Actualmente fondos PNG completos generados; para arte final, tiles de 32×32 px y capas de suelo, mobiliario y colisión | `assets/world/`; reemplaza `World.gd::DRAFT_BACKGROUNDS` y conserva la posición e interacción de Mateo |
 | Objetos interactivos | PNG transparente de 32×32 o 64×64 px: alarma, mochila, escritorio, foto, puerta, grupo, PC | `assets/objects/`; mantener posiciones e IDs definidos en `World.gd::configure()` |
 | Héroes MOBA | PNG transparente con siluetas claramente distintas para Atacante, Defensor y Soporte; 4 direcciones, 32×32 px | `assets/moba/heroes/`; deben distinguir equipos aliado y rival |
 | Torres, bases y ruinas | PNG transparente de 64×64 px; estado intacto y destruido por estructura | `assets/moba/structures/`; reemplaza rectángulos en `MOBAArena.gd` |

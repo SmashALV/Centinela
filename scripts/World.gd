@@ -5,6 +5,12 @@ signal interacted(target_id: String)
 
 const SPEED := 152.0
 const ROOM := Rect2(30, 56, 708, 338)
+const DRAFT_BACKGROUNDS := {
+	"draft_d1": preload("res://assets/world/day1_lobby_generated.png"),
+	"draft_d2": preload("res://assets/world/day2_school_exterior_generated.png"),
+	"draft_d3": preload("res://assets/world/day3_corridor_generated.png"),
+	"draft_d4": preload("res://assets/world/day4_courtyard_generated.png")
+}
 const TARGET_LABELS := {
 	"alarm": "Alarma", "backpack": "Mochila", "desk": "Escritorio",
 	"photo": "Foto", "door": "Puerta", "friends": "Grupo",
@@ -22,6 +28,9 @@ var player_pos: Vector2 = Vector2(384, 280)
 var enabled: bool = true
 var nearby: String = ""
 var objects: Dictionary = {}
+
+func _ready() -> void:
+	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 
 func configure(key: String, position: Vector2) -> void:
 	scene_key = key
@@ -43,7 +52,8 @@ func _physics_process(delta: float) -> void:
 	var direction := Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	player_pos += direction * SPEED * delta
 	player_pos.x = clampf(player_pos.x, ROOM.position.x + 16, ROOM.end.x - 16)
-	player_pos.y = clampf(player_pos.y, ROOM.position.y + 16, ROOM.end.y - 16)
+	var playable_top: float = 185.0 if scene_key.begins_with("draft_d") else ROOM.position.y + 16
+	player_pos.y = clampf(player_pos.y, playable_top, ROOM.end.y - 16)
 	GameState.player_position = player_pos
 	nearby = ""
 	var best := 1.0
@@ -89,11 +99,17 @@ func _draw() -> void:
 	elif scene_key == "draft_d4":
 		floor_color = Color("31524a")
 	draw_rect(Rect2(Vector2.ZERO, Vector2(768, 448)), Color("14182b"))
-	draw_rect(ROOM, floor_color)
-	for x in range(30, 738, 32):
-		draw_line(Vector2(x, 56), Vector2(x, 394), Color(1, 1, 1, 0.04))
-	for y in range(56, 394, 32):
-		draw_line(Vector2(30, y), Vector2(738, y), Color(1, 1, 1, 0.04))
+	if DRAFT_BACKGROUNDS.has(scene_key):
+		var background: Texture2D = DRAFT_BACKGROUNDS[scene_key]
+		var source_size: Vector2 = background.get_size()
+		var source_height: float = minf(source_size.y, source_size.x * ROOM.size.y / ROOM.size.x)
+		draw_texture_rect_region(background, ROOM, Rect2(Vector2.ZERO, Vector2(source_size.x, source_height)))
+	else:
+		draw_rect(ROOM, floor_color)
+		for x in range(30, 738, 32):
+			draw_line(Vector2(x, 56), Vector2(x, 394), Color(1, 1, 1, 0.04))
+		for y in range(56, 394, 32):
+			draw_line(Vector2(30, y), Vector2(738, y), Color(1, 1, 1, 0.04))
 	if scene_key == "bedroom":
 		draw_rect(Rect2(76, 90, 116, 74), Color("6e5269"))
 		draw_rect(Rect2(228, 93, 100, 52), Color("795d51"))
@@ -102,7 +118,7 @@ func _draw() -> void:
 		for p in [Vector2(90, 112), Vector2(620, 114), Vector2(560, 325)]:
 			draw_circle(p, 33, Color("386b55"))
 	elif scene_key.begins_with("draft_d"):
-		_draw_draft_environment()
+		_draw_draft_caption()
 	else:
 		draw_rect(Rect2(311, 103, 142, 73), Color("425d77"))
 		draw_rect(Rect2(552, 96, 98, 77), Color("8ec9c2"))
@@ -120,8 +136,10 @@ func _draw() -> void:
 			continue
 		if key == "mateo":
 			var mateo_color := Color("f5d479") if active else Color("8ec9c2")
+			draw_arc(pos, 29, 0, TAU, 24, Color("10192b"), 5.0)
 			draw_arc(pos, 28, 0, TAU, 24, mateo_color, 2.0)
-			draw_string(ThemeDB.fallback_font, pos + Vector2(-36, -39), "F · Mateo", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, mateo_color)
+			draw_rect(Rect2(pos + Vector2(-44, -69), Vector2(90, 22)), Color("10192b", 0.87))
+			draw_string(ThemeDB.fallback_font, pos + Vector2(-39, -53), "F · Mateo", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, mateo_color)
 			_draw_objective_marker(pos + Vector2(0, 31))
 			continue
 		_draw_object(key, pos, active)
@@ -137,33 +155,16 @@ func _draw() -> void:
 			_draw_character(Vector2(400, 250), "Sebas", Color("e2ad36"), Color("e4ae80"), "spiky")
 	_draw_character(player_pos, "Sofi", Color("258999"), Color("e2a477"), "long_hair")
 
-func _draw_draft_environment() -> void:
+func _draw_draft_caption() -> void:
 	var caption: String = str({"draft_d1": "DÍA 1 · LOBBY", "draft_d2": "DÍA 2 · EXTERIOR DEL COLEGIO", "draft_d3": "DÍA 3 · PASILLO", "draft_d4": "DÍA 4 · PATIO"}.get(scene_key, ""))
-	draw_string(ThemeDB.fallback_font, Vector2(65, 83), caption, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color("fff3df"))
-	match scene_key:
-		"draft_d1":
-			for x in [182, 288, 394]:
-				draw_rect(Rect2(x - 38, 122, 76, 34), Color("a3c8ca"))
-				draw_rect(Rect2(x - 33, 127, 66, 24), Color("182a48"))
-				draw_rect(Rect2(x - 52, 164, 104, 10), Color("77675f"))
-		"draft_d2":
-			draw_circle(Vector2(570, 125), 53, Color("356d4e"))
-			draw_rect(Rect2(562, 157, 16, 69), Color("755b42"))
-			draw_rect(Rect2(112, 126, 178, 94), Color("c6af80"))
-			draw_rect(Rect2(132, 145, 42, 48), Color("577e8c"))
-			draw_rect(Rect2(202, 145, 42, 48), Color("577e8c"))
-		"draft_d3":
-			draw_rect(Rect2(102, 118, 190, 92), Color("7c7f8b"))
-			draw_rect(Rect2(120, 134, 42, 55), Color("adc0c1"))
-			draw_rect(Rect2(188, 134, 42, 55), Color("adc0c1"))
-			draw_rect(Rect2(340, 181, 100, 12), Color("8a715e"))
-		"draft_d4":
-			for p in [Vector2(112, 145), Vector2(290, 122), Vector2(625, 132)]:
-				draw_circle(p, 34, Color("397352"))
-			draw_rect(Rect2(320, 304, 142, 12), Color("8d7359"))
+	draw_rect(Rect2(56, 62, 355, 27), Color("10192b", 0.8))
+	draw_string(ThemeDB.fallback_font, Vector2(65, 81), caption, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color("fff3df"))
 
 func _draw_objective_marker(pos: Vector2) -> void:
 	var marker := Color("f5d479")
+	draw_colored_polygon(PackedVector2Array([
+		pos + Vector2(-7, -2), pos + Vector2(7, -2), pos + Vector2(0, 9)
+	]), Color("10192b"))
 	draw_colored_polygon(PackedVector2Array([
 		pos + Vector2(-5, 0), pos + Vector2(5, 0), pos + Vector2(0, 6)
 	]), marker)
@@ -242,5 +243,6 @@ func _draw_character(pos: Vector2, actor_name: String, jacket: Color, skin: Colo
 		]), hair)
 		"long_hair":
 			draw_arc(pos + Vector2(0, -5), 8, PI, TAU, 8, hair, 3.0)
+	draw_rect(Rect2(pos + Vector2(-24, -37), Vector2(70, 17)), Color("10192b", 0.78))
 	draw_string(ThemeDB.fallback_font, pos + Vector2(-19, -23), actor_name,
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color.WHITE)
