@@ -1,0 +1,36 @@
+extends SceneTree
+
+# Creates exact 32×32 translucent floor tiles. The painted maps remain the backdrop.
+const OUTPUT := "res://assets/world/tiles"
+const SPECS := [
+	{"name": "day1_lobby_floor.png", "grout": Color(0.62, 0.78, 0.83, 0.24), "detail": Color(0.78, 0.86, 0.88, 0.10), "seed": 101},
+	{"name": "day2_exterior_paving.png", "grout": Color(0.30, 0.38, 0.48, 0.19), "detail": Color(0.72, 0.66, 0.56, 0.11), "seed": 202},
+	{"name": "day3_corridor_floor.png", "grout": Color(0.51, 0.64, 0.70, 0.23), "detail": Color(0.82, 0.87, 0.87, 0.12), "seed": 303},
+	{"name": "day4_courtyard_paving.png", "grout": Color(0.39, 0.48, 0.52, 0.25), "detail": Color(0.96, 0.88, 0.68, 0.10), "seed": 404}
+]
+
+func _initialize() -> void:
+	var absolute: String = ProjectSettings.globalize_path(OUTPUT)
+	if DirAccess.make_dir_recursive_absolute(absolute) != OK:
+		printerr("No se pudo crear la carpeta de tiles")
+		quit(1)
+		return
+	for spec in SPECS:
+		var image := Image.create(32, 32, false, Image.FORMAT_RGBA8)
+		image.fill(Color.TRANSPARENT)
+		for coordinate in 32:
+			image.set_pixel(coordinate, 0, spec.grout)
+			image.set_pixel(0, coordinate, spec.grout)
+		var random := RandomNumberGenerator.new()
+		random.seed = int(spec.seed)
+		for point in 24:
+			var px: int = random.randi_range(2, 29)
+			var py: int = random.randi_range(2, 29)
+			image.set_pixel(px, py, spec.detail)
+		var path: String = OUTPUT + "/" + str(spec.name)
+		if image.save_png(path) != OK:
+			printerr("No se pudo guardar " + path)
+			quit(1)
+			return
+		print("Tile generado: ", path)
+	quit()

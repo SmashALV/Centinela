@@ -2,6 +2,8 @@
 
 Generados con la herramienta integrada `image_gen` el 28-10-2026 y guardados en `assets/world/`. Son fondos PNG completos (aprox. 1672×941 px) para el viewport lógico de 768×448. El juego recorta y escala cada imagen dentro del área explorable, sin alterar el archivo fuente. No contienen personajes, texto ni interfaz. Las figuras de Sofi y Mateo se superponen por código.
 
+Los cuatro PNG transparentes en `assets/world/tiles/` son tiles de suelo de 32×32 px generados de forma reproducible por `scripts/generate_world_tiles.gd`. `World.gd` coloca 22×10 celdas sobre el fondo en una `TileMapLayer`, y los muebles o límites están en `CollisionBodies` mediante `StaticBody2D`. El jugador usa `CharacterBody2D`, de modo que los obstáculos se prueban con el motor de física. Estos rectángulos aproximan los objetos de los fondos pintados; el arte final debe reemplazarlos por atlas y formas ajustadas a cada objeto.
+
 | Jornada | Archivo | Ubicación de la interacción |
 |---|---|---|
 | D1, lobby | `day1_lobby_generated.png` | Mateo en (520, 225) |
@@ -29,4 +31,4 @@ Generados con la herramienta integrada `image_gen` el 28-10-2026 y guardados en 
 
 ## Sustitución posterior
 
-Estos fondos son imágenes completas, no atlas de tiles ni mapas de colisión. Para un arte final modular se necesitan tiles de 32×32 px, capas separadas de suelo/objetos/colisión y cuatro escenas con el punto interactivo de Mateo preservado o actualizado en `World.gd`. Revisar visualmente los recorridos y cualquier obstáculo antes de declarar colisiones definitivas. Los fondos generados no determinan la narrativa ni la puntuación.
+Los fondos son imágenes completas; los tiles actuales aportan textura de suelo repetible y las colisiones están definidas por rectángulos independientes, no por píxel. Para el arte final modular se necesitan tiles de 32×32 px para cada tipo de suelo y objeto, con formas físicas ajustadas a los muebles, árboles y paredes. Mantener el punto interactivo de Mateo o actualizarlo en `World.gd`. Los fondos y tiles generados no determinan la narrativa ni la puntuación.

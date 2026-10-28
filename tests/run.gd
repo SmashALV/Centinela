@@ -73,6 +73,29 @@ func _run() -> void:
 	_check(courtyard_world.objective_target() == "pc", "computadora marcada como objetivo nocturno")
 	GameState.flags = saved_flags
 	courtyard_world.free()
+	var physics_world: Node2D = WorldScript.new()
+	add_child(physics_world)
+	physics_world.configure("draft_d1", Vector2(160, 250))
+	_check(physics_world.ground_layer.get_used_cells().size() == 220 and physics_world.collision_root.get_child_count() >= 3, "suelo en tiles y obstáculos físicos separados")
+	await get_tree().physics_frame
+	Input.action_press("move_left")
+	await get_tree().create_timer(0.45).timeout
+	Input.action_release("move_left")
+	_check(physics_world.player_pos.x >= 138.0 and physics_world.player_pos.x < 160.0, "colisión real impide atravesar mobiliario del lobby")
+	for collision_case in [
+		{"map": "draft_d2", "start": Vector2(520, 210), "minimum": 511.0, "label": "banca del exterior"},
+		{"map": "draft_d3", "start": Vector2(170, 360), "minimum": 161.0, "label": "escalera del pasillo"},
+		{"map": "draft_d4", "start": Vector2(215, 185), "minimum": 201.0, "label": "banca del patio"}
+	]:
+		physics_world.configure(collision_case.map, collision_case.start)
+		_check(physics_world.ground_layer.get_used_cells().size() == 220 and physics_world.collision_root.get_child_count() >= 3, "capas de tiles y colisión: " + collision_case.map)
+		await get_tree().physics_frame
+		Input.action_press("move_left")
+		await get_tree().create_timer(0.28).timeout
+		Input.action_release("move_left")
+		_check(physics_world.player_pos.x >= float(collision_case.minimum) and physics_world.player_pos.x < collision_case.start.x, "colisión real: " + collision_case.label)
+	physics_world.queue_free()
+	await get_tree().process_frame
 	var bad_destination := content.duplicate(true)
 	bad_destination.nodes[0].next = 99
 	_check(not Validator.validate(bad_destination).is_empty(), "destino imposible rechazado")
@@ -546,6 +569,7 @@ func _run() -> void:
 					_check(GameState.snapshot() == phone_saved and main.modal_kind == "phone", "celular contextual se reabre tras cargar")
 				await main._close_modal()
 				main.world.player_pos = Vector2(520, 225)
+				main.world.player_body.position = main.world.player_pos
 				main.world._physics_process(0.0)
 				_check(main.world.nearby == "mateo", "Mateo queda al alcance en " + scene_id)
 				main.world.interact()

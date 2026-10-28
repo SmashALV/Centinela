@@ -11,6 +11,18 @@ const DRAFT_BACKGROUNDS := {
 	"draft_d3": preload("res://assets/world/day3_corridor_generated.png"),
 	"draft_d4": preload("res://assets/world/day4_courtyard_generated.png")
 }
+const GROUND_TILES := {
+	"draft_d1": "res://assets/world/tiles/day1_lobby_floor.png",
+	"draft_d2": "res://assets/world/tiles/day2_exterior_paving.png",
+	"draft_d3": "res://assets/world/tiles/day3_corridor_floor.png",
+	"draft_d4": "res://assets/world/tiles/day4_courtyard_paving.png"
+}
+const DRAFT_BLOCKS := {
+	"draft_d1": [[30, 56, 708, 123], [30, 215, 99, 150], [681, 205, 57, 165]],
+	"draft_d2": [[30, 56, 375, 124], [530, 125, 35, 60], [434, 197, 68, 28], [30, 345, 142, 49], [620, 346, 118, 48]],
+	"draft_d3": [[30, 56, 708, 117], [30, 342, 122, 52], [626, 342, 112, 52]],
+	"draft_d4": [[30, 56, 708, 107], [80, 163, 112, 34], [625, 163, 113, 34], [30, 349, 145, 45], [616, 349, 122, 45]]
+}
 const TARGET_LABELS := {
 	"alarm": "Alarma", "backpack": "Mochila", "desk": "Escritorio",
 	"photo": "Foto", "door": "Puerta", "friends": "Grupo",
@@ -28,6 +40,36 @@ var player_pos: Vector2 = Vector2(384, 280)
 var enabled: bool = true
 var nearby: String = ""
 var objects: Dictionary = {}
+var map_sprite: Sprite2D
+var ground_layer: TileMapLayer
+var collision_root: Node2D
+var player_body: CharacterBody2D
+
+func _init() -> void:
+	map_sprite = Sprite2D.new()
+	map_sprite.name = "PaintedBackground"
+	map_sprite.centered = false
+	map_sprite.region_enabled = true
+	map_sprite.z_index = -2
+	add_child(map_sprite)
+	ground_layer = TileMapLayer.new()
+	ground_layer.name = "GroundTiles"
+	ground_layer.z_index = -1
+	ground_layer.position = Vector2(32, 64)
+	add_child(ground_layer)
+	collision_root = Node2D.new()
+	collision_root.name = "CollisionBodies"
+	add_child(collision_root)
+	player_body = CharacterBody2D.new()
+	player_body.name = "PlayerBody"
+	player_body.collision_layer = 1
+	player_body.collision_mask = 2
+	var player_shape := CollisionShape2D.new()
+	var circle := CircleShape2D.new()
+	circle.radius = 10.0
+	player_shape.shape = circle
+	player_body.add_child(player_shape)
+	add_child(player_body)
 
 func _ready() -> void:
 	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
@@ -35,6 +77,7 @@ func _ready() -> void:
 func configure(key: String, position: Vector2) -> void:
 	scene_key = key
 	player_pos = position
+	_configure_layers()
 	if key == "bedroom":
 		objects = {"alarm": Vector2(150, 164), "backpack": Vector2(605, 294),
 			"desk": Vector2(278, 146), "photo": Vector2(494, 140), "door": Vector2(698, 230)}
@@ -46,14 +89,74 @@ func configure(key: String, position: Vector2) -> void:
 		objects = {"pc": Vector2(382, 180)}
 	queue_redraw()
 
+func _configure_layers() -> void:
+	for body in collision_root.get_children():
+		collision_root.remove_child(body)
+		body.free()
+	map_sprite.visible = DRAFT_BACKGROUNDS.has(scene_key)
+	ground_layer.visible = map_sprite.visible
+	ground_layer.clear()
+	if map_sprite.visible:
+		var texture: Texture2D = DRAFT_BACKGROUNDS[scene_key]
+		var size: Vector2 = texture.get_size()
+		var crop_height: float = minf(size.y, size.x * ROOM.size.y / ROOM.size.x)
+		map_sprite.texture = texture
+		map_sprite.region_rect = Rect2(Vector2.ZERO, Vector2(size.x, crop_height))
+		map_sprite.position = ROOM.position
+		map_sprite.scale = Vector2(ROOM.size.x / size.x, ROOM.size.y / crop_height)
+		_configure_ground_tiles()
+		for dimensions in DRAFT_BLOCKS[scene_key]:
+			_add_obstacle(Rect2(float(dimensions[0]), float(dimensions[1]), float(dimensions[2]), float(dimensions[3])))
+		for dimensions in DRAFT_BLOCKS[scene_key]:
+			if Rect2(float(dimensions[0]), float(dimensions[1]), float(dimensions[2]), float(dimensions[3])).grow(11.0).has_point(player_pos):
+				player_pos = Vector2(180, 315)
+				break
+	else:
+		map_sprite.texture = null
+		ground_layer.tile_set = null
+	player_body.position = player_pos
+
+func _configure_ground_tiles() -> void:
+	var tile_texture: Texture2D = load(GROUND_TILES[scene_key]) as Texture2D
+	var tiles := TileSet.new()
+	tiles.tile_size = Vector2i(32, 32)
+	var atlas := TileSetAtlasSource.new()
+	atlas.texture = tile_texture
+	atlas.texture_region_size = Vector2i(32, 32)
+	atlas.create_tile(Vector2i.ZERO)
+	var source_id: int = tiles.add_source(atlas)
+	ground_layer.tile_set = tiles
+	for x in 22:
+		for y in 10:
+			ground_layer.set_cell(Vector2i(x, y), source_id, Vector2i.ZERO)
+
+func _add_obstacle(rect: Rect2) -> void:
+	var body := StaticBody2D.new()
+	body.collision_layer = 2
+	body.collision_mask = 0
+	body.position = rect.get_center()
+	var shape := CollisionShape2D.new()
+	var box := RectangleShape2D.new()
+	box.size = rect.size
+	shape.shape = box
+	body.add_child(shape)
+	collision_root.add_child(body)
+
 func _physics_process(delta: float) -> void:
 	if not enabled:
+		player_body.velocity = Vector2.ZERO
 		return
 	var direction := Input.get_vector("move_left", "move_right", "move_up", "move_down")
-	player_pos += direction * SPEED * delta
+	if is_inside_tree():
+		player_body.velocity = direction * SPEED
+		player_body.move_and_slide()
+		player_pos = player_body.position
+	else:
+		player_pos += direction * SPEED * delta
 	player_pos.x = clampf(player_pos.x, ROOM.position.x + 16, ROOM.end.x - 16)
 	var playable_top: float = 185.0 if scene_key.begins_with("draft_d") else ROOM.position.y + 16
 	player_pos.y = clampf(player_pos.y, playable_top, ROOM.end.y - 16)
+	player_body.position = player_pos
 	GameState.player_position = player_pos
 	nearby = ""
 	var best := 1.0
@@ -98,13 +201,13 @@ func _draw() -> void:
 		floor_color = Color("3d4256")
 	elif scene_key == "draft_d4":
 		floor_color = Color("31524a")
-	draw_rect(Rect2(Vector2.ZERO, Vector2(768, 448)), Color("14182b"))
 	if DRAFT_BACKGROUNDS.has(scene_key):
-		var background: Texture2D = DRAFT_BACKGROUNDS[scene_key]
-		var source_size: Vector2 = background.get_size()
-		var source_height: float = minf(source_size.y, source_size.x * ROOM.size.y / ROOM.size.x)
-		draw_texture_rect_region(background, ROOM, Rect2(Vector2.ZERO, Vector2(source_size.x, source_height)))
+		draw_rect(Rect2(0, 0, 768, ROOM.position.y), Color("14182b"))
+		draw_rect(Rect2(0, ROOM.end.y, 768, 448 - ROOM.end.y), Color("14182b"))
+		draw_rect(Rect2(0, ROOM.position.y, ROOM.position.x, ROOM.size.y), Color("14182b"))
+		draw_rect(Rect2(ROOM.end.x, ROOM.position.y, 768 - ROOM.end.x, ROOM.size.y), Color("14182b"))
 	else:
+		draw_rect(Rect2(Vector2.ZERO, Vector2(768, 448)), Color("14182b"))
 		draw_rect(ROOM, floor_color)
 		for x in range(30, 738, 32):
 			draw_line(Vector2(x, 56), Vector2(x, 394), Color(1, 1, 1, 0.04))
