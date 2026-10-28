@@ -89,8 +89,12 @@ func restore(data: Dictionary) -> bool:
 	for index in range(4, 10):
 		if data.code.unicode_at(index) < 48 or data.code.unicode_at(index) > 57:
 			return false
-	for flag in ["wakeup_seen", "alarm", "backpack", "friends", "d0_chat_done", "preview_reviewed", "draft_mode", "draft_completed", "draft_exploring"]:
+	for flag in ["prologue_seen", "wakeup_seen", "alarm", "backpack", "friends", "d0_chat_done", "preview_reviewed", "draft_mode", "draft_completed", "draft_exploring"]:
 		if data.flags.has(flag) and typeof(data.flags[flag]) != TYPE_BOOL:
+			return false
+	if data.flags.has("prologue_step"):
+		var prologue_step: Variant = data.flags.prologue_step
+		if typeof(prologue_step) not in [TYPE_INT, TYPE_FLOAT] or float(prologue_step) != float(int(prologue_step)) or int(prologue_step) < 0 or int(prologue_step) > 2 or data.get("phase") != "bedroom" or data.flags.get("prologue_seen", false) or data.flags.get("wakeup_seen", false):
 			return false
 	if data.flags.get("draft_exploring", false) and (not data.flags.get("draft_mode", false) or data.get("phase") != "preview" or data.get("preview_scene", "") not in ["D1_02_A", "D2_03_A", "D3_01_A", "D4_01_A"] or data.get("preview_step", 0) != 0):
 		return false

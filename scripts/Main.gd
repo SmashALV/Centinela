@@ -6,6 +6,11 @@ const PreviewCatalogScript = preload("res://scripts/narrative/RecoveredPreviewCa
 const DraftFlowScript = preload("res://scripts/narrative/PlayableDraftFlow.gd")
 const DisplayGuardScript = preload("res://scripts/DisplayGuard.gd")
 const DAY_0_PREVIEW := "res://data/narrative/day_0_RECOVERED_PREVIEW.json"
+const PROLOGUE_LINES := [
+	"¡Hay días que empiezan con una alarma... y acaban convirtiéndose en una gran historia! Esta comienza en el mundo de Sofi: el colegio, sus amistades y las partidas que comparten.",
+	"Ella es Sofía Castillo, aunque todos la llaman Sofi. Tiene 15 años y le encanta jugar con Mateo, Bruno, Camila y Sebas. Juntos forman un equipo dentro y fuera de la pantalla.",
+	"Hoy acompañarás a Sofi. Explora, habla con el grupo y elige cómo actuar ante situaciones inesperadas en línea. Observa las señales y recuerda: pedir apoyo también cuenta. ¡Empecemos!"
+]
 const PORTRAITS := {
 	"Sofi": "res://assets/portraits/sofi_neutral.png",
 	"Mateo": "res://assets/portraits/mateo_neutral.png",
@@ -136,6 +141,8 @@ func _process(delta: float) -> void:
 		prompt_icon.visible = false
 		if modal_kind == "menu":
 			prompt.text = "Selecciona una ranura para comenzar"
+		elif modal_kind == "prologue":
+			prompt.text = "Enter · continuar   P · pausa"
 		elif modal_kind in ["preview", "preview_unplaced"]:
 			prompt.text = "P · pausa   Usa los botones para recorrer el fragmento"
 		else:
@@ -423,6 +430,8 @@ func _start_slot(chosen: int) -> void:
 			"phone": _render_phone()
 			"objective": _render_objective()
 			"class": _render_class()
+	elif GameState.phase == "bedroom" and not GameState.flags.get("prologue_seen", false) and not GameState.flags.get("wakeup_seen", false):
+		_render_prologue()
 	elif GameState.phase == "bedroom" and not GameState.flags.get("wakeup_seen", false):
 		_show_dialogue("wakeup")
 	elif GameState.phase not in ["result", "preview"]:
@@ -715,6 +724,7 @@ func _resume_pause() -> void:
 		return
 	AudioManager.set_music_paused(false)
 	match modal_before_pause:
+		"prologue": _render_prologue()
 		"phone": _render_phone()
 		"objective": _render_objective()
 		"class": _render_class()
@@ -726,6 +736,63 @@ func _resume_pause() -> void:
 		"preview_unplaced": _render_unplaced_preview()
 		_: _close_modal()
 	modal_before_pause = ""
+
+func _render_prologue() -> void:
+	modal_kind = "prologue"
+	_clear_modal()
+	modal.position = Vector2(70, 47)
+	modal.custom_minimum_size = Vector2(628, 342)
+	modal.size = Vector2(628, 342)
+	hud_icon.visible = false
+	hud.visible = false
+	_modal_heading("PRÓLOGO · EL DÍA DE SOFI", "dialogue", 21)
+	var body := _preview_content()
+	body.get_parent().custom_minimum_size.y = 190
+	var step: int = clampi(int(GameState.flags.get("prologue_step", 0)), 0, PROLOGUE_LINES.size() - 1)
+	_preview_text(body, "NARRADOR", 15)
+	if step == 1:
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 12)
+		body.add_child(row)
+		_preview_text(row, PROLOGUE_LINES[step], 19, 420)
+		var portrait := TextureRect.new()
+		portrait.name = "PrologueSofiPortrait"
+		portrait.texture = load(PORTRAITS["Sofi"]) as Texture2D
+		portrait.custom_minimum_size = Vector2(100, 100)
+		portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		row.add_child(portrait)
+	else:
+		_preview_text(body, PROLOGUE_LINES[step], 19)
+	_preview_text(body, "%d / %d" % [step + 1, PROLOGUE_LINES.size()], 14)
+	_button("Comenzar" if step == PROLOGUE_LINES.size() - 1 else "Continuar", _advance_prologue).grab_focus()
+
+func _advance_prologue() -> void:
+	if save_in_progress or modal_kind != "prologue":
+		return
+	save_in_progress = true
+	var previous: Dictionary = GameState.flags.duplicate(true)
+	var next_step: int = int(GameState.flags.get("prologue_step", 0)) + 1
+	if next_step >= PROLOGUE_LINES.size():
+		GameState.flags.erase("prologue_step")
+		GameState.flags.prologue_seen = true
+	else:
+		GameState.flags.prologue_step = next_step
+	if await SaveManager.save_slot_async():
+		save_in_progress = false
+		if not is_inside_tree():
+			return
+		AudioManager.play_effect("confirm")
+		if next_step >= PROLOGUE_LINES.size():
+			hud_icon.visible = true
+			hud.visible = true
+			_show_dialogue("wakeup")
+		else:
+			_render_prologue()
+	else:
+		GameState.flags = previous
+		save_in_progress = false
+		_toast("No se pudo guardar el prólogo; reintenta")
 
 func _show_class() -> void:
 	await _open_ui_modal("class", Callable(self, "_render_class"))
@@ -1102,7 +1169,7 @@ func _preview_content() -> VBoxContainer:
 	scroll.add_child(body)
 	return body
 
-func _preview_text(parent: VBoxContainer, value: String, size: int = 16, width: int = 545) -> Label:
+func _preview_text(parent: Container, value: String, size: int = 16, width: int = 545) -> Label:
 	var label := Label.new()
 	label.text = value
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART

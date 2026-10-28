@@ -72,8 +72,21 @@ async function main() {
       }
       throw new Error(`Timed out waiting for ${storeName}:${key}`);
     };
+    await waitForStore("save_snapshots", 1,
+      (record) => record?.snapshot?.phase === "bedroom" &&
+        !record.snapshot.flags.prologue_seen && !record.snapshot.dialogue_key);
+    await page.waitForTimeout(300);
+    await page.screenshot({ path: "build/web/prologue.png" });
+    for (const step of [1, 2]) {
+      await page.keyboard.press("Enter");
+      await waitForStore("save_snapshots", 1,
+        (record) => record?.snapshot?.flags?.prologue_step === step);
+      if (step === 1) await page.screenshot({ path: "build/web/prologue_sofi.png" });
+    }
+    await page.keyboard.press("Enter");
     const initialDialogue = await waitForStore("save_snapshots", 1,
-      (record) => record?.snapshot?.dialogue_key === "wakeup");
+      (record) => record?.snapshot?.flags?.prologue_seen === true &&
+        record.snapshot.dialogue_key === "wakeup");
     await page.waitForTimeout(300);
     await page.screenshot({ path: "build/web/dialogue_portrait.png" });
     let saved = null;
