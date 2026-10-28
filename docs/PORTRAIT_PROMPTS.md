@@ -22,3 +22,15 @@ Se añadió al prompt base una de estas descripciones:
 | `sebas_neutral.png` | Subject: Sebas, fictional 14-year-old Peruvian schoolboy, cheerful neutral expression, short tousled dark hair, mustard yellow hoodie over a light shirt; noticeably different facial features from Sofi and Mateo. |
 
 En todas las llamadas se solicitó `transparent_background: true`. Estas imágenes se pueden sustituir directamente por PNG transparentes autorizados con los mismos nombres. Para incorporar expresiones definitivas se necesita el arte correspondiente y la asignación aprobada de expresión a cada línea del guion.
+
+## Revisión de Bruno y Sebas — `0.12.0-preview`
+
+Se editaron sus PNG iniciales con imagegen y fondo transparente para distinguirlos mejor a 110×110 px. Los rasgos añadidos son igualmente provisionales.
+
+**Bruno:**
+
+> Use case: identity-preserve. Edit target: the attached Bruno dialogue portrait for the Centinela 2.0 game. Change only Bruno's face and hair enough to make him immediately distinct from Mateo and Sebas at a small 110x110 display size: a more angular jaw, deeper warm-brown skin tone, neatly cropped straight dark hair with a clear side part, thin rectangular eyeglasses, calm thoughtful neutral expression. Preserve the burgundy jacket, light shirt, shoulders-up three-quarter composition, anime-inspired flat-color rendering, crisp contours, image dimensions and genuinely transparent background. Keep him a fictional fully clothed 16-year-old Peruvian schoolboy. No new props, logos, text, watermark, border or scenery. The appearance remains provisional, not canonical.
+
+**Sebas:**
+
+> Use case: identity-preserve. Edit target: attached Sebas dialogue portrait for Centinela 2.0. Make Sebas clearly distinguishable from Mateo and Bruno at 110x110 display size while keeping him the same fictional 14-year-old Peruvian schoolboy: rounder youthful face, slightly wider cheerful smile, a few subtle freckles, shorter spiky dark hair with a lively asymmetrical fringe and visible ears. Preserve the mustard yellow hoodie, light shirt, shoulders-up front three-quarter composition, anime-inspired flat-color style, crisp contours, image dimensions and genuinely transparent background. Fully clothed, age-appropriate, nonsexualized. No extra props, logos, text, watermark, border or scenery. Provisional character appearance, not canonical.

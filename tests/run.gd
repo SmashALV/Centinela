@@ -6,6 +6,7 @@ const Arena = preload("res://scenes/moba/MOBAArena.tscn")
 const MainScene = preload("res://scenes/Main.tscn")
 const PreviewCatalog = preload("res://scripts/narrative/RecoveredPreviewCatalog.gd")
 const DisplayGuardScript = preload("res://scripts/DisplayGuard.gd")
+const WorldScript = preload("res://scripts/World.gd")
 
 var failures := 0
 
@@ -38,6 +39,19 @@ func _run() -> void:
 	_check(preview.get_scene("D4_01_A").get("choices", []).size() == 3 and preview.next_main("D4_03_A").is_empty(), "opciones D4 presentes y final sin enlace automático")
 	_check(not DisplayGuardScript.too_small(Vector2i(768, 448)) and DisplayGuardScript.too_small(Vector2i(767, 448)) and DisplayGuardScript.too_small(Vector2i(768, 447)), "ventana mínima exacta 768×448")
 	_check(DisplayGuardScript.RESIZE_MESSAGE == "Amplía la ventana del navegador o activa la pantalla completa para continuar jugando", "aviso de ventana insuficiente usa texto aprobado")
+	var distinct_names := {}
+	var distinct_jackets := {}
+	var distinct_styles := {}
+	for friend in WorldScript.FRIENDS:
+		distinct_names[friend.name] = true
+		distinct_jackets[friend.jacket] = true
+		distinct_styles[friend.style] = true
+	_check(distinct_names.size() == 4 and distinct_jackets.size() == 4 and distinct_styles.size() == 4, "grupo del patio tiene cuatro identidades visuales")
+	var courtyard_world: Node2D = WorldScript.new()
+	courtyard_world.configure("courtyard", Vector2(314, 203))
+	courtyard_world._physics_process(0.0)
+	_check(courtyard_world.nearby == "friends", "grupo interactuable junto a Mateo")
+	courtyard_world.free()
 	var bad_destination := content.duplicate(true)
 	bad_destination.nodes[0].next = 99
 	_check(not Validator.validate(bad_destination).is_empty(), "destino imposible rechazado")

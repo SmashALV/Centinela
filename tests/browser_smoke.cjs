@@ -324,6 +324,43 @@ async function main() {
     await page.setViewportSize({ width: 768, height: 448 });
     await page.waitForTimeout(600);
     await page.screenshot({ path: "build/web/window_minimum.png" });
+    await page.setViewportSize({ width: 1152, height: 672 });
+    await page.evaluate(async () => {
+      const db = await new Promise((resolve, reject) => {
+        const request = indexedDB.open("centinela_2_local_v1");
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+      try {
+        await new Promise((resolve, reject) => {
+          const transaction = db.transaction("save_snapshots", "readwrite");
+          const store = transaction.objectStore("save_snapshots");
+          const request = store.get(1);
+          request.onsuccess = () => {
+            const record = request.result;
+            Object.assign(record.snapshot, {
+              phase: "courtyard", player_position: [374, 250], ui_modal: "",
+              dialogue_key: "", dialogue_position: 0, dialogue_choice: "", dialogue_history: [],
+              preview_scene: "", preview_step: 0, preview_choices: {}
+            });
+            record.snapshot.flags.wakeup_seen = true;
+            store.put(record);
+          };
+          transaction.oncomplete = resolve;
+          transaction.onerror = () => reject(transaction.error);
+        });
+      } finally { db.close(); }
+    });
+    await page.reload();
+    await page.waitForFunction(() => !!globalThis.CentinelaStorage);
+    await page.waitForTimeout(1000);
+    await page.mouse.click(canvas.x + canvas.width * 0.5, canvas.y + canvas.height * 0.41);
+    await page.waitForTimeout(800);
+    await page.screenshot({ path: "build/web/courtyard_characters.png" });
+    await page.keyboard.press("f");
+    await waitForStore("save_snapshots", 1, (record) => record?.snapshot?.dialogue_key === "courtyard");
+    await page.waitForTimeout(250);
+    await page.screenshot({ path: "build/web/courtyard_camila_dialogue.png" });
     console.log("Canvas:", canvas);
     console.log("Browser:", path.basename(executablePath));
     console.log("Persisted slot:", { slot: saved.snapshot.slot, phase: saved.snapshot.phase });

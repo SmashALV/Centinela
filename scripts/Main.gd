@@ -93,7 +93,8 @@ func _process(delta: float) -> void:
 		if toast_time <= 0:
 			toast.text = ""
 	if modal_kind == "":
-		prompt.text = "F · interactuar: " + world.nearby if not world.nearby.is_empty() else "WASD · mover   F · interactuar   E · celular   Tab · objetivo   P · pausa"
+		var target_label: String = "Grupo" if world.nearby == "friends" else world.nearby
+		prompt.text = "F · interactuar: " + target_label if not world.nearby.is_empty() else "WASD · mover   F · interactuar   E · celular   Tab · objetivo   P · pausa"
 	else:
 		if modal_kind == "menu":
 			prompt.text = "Selecciona una ranura para comenzar"
