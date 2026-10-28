@@ -6,7 +6,7 @@ Proyecto 2D de escritorio y Web en desarrollo. El diseño de referencia está en
 
 1. Abrir `project.godot` con Godot 4.4.1 o una versión compatible de Godot 4.
 2. Ejecutar la escena principal con **F6** o el proyecto con **F5**.
-3. Elegir una de las tres ranuras. En la habitación: alarma y mochila; en el patio: grupo; después, usar la PC, abrir el chat en su escritorio ficticio, elegir clase y jugar el MOBA. En el menú, **Rehacer** inicia esa ranura desde el prólogo y **Borrar** la deja vacía; ambas acciones piden confirmación. Durante el MOBA, **P** permite salir al menú. Tras el resultado, **Continuar borrador jugable** recorre D1–D4 hasta un desenlace provisional. **Ver fragmentos D1–D4** mantiene la lectura independiente de la fuente recuperada.
+3. Elegir una de las tres ranuras. En la habitación: alarma y mochila; en el patio: grupo; después, usar la PC, abrir el chat en su escritorio ficticio, elegir clase y jugar el MOBA. En el menú, **Rehacer** inicia esa ranura desde el prólogo y **Borrar** la deja vacía; ambas acciones piden confirmación. Durante el MOBA, **P** permite salir al menú. Al terminar la partida, **Continuar** muestra la reacción de Camila y **Continuar historia · Día 1** inicia el recorrido D1–D4 sin volver al menú. **Ver fragmentos D1–D4** mantiene la lectura independiente de la fuente recuperada.
 
 Controles: **WASD** movimiento, **F** interacción, **E** celular, **Tab** objetivo, **P** pausa, **Esc** volver, **Q** habilidad en MOBA y **clic izquierdo** ataque.
 
@@ -19,6 +19,7 @@ Para ejecutar las pruebas sin abrir la ventana:
 ```powershell
 & 'C:\Users\fabri\Downloads\Godot_v4.4.1-stable_win64.exe\Godot_v4.4.1-stable_win64_console.exe' --headless --editor --import --path 'E:\GODOT\grooming-2' --quit
 & 'C:\Users\fabri\Downloads\Godot_v4.4.1-stable_win64.exe\Godot_v4.4.1-stable_win64_console.exe' --headless --path 'E:\GODOT\grooming-2' --scene 'res://tests/RunTests.tscn'
+& 'C:\Users\fabri\Downloads\Godot_v4.4.1-stable_win64.exe\Godot_v4.4.1-stable_win64_console.exe' --headless --path 'E:\GODOT\grooming-2' --scene 'res://tests/MobaReturnTests.tscn'
 ```
 
 La suite devuelve código distinto de cero cuando falla una comprobación. Se ha probado con Godot 4.4.1 y 4.7.2.
@@ -70,7 +71,7 @@ npm run test:dashboard-browser
 
 ## QA técnico
 
-La [matriz P7 con evidencia por caso](docs/P7_QA_2026-10-27.md) registra qué funcionó en `0.7.0-preview` y qué sigue bloqueado por el guion/rúbrica definitivos, Supabase de desarrollo y staging. El build local actual es `0.29.0-preview`; la [verificación P0–P1](docs/P0_P1_CLOSURE_2026-10-28.md) detalla el recorrido local y su evidencia. La [gestión de ranuras](docs/SLOT_MANAGEMENT_2026-10-28.md) explica el reinicio y borrado local. El menú de pausa permite cambiar entre texto pequeño, mediano y grande, y ajustar la velocidad de los diálogos D0; una ventana menor de 768×448 pausa el juego y exige pulsar **Continuar** después de ampliarla. Los diálogos D0 guardan el nodo activo y el historial de la conversación actual antes de avanzar y se reanudan tras recargar. Mientras aparece una línea, un toque la revela completa; una vez visible, el siguiente avanza. Las respuestas D0 y de fragmentos D1–D4 requieren confirmación neutral antes de guardarse; **Esc/Volver** cancela sin modificar la ranura. También se recuperan el celular, el objetivo, el escritorio de la PC, la selección de clase y el nivel de pista si estaban abiertos.
+La [matriz P7 con evidencia por caso](docs/P7_QA_2026-10-27.md) registra qué funcionó en `0.7.0-preview` y qué sigue bloqueado por el guion/rúbrica definitivos, Supabase de desarrollo y staging. El build local actual es `0.30.0-preview`; la [verificación P0–P1](docs/P0_P1_CLOSURE_2026-10-28.md) detalla el recorrido local y su evidencia. La [gestión de ranuras](docs/SLOT_MANAGEMENT_2026-10-28.md) explica el reinicio y borrado local; la [continuidad D0→D1](docs/D0_D1_CONTINUITY_2026-10-28.md) registra la corrección de la transición. El menú de pausa permite cambiar entre texto pequeño, mediano y grande, y ajustar la velocidad de los diálogos D0; una ventana menor de 768×448 pausa el juego y exige pulsar **Continuar** después de ampliarla. Los diálogos D0 guardan el nodo activo y el historial de la conversación actual antes de avanzar y se reanudan tras recargar. Mientras aparece una línea, un toque la revela completa; una vez visible, el siguiente avanza. Las respuestas D0 y de fragmentos D1–D4 requieren confirmación neutral antes de guardarse; **Esc/Volver** cancela sin modificar la ranura. También se recuperan el celular, el objetivo, el escritorio de la PC, la selección de clase y el nivel de pista si estaban abiertos.
 
 ## Entrega P8
 

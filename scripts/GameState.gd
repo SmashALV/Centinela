@@ -28,8 +28,10 @@ var ui_modal: String = ""
 var hint_level: int = 0
 var music_volume: int = 50
 var effects_volume: int = 75
+var returning_from_moba: bool = false
 
 func new_game(chosen_slot: int) -> void:
+	returning_from_moba = false
 	slot = chosen_slot
 	code = "CTN-%06d" % randi_range(0, 999999)
 	phase = "bedroom"

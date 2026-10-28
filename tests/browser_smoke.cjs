@@ -481,6 +481,16 @@ async function main() {
     await showExplorationPhase("computer", [384, 320], { wakeup_seen: true, alarm: true, backpack: true, friends: true }, "class_selection.png", "", 0, "class");
     await showExplorationPhase("moba", [384, 320], { wakeup_seen: true, alarm: true, backpack: true, friends: true }, "moba_teams.png", "Defensor", 3500);
     assert.equal((await readStore("save_snapshots", 1)).snapshot.phase, "moba");
+    await waitForStore("save_snapshots", 1, (record) => record?.snapshot?.phase === "result", 80000);
+    await page.waitForTimeout(350);
+    await page.screenshot({ path: "build/web/moba_result_continue.png" });
+    await page.keyboard.press("Enter");
+    await page.waitForTimeout(1000);
+    await page.screenshot({ path: "build/web/day0_to_day1_result.png" });
+    await page.keyboard.press("Enter");
+    await waitForStore("save_snapshots", 1, (record) => record?.snapshot?.phase === "preview" &&
+      record.snapshot.preview_scene === "D1_02_A" && record.snapshot.flags.draft_mode === true, 30000);
+    await page.screenshot({ path: "build/web/day1_exploration.png" });
     await page.evaluate(async () => {
       const db = await new Promise((resolve, reject) => {
         const request = indexedDB.open("centinela_2_local_v1");
@@ -496,6 +506,7 @@ async function main() {
             const record = request.result;
             Object.assign(record.snapshot, { phase: "preview", moba_result: "empate",
               preview_scene: "F02", preview_step: 9, preview_choices: { D1_02_A: "B" },
+              flags: { ...record.snapshot.flags, draft_mode: false, draft_completed: false, draft_exploring: false },
               ui_modal: "", dialogue_key: "", dialogue_position: 0,
               dialogue_choice: "", dialogue_history: [] });
             store.put(record);

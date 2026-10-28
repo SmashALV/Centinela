@@ -106,10 +106,14 @@ func _ready() -> void:
 	modal.add_child(modal_box)
 	window_guard_layer = DisplayGuardScript.make_overlay(self)
 	_show_menu()
+	var return_to_result: bool = GameState.returning_from_moba
+	GameState.returning_from_moba = false
 	if not GameState.code.is_empty():
 		AudioManager.apply_preferences()
 		AudioManager.enter_context("explore")
 	_check_window_size()
+	if return_to_result and GameState.phase == "result":
+		_start_slot(GameState.slot)
 
 func _process(delta: float) -> void:
 	if modal_kind == "dialogue" and is_instance_valid(dialogue_text_label):
@@ -1193,8 +1197,9 @@ func _show_result() -> void:
 	_modal_text("Resultado: " + GameState.moba_result, 19)
 	var body := _preview_content()
 	_preview_text(body, "BORRADOR · Camila: " + draft_flow.camila_reaction(GameState.moba_result, GameState.moba_class), 16)
-	_preview_text(body, "Puedes continuar la historia provisional D1–D4. Los conectores y desenlaces aún requieren aprobación.", 16)
-	var draft_button := _preview_button(body, "Continuar borrador jugable", _start_playable_draft)
+	_preview_text(body, "BORRADOR · " + draft_flow.connector("D1_02_A"), 16)
+	_preview_text(body, "Días 1–4: borrador provisional; requiere aprobación.", 15)
+	var draft_button := _preview_button(body, "Continuar historia · Día 1", _start_playable_draft)
 	draft_button.disabled = preview_catalog.scenes.is_empty() or draft_flow.content.is_empty()
 	if not draft_button.disabled:
 		draft_button.grab_focus()

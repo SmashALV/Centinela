@@ -657,7 +657,11 @@ func _run() -> void:
 		GameState.moba_class = "Atacante"
 		main._show_result()
 		var result_body: VBoxContainer = main.modal_box.get_child(2).get_child(0)
-		_check(result_body.get_child(2) is Button and not result_body.get_child(2).disabled, "resultado ofrece continuar borrador jugable")
+		var continue_button: Button = null
+		for child in result_body.get_children():
+			if child is Button and child.text == "Continuar historia · Día 1":
+				continue_button = child
+		_check(continue_button != null and not continue_button.disabled, "resultado ofrece continuar al Día 1")
 		_check(await main._start_playable_draft() and GameState.flags.draft_mode and GameState.preview_scene == "D1_02_A", "borrador inicia y limpia opciones")
 		_check(GameState.flags.get("draft_exploring", false) and main.modal_kind == "" and main.world.scene_key == "draft_d1", "Día 1 inicia en exploración")
 		var exploring_saved := GameState.snapshot()

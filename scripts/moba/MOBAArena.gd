@@ -824,6 +824,7 @@ func _return_to_story() -> void:
 	if not result_saved:
 		result_panel.get_node("Content/Title").text = "Error al guardar; reintenta"
 		return
+	GameState.returning_from_moba = true
 	get_tree().change_scene_to_file("res://scenes/Main.tscn")
 
 func _draw() -> void:
