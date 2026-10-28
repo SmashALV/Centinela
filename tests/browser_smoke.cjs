@@ -318,20 +318,12 @@ async function main() {
     await page.screenshot({ path: "build/web/preview_choices_large.png" });
     const beforeChoice = await readStore("save_snapshots", 1);
     await page.keyboard.press("2");
-    await page.waitForTimeout(200);
-    await page.screenshot({ path: "build/web/preview_choice_confirm.png" });
-    assert.deepEqual((await readStore("save_snapshots", 1)).snapshot, beforeChoice.snapshot,
-      "unconfirmed choice changed IndexedDB");
-    await page.keyboard.press("Escape");
-    await page.waitForTimeout(150);
-    assert.deepEqual((await readStore("save_snapshots", 1)).snapshot, beforeChoice.snapshot,
-      "cancelled choice changed IndexedDB");
-    await page.keyboard.press("2");
-    await page.waitForTimeout(150);
-    await page.keyboard.press("Enter");
     const selected = await waitForStore("save_snapshots", 1, (record) =>
       record?.snapshot?.preview_choices?.D2_03_A === "B");
+    assert.notDeepEqual(selected.snapshot, beforeChoice.snapshot, "choice was not saved immediately");
     assert.equal(selected.snapshot.preview_step, 10);
+    await page.waitForTimeout(350);
+    await page.screenshot({ path: "build/web/preview_mateo_response.png" });
     await page.evaluate(async () => {
       const db = await new Promise((resolve, reject) => {
         const request = indexedDB.open("centinela_2_local_v1");
@@ -360,9 +352,6 @@ async function main() {
     await page.mouse.click(canvas.x + canvas.width * 0.5, canvas.y + canvas.height * 0.41);
     await page.waitForTimeout(500);
     await page.keyboard.press("ArrowDown");
-    await page.keyboard.press("Enter");
-    await page.waitForTimeout(150);
-    assert.equal((await readStore("save_snapshots", 1)).snapshot.preview_choices.D2_03_A, undefined);
     await page.keyboard.press("Enter");
     const arrowSelected = await waitForStore("save_snapshots", 1, (record) =>
       record?.snapshot?.preview_choices?.D2_03_A === "B");
