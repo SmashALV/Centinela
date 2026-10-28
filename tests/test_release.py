@@ -28,7 +28,8 @@ class ReleaseTests(unittest.TestCase):
         self.assertTrue(expected.issubset(inputs))
 
     def test_world_tiles_are_tracked(self):
-        names = ("day1_lobby_floor", "day2_exterior_paving",
+        names = ("day0_bedroom_floor", "day0_courtyard_paving", "day0_computer_floor",
+                 "day1_lobby_floor", "day2_exterior_paving",
                  "day3_corridor_floor", "day4_courtyard_paving")
         expected = {f"assets/world/tiles/{name}.png{suffix}" for name in names
                     for suffix in ("", ".import")}
@@ -41,6 +42,10 @@ class ReleaseTests(unittest.TestCase):
                  ("sofi", "mateo", "bruno", "camila", "sebas")]
         names += [f"assets/objects/{name}.png" for name in
                   ("alarm", "backpack", "desk", "photo", "door", "pc")]
+        names += [f"assets/world/{name}.png" for name in
+                  ("day0_bedroom", "day0_courtyard", "day0_computer_room")]
+        names += [f"assets/world/props/{name}.png" for name in
+                  ("bed", "wardrobe", "bookshelf", "tree", "bench", "plant")]
         names += [f"assets/moba/heroes/{name}_directions.png" for name in
                   ("attacker", "defender", "support")]
         names += [f"assets/moba/structures/{name}.png" for name in

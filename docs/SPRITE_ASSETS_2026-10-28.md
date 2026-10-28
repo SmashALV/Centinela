@@ -1,5 +1,7 @@
 # Sprites provisionales generados el 28-10-2026
 
+Los fondos y muebles separados de la habitación de Sofi, el patio y la sala de computadora se detallan en [DAY0_MAP_ASSETS_2026-10-28.md](DAY0_MAP_ASSETS_2026-10-28.md).
+
 Se usó la herramienta integrada `image_gen` para generar PNG con transparencia real. Los sprites son propuestas visuales reemplazables; los retratos existentes sirvieron como referencia de Sofi, Mateo, Bruno, Camila y Sebas. No representan diseños aprobados.
 
 | Grupo | Archivos en el proyecto | Uso actual |

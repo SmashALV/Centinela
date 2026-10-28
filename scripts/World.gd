@@ -11,7 +11,15 @@ const DRAFT_BACKGROUNDS := {
 	"draft_d3": preload("res://assets/world/day3_corridor_generated.png"),
 	"draft_d4": preload("res://assets/world/day4_courtyard_generated.png")
 }
+const DAY0_BACKGROUNDS := {
+	"bedroom": preload("res://assets/world/day0_bedroom.png"),
+	"courtyard": preload("res://assets/world/day0_courtyard.png"),
+	"computer": preload("res://assets/world/day0_computer_room.png")
+}
 const GROUND_TILES := {
+	"bedroom": "res://assets/world/tiles/day0_bedroom_floor.png",
+	"courtyard": "res://assets/world/tiles/day0_courtyard_paving.png",
+	"computer": "res://assets/world/tiles/day0_computer_floor.png",
 	"draft_d1": "res://assets/world/tiles/day1_lobby_floor.png",
 	"draft_d2": "res://assets/world/tiles/day2_exterior_paving.png",
 	"draft_d3": "res://assets/world/tiles/day3_corridor_floor.png",
@@ -38,6 +46,40 @@ const OBJECT_SIZES := {
 	"desk": Vector2(80, 62), "photo": Vector2(48, 44),
 	"door": Vector2(70, 78), "exit": Vector2(70, 78),
 	"pc": Vector2(90, 66)
+}
+const PROP_SPRITES := {
+	"bed": preload("res://assets/world/props/bed.png"),
+	"wardrobe": preload("res://assets/world/props/wardrobe.png"),
+	"bookshelf": preload("res://assets/world/props/bookshelf.png"),
+	"tree": preload("res://assets/world/props/tree.png"),
+	"bench": preload("res://assets/world/props/bench.png"),
+	"plant": preload("res://assets/world/props/plant.png")
+}
+const SCENE_PROPS := {
+	"bedroom": [
+		{"sprite": "bed", "rect": Rect2(79, 112, 104, 113)},
+		{"sprite": "wardrobe", "rect": Rect2(451, 101, 86, 74)},
+		{"sprite": "bookshelf", "rect": Rect2(565, 109, 86, 57)},
+		{"sprite": "plant", "rect": Rect2(669, 121, 44, 50)}
+	],
+	"courtyard": [
+		{"sprite": "tree", "rect": Rect2(44, 113, 90, 91)},
+		{"sprite": "tree", "rect": Rect2(607, 110, 90, 91)},
+		{"sprite": "tree", "rect": Rect2(572, 299, 90, 91)},
+		{"sprite": "bench", "rect": Rect2(157, 145, 91, 43)},
+		{"sprite": "bench", "rect": Rect2(508, 145, 91, 43)},
+		{"sprite": "plant", "rect": Rect2(266, 113, 40, 46)},
+		{"sprite": "plant", "rect": Rect2(455, 113, 40, 46)}
+	],
+	"computer": [
+		{"sprite": "bookshelf", "rect": Rect2(93, 117, 104, 67)},
+		{"sprite": "plant", "rect": Rect2(610, 133, 51, 58)}
+	]
+}
+const DAY0_BLOCKS := {
+	"bedroom": [[30, 56, 708, 52], [86, 123, 91, 94], [238, 124, 80, 39], [455, 112, 78, 55], [569, 118, 78, 47], [680, 151, 24, 20]],
+	"courtyard": [[30, 56, 708, 55], [75, 171, 29, 22], [638, 168, 29, 22], [603, 357, 29, 22], [162, 153, 81, 22], [513, 153, 81, 22], [277, 141, 18, 15], [466, 141, 18, 15]],
+	"computer": [[30, 56, 708, 62], [97, 129, 96, 51], [343, 155, 78, 43], [626, 161, 20, 25]]
 }
 const DRAFT_BLOCKS := {
 	"draft_d1": [[30, 56, 708, 123], [30, 178, 130, 42], [30, 215, 99, 150], [681, 205, 57, 165]],
@@ -117,11 +159,11 @@ func _configure_layers() -> void:
 	for body in collision_root.get_children():
 		collision_root.remove_child(body)
 		body.free()
-	map_sprite.visible = DRAFT_BACKGROUNDS.has(scene_key)
+	map_sprite.visible = DRAFT_BACKGROUNDS.has(scene_key) or DAY0_BACKGROUNDS.has(scene_key)
 	ground_layer.visible = map_sprite.visible
 	ground_layer.clear()
 	if map_sprite.visible:
-		var texture: Texture2D = DRAFT_BACKGROUNDS[scene_key]
+		var texture: Texture2D = DRAFT_BACKGROUNDS[scene_key] if DRAFT_BACKGROUNDS.has(scene_key) else DAY0_BACKGROUNDS[scene_key]
 		var size: Vector2 = texture.get_size()
 		var crop_height: float = minf(size.y, size.x * ROOM.size.y / ROOM.size.x)
 		map_sprite.texture = texture
@@ -129,12 +171,14 @@ func _configure_layers() -> void:
 		map_sprite.position = ROOM.position
 		map_sprite.scale = Vector2(ROOM.size.x / size.x, ROOM.size.y / crop_height)
 		_configure_ground_tiles()
-		for dimensions in DRAFT_BLOCKS[scene_key]:
+		var blocks: Array = DRAFT_BLOCKS[scene_key] if DRAFT_BLOCKS.has(scene_key) else DAY0_BLOCKS[scene_key]
+		for dimensions in blocks:
 			_add_obstacle(Rect2(float(dimensions[0]), float(dimensions[1]), float(dimensions[2]), float(dimensions[3])))
-		for dimensions in DRAFT_BLOCKS[scene_key]:
-			if Rect2(float(dimensions[0]), float(dimensions[1]), float(dimensions[2]), float(dimensions[3])).grow(11.0).has_point(player_pos):
-				player_pos = Vector2(180, 315)
-				break
+		if DRAFT_BLOCKS.has(scene_key):
+			for dimensions in blocks:
+				if Rect2(float(dimensions[0]), float(dimensions[1]), float(dimensions[2]), float(dimensions[3])).grow(11.0).has_point(player_pos):
+					player_pos = Vector2(180, 315)
+					break
 	else:
 		map_sprite.texture = null
 		ground_layer.tile_set = null
@@ -184,7 +228,7 @@ func _physics_process(delta: float) -> void:
 	else:
 		player_pos += direction * SPEED * delta
 	player_pos.x = clampf(player_pos.x, ROOM.position.x + 16, ROOM.end.x - 16)
-	var playable_top: float = 185.0 if scene_key.begins_with("draft_d") else ROOM.position.y + 16
+	var playable_top: float = 185.0 if scene_key.begins_with("draft_d") else 124.0
 	player_pos.y = clampf(player_pos.y, playable_top, ROOM.end.y - 16)
 	player_body.position = player_pos
 	GameState.player_position = player_pos
@@ -231,7 +275,7 @@ func _draw() -> void:
 		floor_color = Color("3d4256")
 	elif scene_key == "draft_d4":
 		floor_color = Color("31524a")
-	if DRAFT_BACKGROUNDS.has(scene_key):
+	if map_sprite.visible:
 		draw_rect(Rect2(0, 0, 768, ROOM.position.y), Color("14182b"))
 		draw_rect(Rect2(0, ROOM.end.y, 768, 448 - ROOM.end.y), Color("14182b"))
 		draw_rect(Rect2(0, ROOM.position.y, ROOM.position.x, ROOM.size.y), Color("14182b"))
@@ -243,26 +287,17 @@ func _draw() -> void:
 			draw_line(Vector2(x, 56), Vector2(x, 394), Color(1, 1, 1, 0.04))
 		for y in range(56, 394, 32):
 			draw_line(Vector2(30, y), Vector2(738, y), Color(1, 1, 1, 0.04))
-	if scene_key == "bedroom":
-		draw_rect(Rect2(76, 90, 116, 74), Color("6e5269"))
-		draw_rect(Rect2(228, 93, 100, 52), Color("795d51"))
-		draw_rect(Rect2(458, 94, 72, 44), Color("92736a"))
-	elif scene_key == "courtyard":
-		for p in [Vector2(90, 112), Vector2(620, 114), Vector2(560, 325)]:
-			draw_circle(p, 33, Color("386b55"))
-	elif scene_key.begins_with("draft_d"):
+	if scene_key.begins_with("draft_d"):
 		_draw_draft_caption()
-	else:
-		draw_rect(Rect2(311, 103, 142, 73), Color("425d77"))
-		draw_rect(Rect2(552, 96, 98, 77), Color("8ec9c2"))
-		draw_rect(Rect2(557, 101, 88, 67), Color("111b36"))
-		draw_line(Vector2(601, 101), Vector2(601, 168), Color("8ec9c2"), 3.0)
+	for prop in SCENE_PROPS.get(scene_key, []):
+		draw_texture_rect(PROP_SPRITES[prop.sprite], prop.rect, false)
 	for key in objects:
 		var pos: Vector2 = objects[key]
 		var active: bool = key == nearby
 		if key == "friends":
 			var color := Color("f5d479") if active else Color("8ec9c2")
 			draw_rect(Rect2(pos + Vector2(-83, -12), Vector2(166, 67)), color, false, 2.0 if active else 1.0)
+			draw_rect(Rect2(pos + Vector2(-43, -38), Vector2(86, 20)), Color("10192b", 0.84))
 			draw_string(ThemeDB.fallback_font, pos + Vector2(-31, -23), "F · Grupo", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, color)
 			if key == objective_target():
 				_draw_objective_marker(pos + Vector2(0, -50))
@@ -312,6 +347,7 @@ func _draw_object(key: String, pos: Vector2, active: bool) -> void:
 		draw_circle(pos + Vector2(19, -14), 7, Color("54b67c"))
 		draw_line(pos + Vector2(16, -14), pos + Vector2(19, -11), Color.WHITE, 2.0)
 		draw_line(pos + Vector2(19, -11), pos + Vector2(23, -17), Color.WHITE, 2.0)
+	draw_rect(Rect2(pos + Vector2(-41, -45), Vector2(82, 18)), Color("10192b", 0.82))
 	draw_string(ThemeDB.fallback_font, pos + Vector2(-41, -30), target_label(key),
 		HORIZONTAL_ALIGNMENT_CENTER, 82, 12, color)
 

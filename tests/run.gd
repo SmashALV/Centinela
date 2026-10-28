@@ -57,6 +57,11 @@ func _run() -> void:
 		_check(background != null and background.get_width() >= 768 and background.get_height() >= 448, "fondo generado importado: " + map_key)
 		courtyard_world.configure(map_key, Vector2(180, 315))
 		_check(courtyard_world.objective_target() == "mateo" and courtyard_world.objects.has("mateo"), "Mateo interactuable sobre fondo: " + map_key)
+	for map_key in ["bedroom", "courtyard", "computer"]:
+		var day0_background: Texture2D = WorldScript.DAY0_BACKGROUNDS[map_key]
+		_check(day0_background != null and day0_background.get_width() >= 768 and day0_background.get_height() >= 448, "fondo D0 importado: " + map_key)
+		courtyard_world.configure(map_key, Vector2(384, 280))
+		_check(courtyard_world.ground_layer.get_used_cells().size() == 220 and courtyard_world.collision_root.get_child_count() >= 4 and WorldScript.SCENE_PROPS[map_key].size() >= 2, "tiles, props y colisiones separados: " + map_key)
 	var saved_flags := GameState.flags.duplicate(true)
 	GameState.flags = {}
 	courtyard_world.configure("bedroom", Vector2(384, 280))
@@ -84,6 +89,22 @@ func _run() -> void:
 	await get_tree().create_timer(0.45).timeout
 	Input.action_release("move_left")
 	_check(physics_world.player_pos.x >= 138.0 and physics_world.player_pos.x < 160.0, "colisión real impide atravesar mobiliario del lobby")
+	for day0_case in [
+		{"map": "bedroom", "start": Vector2(195, 165), "motion": Vector2(-30, 0), "label": "cama"},
+		{"map": "courtyard", "start": Vector2(205, 210), "motion": Vector2(0, -70), "label": "banca"},
+		{"map": "computer", "start": Vector2(382, 250), "motion": Vector2(0, -60), "label": "computadora"}
+	]:
+		physics_world.configure(day0_case.map, day0_case.start)
+		await get_tree().physics_frame
+		_check(physics_world.player_body.test_move(Transform2D(0.0, day0_case.start), day0_case.motion), "colisión física D0: " + day0_case.label)
+	for day0_route in [
+		{"map": "bedroom", "from": Vector2(384, 280), "horizontal": Vector2(-179, 0), "turn": Vector2(205, 280), "vertical": Vector2(0, -115)},
+		{"map": "courtyard", "from": Vector2(140, 300), "horizontal": Vector2(174, 0), "turn": Vector2(314, 300), "vertical": Vector2(0, -80)},
+		{"map": "computer", "from": Vector2(384, 320), "horizontal": Vector2.ZERO, "turn": Vector2(384, 320), "vertical": Vector2(0, -102)}
+	]:
+		physics_world.configure(day0_route.map, day0_route.from)
+		await get_tree().physics_frame
+		_check(not physics_world.player_body.test_move(Transform2D(0.0, day0_route.from), day0_route.horizontal) and not physics_world.player_body.test_move(Transform2D(0.0, day0_route.turn), day0_route.vertical), "ruta física D0 despejada: " + day0_route.map)
 	for collision_case in [
 		{"map": "draft_d2", "start": Vector2(520, 210), "minimum": 511.0, "label": "banca del exterior"},
 		{"map": "draft_d3", "start": Vector2(170, 360), "minimum": 161.0, "label": "escalera del pasillo"},

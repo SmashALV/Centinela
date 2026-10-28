@@ -3,6 +3,9 @@ extends SceneTree
 # Creates four exact 32×32 translucent variants per map. The painted maps remain the backdrop.
 const OUTPUT := "res://assets/world/tiles"
 const SPECS := [
+	{"name": "day0_bedroom_floor.png", "grout": Color(0.62, 0.64, 0.78, 0.18), "detail": Color(0.96, 0.77, 0.62, 0.08), "seed": 10},
+	{"name": "day0_courtyard_paving.png", "grout": Color(0.43, 0.54, 0.60, 0.18), "detail": Color(0.99, 0.90, 0.68, 0.08), "seed": 20},
+	{"name": "day0_computer_floor.png", "grout": Color(0.52, 0.66, 0.74, 0.17), "detail": Color(0.79, 0.88, 0.90, 0.07), "seed": 30},
 	{"name": "day1_lobby_floor.png", "grout": Color(0.62, 0.78, 0.83, 0.24), "detail": Color(0.78, 0.86, 0.88, 0.10), "seed": 101},
 	{"name": "day2_exterior_paving.png", "grout": Color(0.30, 0.38, 0.48, 0.19), "detail": Color(0.72, 0.66, 0.56, 0.11), "seed": 202},
 	{"name": "day3_corridor_floor.png", "grout": Color(0.51, 0.64, 0.70, 0.23), "detail": Color(0.82, 0.87, 0.87, 0.12), "seed": 303},

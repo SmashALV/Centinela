@@ -1,5 +1,7 @@
 # Fondos generados para la exploración D1–D4
 
+Los mapas del Día 0 y su mobiliario separado se documentan en [DAY0_MAP_ASSETS_2026-10-28.md](DAY0_MAP_ASSETS_2026-10-28.md).
+
 Generados con la herramienta integrada `image_gen` el 28-10-2026 y guardados en `assets/world/`. Son fondos PNG completos (aprox. 1672×941 px) para el viewport lógico de 768×448. El juego recorta y escala cada imagen dentro del área explorable, sin alterar el archivo fuente. No contienen personajes, texto ni interfaz. Las figuras de Sofi y Mateo se superponen por código.
 
 Los cuatro PNG transparentes en `assets/world/tiles/` son atlas de cuatro variantes de suelo de 32×32 px generados de forma reproducible por `scripts/generate_world_tiles.gd`. `World.gd` coloca 22×10 celdas sobre el fondo en una `TileMapLayer`; la capa `CollisionBodies` contiene obstáculos `StaticBody2D` que cubren muebles, paredes, jardineras y escaleras. El jugador usa `CharacterBody2D`, de modo que los obstáculos se prueban con el motor de física. Los rectángulos aproximan los objetos de los fondos pintados; el arte final debe reemplazarlos por atlas y formas ajustadas a cada objeto. La prueba física verifica una ruta desde el inicio hasta Mateo en las cuatro jornadas.
