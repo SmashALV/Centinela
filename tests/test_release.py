@@ -36,6 +36,25 @@ class ReleaseTests(unittest.TestCase):
         inputs = {path.relative_to(release.ROOT).as_posix() for path in release.export_inputs()}
         self.assertTrue(expected.issubset(inputs))
 
+    def test_generated_sprites_are_tracked(self):
+        names = [f"assets/characters/{name}_directions.png" for name in
+                 ("sofi", "mateo", "bruno", "camila", "sebas")]
+        names += [f"assets/objects/{name}.png" for name in
+                  ("alarm", "backpack", "desk", "photo", "door", "pc")]
+        names += [f"assets/moba/heroes/{name}_directions.png" for name in
+                  ("attacker", "defender", "support")]
+        names += [f"assets/moba/structures/{name}.png" for name in
+                  ("tower", "base", "ruin")]
+        names.append("assets/moba/terrain/barrier_2x4.png")
+        names += [f"assets/moba/effects/{name}.png" for name in
+                  ("projectile", "attack_q", "shield_q", "support_q")]
+        names += [f"assets/ui/{name}.png" for name in
+                  ("phone", "objective", "pause", "controls")]
+        expected = {name + suffix for name in names for suffix in ("", ".import")}
+        self.assertTrue(expected.issubset(release.source_hashes()))
+        inputs = {path.relative_to(release.ROOT).as_posix() for path in release.export_inputs()}
+        self.assertTrue(expected.issubset(inputs))
+
     def test_stale_web_export_is_rejected(self):
         with tempfile.TemporaryDirectory(dir=release.ROOT / "build") as temporary:
             newer = Path(temporary) / "changed.gd"

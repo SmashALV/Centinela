@@ -17,6 +17,28 @@ const GROUND_TILES := {
 	"draft_d3": "res://assets/world/tiles/day3_corridor_floor.png",
 	"draft_d4": "res://assets/world/tiles/day4_courtyard_paving.png"
 }
+const CHARACTER_SHEETS := {
+	"Sofi": preload("res://assets/characters/sofi_directions.png"),
+	"Mateo": preload("res://assets/characters/mateo_directions.png"),
+	"Bruno": preload("res://assets/characters/bruno_directions.png"),
+	"Camila": preload("res://assets/characters/camila_directions.png"),
+	"Sebas": preload("res://assets/characters/sebas_directions.png")
+}
+const OBJECT_SPRITES := {
+	"alarm": preload("res://assets/objects/alarm.png"),
+	"backpack": preload("res://assets/objects/backpack.png"),
+	"desk": preload("res://assets/objects/desk.png"),
+	"photo": preload("res://assets/objects/photo.png"),
+	"door": preload("res://assets/objects/door.png"),
+	"exit": preload("res://assets/objects/door.png"),
+	"pc": preload("res://assets/objects/pc.png")
+}
+const OBJECT_SIZES := {
+	"alarm": Vector2(46, 38), "backpack": Vector2(52, 52),
+	"desk": Vector2(80, 62), "photo": Vector2(48, 44),
+	"door": Vector2(70, 78), "exit": Vector2(70, 78),
+	"pc": Vector2(90, 66)
+}
 const DRAFT_BLOCKS := {
 	"draft_d1": [[30, 56, 708, 123], [30, 178, 130, 42], [30, 215, 99, 150], [681, 205, 57, 165]],
 	"draft_d2": [[30, 56, 375, 124], [30, 180, 154, 64], [530, 125, 35, 60], [434, 197, 68, 28], [30, 345, 142, 49], [620, 346, 118, 48]],
@@ -37,6 +59,7 @@ const FRIENDS := [
 
 var scene_key: String = "bedroom"
 var player_pos: Vector2 = Vector2(384, 280)
+var player_facing: String = "down"
 var enabled: bool = true
 var nearby: String = ""
 var objects: Dictionary = {}
@@ -72,7 +95,8 @@ func _init() -> void:
 	add_child(player_body)
 
 func _ready() -> void:
-	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	map_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 
 func configure(key: String, position: Vector2) -> void:
 	scene_key = key
@@ -148,6 +172,11 @@ func _physics_process(delta: float) -> void:
 		player_body.velocity = Vector2.ZERO
 		return
 	var direction := Input.get_vector("move_left", "move_right", "move_up", "move_down")
+	if direction != Vector2.ZERO:
+		if absf(direction.x) > absf(direction.y):
+			player_facing = "right" if direction.x > 0.0 else "left"
+		else:
+			player_facing = "down" if direction.y > 0.0 else "up"
 	if is_inside_tree():
 		player_body.velocity = direction * SPEED
 		player_body.move_and_slide()
@@ -249,15 +278,14 @@ func _draw() -> void:
 		_draw_object(key, pos, active)
 	if scene_key == "courtyard":
 		for friend in FRIENDS:
-			_draw_character(Vector2(objects.friends) + friend.offset, str(friend.name),
-				Color(friend.jacket), Color(friend.skin), str(friend.style))
+			_draw_character(Vector2(objects.friends) + friend.offset, str(friend.name), "down", true)
 	elif scene_key.begins_with("draft_d"):
-		_draw_character(objects.mateo, "Mateo", Color("2f568c"), Color("dc9f71"), "curly")
+		_draw_character(objects.mateo, "Mateo")
 		if scene_key == "draft_d1":
-			_draw_character(Vector2(330, 245), "Camila", Color("d9696a"), Color("dfa47b"), "ponytail")
-			_draw_character(Vector2(260, 250), "Bruno", Color("87334d"), Color("c98b61"), "glasses")
-			_draw_character(Vector2(400, 250), "Sebas", Color("e2ad36"), Color("e4ae80"), "spiky")
-	_draw_character(player_pos, "Sofi", Color("258999"), Color("e2a477"), "long_hair")
+			_draw_character(Vector2(330, 245), "Camila")
+			_draw_character(Vector2(260, 250), "Bruno")
+			_draw_character(Vector2(400, 250), "Sebas")
+	_draw_character(player_pos, "Sofi", player_facing)
 
 func _draw_draft_caption() -> void:
 	var caption: String = str({"draft_d1": "DÍA 1 · LOBBY", "draft_d2": "DÍA 2 · EXTERIOR DEL COLEGIO", "draft_d3": "DÍA 3 · PASILLO", "draft_d4": "DÍA 4 · PATIO"}.get(scene_key, ""))
@@ -275,41 +303,11 @@ func _draw_objective_marker(pos: Vector2) -> void:
 
 func _draw_object(key: String, pos: Vector2, active: bool) -> void:
 	var color := Color("f5d479") if active else Color("8ec9c2")
-	var dark := Color("182a38")
 	if key == objective_target():
 		draw_arc(pos, 27, 0, TAU, 24, Color("f5d479"), 2.0)
 		_draw_objective_marker(pos + Vector2(0, 32))
-	match key:
-		"alarm":
-			draw_rect(Rect2(pos + Vector2(-14, -10), Vector2(28, 21)), color)
-			draw_rect(Rect2(pos + Vector2(-10, -6), Vector2(20, 13)), dark)
-			draw_circle(pos + Vector2(-11, -13), 4, color)
-			draw_circle(pos + Vector2(11, -13), 4, color)
-			draw_string(ThemeDB.fallback_font, pos + Vector2(-8, 4), "7:00", HORIZONTAL_ALIGNMENT_LEFT, -1, 8, Color.WHITE)
-		"backpack":
-			draw_arc(pos + Vector2(0, -8), 8, PI, TAU, 12, color, 3.0)
-			draw_rect(Rect2(pos + Vector2(-13, -10), Vector2(26, 25)), color)
-			draw_rect(Rect2(pos + Vector2(-9, 4), Vector2(18, 8)), dark)
-		"desk":
-			draw_rect(Rect2(pos + Vector2(-18, -5), Vector2(36, 7)), color)
-			draw_rect(Rect2(pos + Vector2(-15, 2), Vector2(4, 15)), color)
-			draw_rect(Rect2(pos + Vector2(11, 2), Vector2(4, 15)), color)
-			draw_rect(Rect2(pos + Vector2(-9, -14), Vector2(17, 9)), dark)
-		"photo":
-			draw_rect(Rect2(pos + Vector2(-14, -13), Vector2(28, 26)), color)
-			draw_rect(Rect2(pos + Vector2(-10, -9), Vector2(20, 18)), dark)
-			draw_circle(pos + Vector2(5, -4), 3, color)
-			draw_line(pos + Vector2(-9, 8), pos + Vector2(-2, 0), color, 2.0)
-			draw_line(pos + Vector2(-2, 0), pos + Vector2(9, 8), color, 2.0)
-		"door", "exit":
-			draw_rect(Rect2(pos + Vector2(-13, -18), Vector2(26, 35)), color)
-			draw_rect(Rect2(pos + Vector2(-9, -14), Vector2(18, 29)), dark)
-			draw_circle(pos + Vector2(5, 2), 2, color)
-		"pc":
-			draw_rect(Rect2(pos + Vector2(-18, -16), Vector2(36, 25)), color)
-			draw_rect(Rect2(pos + Vector2(-14, -12), Vector2(28, 17)), dark)
-			draw_rect(Rect2(pos + Vector2(-2, 9), Vector2(4, 7)), color)
-			draw_line(pos + Vector2(-12, 17), pos + Vector2(12, 17), color, 3.0)
+	var sprite_size: Vector2 = OBJECT_SIZES[key]
+	draw_texture_rect(OBJECT_SPRITES[key], Rect2(pos - sprite_size * 0.5, sprite_size), false)
 	if key in ["alarm", "backpack"] and GameState.flags.get(key, false):
 		draw_circle(pos + Vector2(19, -14), 7, Color("54b67c"))
 		draw_line(pos + Vector2(16, -14), pos + Vector2(19, -11), Color.WHITE, 2.0)
@@ -317,36 +315,26 @@ func _draw_object(key: String, pos: Vector2, active: bool) -> void:
 	draw_string(ThemeDB.fallback_font, pos + Vector2(-41, -30), target_label(key),
 		HORIZONTAL_ALIGNMENT_CENTER, 82, 12, color)
 
-func _draw_character(pos: Vector2, actor_name: String, jacket: Color, skin: Color, style: String) -> void:
-	var hair := Color("302b38")
-	draw_circle(pos + Vector2(0, 11), 13, Color(0, 0, 0, 0.26))
-	draw_rect(Rect2(pos + Vector2(-10, 1), Vector2(20, 16)), jacket)
-	draw_rect(Rect2(pos + Vector2(-3, 3), Vector2(6, 12)), Color("e8e2d6"))
-	if style == "ponytail":
-		draw_circle(pos + Vector2(11, -11), 6, hair)
-	elif style == "long_hair":
-		draw_circle(pos + Vector2(-8, -3), 6, hair)
-		draw_circle(pos + Vector2(8, -3), 6, hair)
-	draw_circle(pos + Vector2(0, -7), 9, hair)
-	draw_circle(pos + Vector2(0, -5), 7, skin)
-	match style:
-		"curly":
-			for dx in [-6.0, 0.0, 6.0]:
-				draw_circle(pos + Vector2(dx, -12), 3, hair)
-		"glasses":
-			draw_rect(Rect2(pos + Vector2(-6, -8), Vector2(5, 4)), Color.WHITE, false, 1.0)
-			draw_rect(Rect2(pos + Vector2(1, -8), Vector2(5, 4)), Color.WHITE, false, 1.0)
-			draw_line(pos + Vector2(-1, -6), pos + Vector2(1, -6), Color.WHITE, 1.0)
-		"ponytail":
-			draw_arc(pos + Vector2(0, -8), 8, PI, TAU, 8, hair, 3.0)
-		"spiky":
-			draw_colored_polygon(PackedVector2Array([
-			pos + Vector2(-8, -11), pos + Vector2(-6, -18), pos + Vector2(-2, -13),
-			pos + Vector2(2, -19), pos + Vector2(5, -13), pos + Vector2(9, -16),
-			pos + Vector2(8, -9)
-		]), hair)
-		"long_hair":
-			draw_arc(pos + Vector2(0, -5), 8, PI, TAU, 8, hair, 3.0)
-	draw_rect(Rect2(pos + Vector2(-24, -37), Vector2(70, 17)), Color("10192b", 0.78))
-	draw_string(ThemeDB.fallback_font, pos + Vector2(-19, -23), actor_name,
-		HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color.WHITE)
+func _draw_character(pos: Vector2, actor_name: String, facing: String = "down", compact_label: bool = false) -> void:
+	var texture: Texture2D = CHARACTER_SHEETS[actor_name]
+	var half: Vector2 = texture.get_size() * 0.5
+	var cell := Vector2.ZERO
+	match facing:
+		"up": cell = Vector2(1, 0)
+		"left": cell = Vector2(0, 1)
+		"right": cell = Vector2(1, 1)
+	draw_circle(pos + Vector2(0, 13), 11, Color(0, 0, 0, 0.22))
+	draw_texture_rect_region(texture, Rect2(pos + Vector2(-23, -25), Vector2(46, 46)),
+		Rect2(cell * half, half))
+	if compact_label:
+		draw_rect(Rect2(pos + Vector2(-22, -47), Vector2(44, 15)), Color("10192b", 0.78))
+		draw_string(ThemeDB.fallback_font, pos + Vector2(-22, -35), actor_name,
+			HORIZONTAL_ALIGNMENT_CENTER, 44, 9, Color.WHITE)
+	elif scene_key == "courtyard" and actor_name == "Sofi":
+		draw_rect(Rect2(pos + Vector2(-23, 21), Vector2(46, 15)), Color("10192b", 0.78))
+		draw_string(ThemeDB.fallback_font, pos + Vector2(-23, 33), actor_name,
+			HORIZONTAL_ALIGNMENT_CENTER, 46, 10, Color.WHITE)
+	else:
+		draw_rect(Rect2(pos + Vector2(-24, -47), Vector2(70, 17)), Color("10192b", 0.78))
+		draw_string(ThemeDB.fallback_font, pos + Vector2(-19, -33), actor_name,
+			HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color.WHITE)

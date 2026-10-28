@@ -10,6 +10,19 @@ const ALLY_ACCENTS := {
 	"Mateo": "2f568c", "Bruno": "87334d", "Sofi": "258999",
 	"Camila": "d9696a", "Sebas": "e2ad36"
 }
+const HERO_SHEETS := {
+	"Atacante": preload("res://assets/moba/heroes/attacker_directions.png"),
+	"Defensor": preload("res://assets/moba/heroes/defender_directions.png"),
+	"Soporte": preload("res://assets/moba/heroes/support_directions.png")
+}
+const TOWER_SPRITE := preload("res://assets/moba/structures/tower.png")
+const BASE_SPRITE := preload("res://assets/moba/structures/base.png")
+const RUIN_SPRITE := preload("res://assets/moba/structures/ruin.png")
+const BARRIER_SPRITE := preload("res://assets/moba/terrain/barrier_2x4.png")
+const PROJECTILE_SPRITE := preload("res://assets/moba/effects/projectile.png")
+const ATTACK_Q_SPRITE := preload("res://assets/moba/effects/attack_q.png")
+const SHIELD_Q_SPRITE := preload("res://assets/moba/effects/shield_q.png")
+const SUPPORT_Q_SPRITE := preload("res://assets/moba/effects/support_q.png")
 const TILE_SIZE := 32
 const MAP_CELLS := Vector2i(36, 20)
 const STATIC_OBSTACLES := [Rect2i(17, 8, 2, 4)]
@@ -47,6 +60,7 @@ var window_too_small := false
 var window_check_elapsed := 0.0
 
 func _ready() -> void:
+	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	SaveManager.lock_lost.connect(_on_lock_lost)
 	_create_entities()
 	camera = Camera2D.new()
@@ -243,6 +257,7 @@ func _hero(name: String, side: int, pos: Vector2) -> Dictionary:
 	return {"name": name, "side": side, "pos": pos, "hp": 80.0, "shield": 0.0,
 		"shields": [], "dead_until": 0.0, "immune_until": 0.0,
 		"last_combat": 0.0, "attack_cd": 0.0, "hero_class": "Atacante",
+		"facing": "right" if side == 0 else "left",
 		"buff_until": 0.0, "q_cd": 0.0, "retreating": false,
 		"nav_path": PackedVector2Array(), "nav_index": 0, "nav_goal": Vector2i(-1, -1), "nav_until": 0.0}
 
@@ -309,6 +324,8 @@ func _move_player(delta: float) -> void:
 	if hero.hp <= 0:
 		return
 	var direction := Input.get_vector("move_left", "move_right", "move_up", "move_down")
+	if direction != Vector2.ZERO:
+		hero.facing = _facing_from_motion(direction)
 	var speed := HERO_SPEED * (1.25 if hero.buff_until > elapsed else 1.0)
 	hero.pos = _sweep_move(hero.pos, direction * speed * delta)
 	heroes[player_index] = hero
@@ -356,8 +373,16 @@ func _move_ai(hero: Dictionary, goal: Vector2, delta: float) -> Dictionary:
 			hero.nav_index += 1
 		waypoint = hero.nav_path[hero.nav_index]
 	var speed := HERO_SPEED * (1.25 if hero.buff_until > elapsed else 1.0)
-	hero.pos = _sweep_move(hero.pos, hero.pos.direction_to(waypoint) * speed * delta)
+	var motion: Vector2 = hero.pos.direction_to(waypoint) * speed * delta
+	if motion.length_squared() > 0.0:
+		hero.facing = _facing_from_motion(motion)
+	hero.pos = _sweep_move(hero.pos, motion)
 	return hero
+
+func _facing_from_motion(motion: Vector2) -> String:
+	if absf(motion.x) > absf(motion.y):
+		return "right" if motion.x > 0.0 else "left"
+	return "down" if motion.y > 0.0 else "up"
 
 func _shot(pos: Vector2, direction: Vector2, side: int, damage: float, speed: float, distance: float, piercing: bool, tower: bool) -> Dictionary:
 	return {"pos": pos, "dir": direction, "side": side, "damage": damage, "speed": speed,
@@ -717,26 +742,30 @@ func _draw() -> void:
 		draw_line(Vector2(0, y), Vector2(1152, y), Color(1, 1, 1, 0.05))
 	for obstacle in STATIC_OBSTACLES:
 		var rect := Rect2(Vector2(obstacle.position * TILE_SIZE), Vector2(obstacle.size * TILE_SIZE))
-		draw_rect(rect, Color("4d535b"))
-		draw_rect(rect.grow(-4.0), Color("70757b"), false, 2.0)
+		draw_texture_rect_region(BARRIER_SPRITE, rect, Rect2(245, 100, 410, 1450))
 	for building in buildings:
 		if building.tier < 2 and building.hp <= 0:
 			var ruin := _ruin_cells(building)
-			draw_rect(Rect2(Vector2(ruin.position * TILE_SIZE), Vector2(ruin.size * TILE_SIZE)), Color("5d625d"))
+			draw_texture_rect(RUIN_SPRITE, Rect2(Vector2(ruin.position * TILE_SIZE), Vector2(ruin.size * TILE_SIZE)), false)
 			continue
-		var color: Color = COLORS[building.side]
-		if building.hp <= 0:
-			color = Color("5d625d")
 		var width := 32 if building.tier == 2 else 24
-		draw_rect(Rect2(building.pos - Vector2(width, width), Vector2(width * 2, width * 2)), color)
+		var structure_texture: Texture2D = BASE_SPRITE if building.tier == 2 else TOWER_SPRITE
+		if building.hp <= 0:
+			structure_texture = RUIN_SPRITE
+		draw_texture_rect(structure_texture, Rect2(building.pos - Vector2(width, width), Vector2(width * 2, width * 2)), false)
+		draw_arc(building.pos, float(width), 0, TAU, 24, COLORS[building.side], 3.0)
 		var structure_name := "BASE" if building.tier == 2 else "T%d" % (building.tier + 1)
-		draw_string(ThemeDB.fallback_font, building.pos + Vector2(-width, 5), structure_name,
-			HORIZONTAL_ALIGNMENT_CENTER, width * 2, 13, Color("172534"))
+		draw_string(ThemeDB.fallback_font, building.pos + Vector2(-width, width + 11), structure_name,
+			HORIZONTAL_ALIGNMENT_CENTER, width * 2, 12, Color("fff3df"))
 		if building.hp > 0:
 			draw_rect(Rect2(building.pos + Vector2(-25, -width - 12), Vector2(50, 5)), Color("182a38"))
 			draw_rect(Rect2(building.pos + Vector2(-25, -width - 12), Vector2(50 * building.hp / building.max_hp, 5)), Color("d6e99f"))
 	for hero in heroes:
 		if hero.hp <= 0: continue
+		if hero.buff_until > elapsed:
+			draw_texture_rect(SUPPORT_Q_SPRITE, Rect2(hero.pos - Vector2(28, 28), Vector2(56, 56)), false, Color(1, 1, 1, 0.55))
+		if hero.shield > 0:
+			draw_texture_rect(SHIELD_Q_SPRITE, Rect2(hero.pos - Vector2(24, 24), Vector2(48, 48)), false, Color(1, 1, 1, 0.62))
 		_draw_hero_symbol(hero)
 		if hero.shield > 0:
 			draw_arc(hero.pos, 17, 0, TAU, 32, Color("82ddff"), 3.0)
@@ -747,40 +776,37 @@ func _draw() -> void:
 		if hero.name == "Sofi":
 			draw_arc(hero.pos, 29, 0, TAU, 32, Color.WHITE, 2.0)
 			_draw_player_marker(hero.pos)
-		draw_rect(Rect2(hero.pos + Vector2(-17, -24), Vector2(34, 4)), Color("182a38"))
-		draw_rect(Rect2(hero.pos + Vector2(-17, -24), Vector2(34 * hero.hp / 80.0, 4)), Color("d6e99f"))
-		draw_string(ThemeDB.fallback_font, hero.pos + Vector2(-25, 29), hero.name, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color.WHITE)
+		draw_rect(Rect2(hero.pos + Vector2(-17, -32), Vector2(34, 4)), Color("182a38"))
+		draw_rect(Rect2(hero.pos + Vector2(-17, -32), Vector2(34 * hero.hp / 80.0, 4)), Color("d6e99f"))
+		var name_offset := Vector2(22, 4) if hero.side == 0 else Vector2(-70, 4)
+		draw_string(ThemeDB.fallback_font, hero.pos + name_offset, hero.name, HORIZONTAL_ALIGNMENT_LEFT, -1, 10, Color.WHITE)
 	for shot in shots:
-		draw_circle(shot.pos, 5, Color("fff0a6") if shot.side == 0 else Color("ffa6b2"))
+		draw_circle(shot.pos, 6, Color("fff0a6") if shot.side == 0 else Color("ffa6b2"))
+		var effect: Texture2D = ATTACK_Q_SPRITE if shot.piercing else PROJECTILE_SPRITE
+		var effect_size := 28.0 if shot.piercing else 20.0
+		draw_texture_rect(effect, Rect2(shot.pos - Vector2.ONE * effect_size * 0.5, Vector2.ONE * effect_size), false)
 
 func _draw_player_marker(pos: Vector2) -> void:
 	draw_colored_polygon(PackedVector2Array([
-		pos + Vector2(-5, -37), pos + Vector2(5, -37), pos + Vector2(0, -30)
+		pos + Vector2(-5, -47), pos + Vector2(5, -47), pos + Vector2(0, -39)
 	]), Color("fff3df"))
 
 func _draw_hero_symbol(hero: Dictionary) -> void:
 	var position: Vector2 = hero.pos
-	var color: Color = COLORS[hero.side]
-	match hero.hero_class:
-		"Atacante":
-			var facing := 1.0 if hero.side == 0 else -1.0
-			draw_colored_polygon(PackedVector2Array([
-				position + Vector2(-10.0 * facing, -12.0),
-				position + Vector2(12.0 * facing, 0),
-				position + Vector2(-10.0 * facing, 12.0)
-			]), color)
-		"Defensor":
-			draw_rect(Rect2(position - Vector2(11, 11), Vector2(22, 22)), color)
-		"Soporte":
-			draw_colored_polygon(PackedVector2Array([
-				position + Vector2(0, -13), position + Vector2(13, 0),
-				position + Vector2(0, 13), position + Vector2(-13, 0)
-			]), color)
-		_:
-			draw_circle(position, 13, color)
+	var texture: Texture2D = HERO_SHEETS.get(hero.hero_class, HERO_SHEETS["Atacante"])
+	var half: Vector2 = texture.get_size() * 0.5
+	var cell := Vector2.ZERO
+	match str(hero.get("facing", "down")):
+		"up": cell = Vector2(1, 0)
+		"left": cell = Vector2(0, 1)
+		"right": cell = Vector2(1, 1)
+	draw_circle(position + Vector2(0, 15), 13, Color(0, 0, 0, 0.22))
+	draw_texture_rect_region(texture, Rect2(position + Vector2(-27, -32), Vector2(54, 54)),
+		Rect2(cell * half, half))
+	draw_arc(position, 16, 0, TAU, 24, COLORS[hero.side], 2.0)
 	if hero.side == 0:
-		draw_circle(position, 5, Color("fff3df"))
-		draw_circle(position, 3, Color(ALLY_ACCENTS.get(hero.name, "258999")))
+		draw_circle(position + Vector2(0, 21), 5, Color("fff3df"))
+		draw_circle(position + Vector2(0, 21), 3, Color(ALLY_ACCENTS.get(hero.name, "258999")))
 	else:
-		draw_line(position + Vector2(-4, -4), position + Vector2(4, 4), Color("172534"), 2.0)
-		draw_line(position + Vector2(4, -4), position + Vector2(-4, 4), Color("172534"), 2.0)
+		draw_line(position + Vector2(-4, 17), position + Vector2(4, 25), Color("dc827d"), 2.0)
+		draw_line(position + Vector2(4, 17), position + Vector2(-4, 25), Color("dc827d"), 2.0)

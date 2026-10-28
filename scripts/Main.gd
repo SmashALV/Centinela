@@ -13,6 +13,12 @@ const PORTRAITS := {
 	"Camila": "res://assets/portraits/camila_neutral.png",
 	"Sebas": "res://assets/portraits/sebas_neutral.png"
 }
+const UI_ICONS := {
+	"phone": preload("res://assets/ui/phone.png"),
+	"objective": preload("res://assets/ui/objective.png"),
+	"pause": preload("res://assets/ui/pause.png"),
+	"controls": preload("res://assets/ui/controls.png")
+}
 
 var world: Node2D
 var canvas: CanvasLayer
@@ -243,6 +249,22 @@ func _modal_text(value: String, size: int = 18) -> void:
 	label.add_theme_color_override("font_color", Color("fff3df"))
 	modal_box.add_child(label)
 
+func _modal_heading(value: String, icon_key: String, size: int = 23) -> void:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	modal_box.add_child(row)
+	var icon := TextureRect.new()
+	icon.texture = UI_ICONS[icon_key]
+	icon.custom_minimum_size = Vector2(32, 32)
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	row.add_child(icon)
+	var label := Label.new()
+	label.text = value
+	label.add_theme_font_size_override("font_size", _scaled_text_size(size))
+	label.add_theme_color_override("font_color", Color("fff3df"))
+	row.add_child(label)
+
 func _button(value: String, callback: Callable) -> Button:
 	var button := Button.new()
 	button.text = value
@@ -259,7 +281,7 @@ func _show_menu() -> void:
 	pending_choice.clear()
 	modal_kind = "menu"
 	_clear_modal()
-	_modal_text("CENTINELA 2.0 · prototipo jugable", 24)
+	_modal_heading("CENTINELA 2.0 · prototipo jugable", "controls", 24)
 	_modal_text("Día 0 con texto recuperado en vista previa. Falta validar el guion canónico completo.", 15)
 	var buttons: Array[Button] = []
 	for i in range(1, 4):
@@ -519,7 +541,7 @@ func _open_ui_modal(kind: String, renderer: Callable) -> void:
 func _render_phone() -> void:
 	modal_kind = "phone"
 	_clear_modal()
-	_modal_text("CELULAR · chats y contactos", 23)
+	_modal_heading("CELULAR · chats y contactos", "phone")
 	var body := _preview_content()
 	if GameState.phone_messages.is_empty():
 		_preview_text(body, "No hay mensajes guardados. La conversación recuperada del Día 0 aparece al usar la computadora.", 16)
@@ -540,7 +562,7 @@ func _show_objective() -> void:
 func _render_objective() -> void:
 	modal_kind = "objective"
 	_clear_modal()
-	_modal_text("OBJETIVO", 23)
+	_modal_heading("OBJETIVO", "objective")
 	_modal_text(_objective_text(), 19)
 	_button("Pista", _advance_hint)
 	_button("Cerrar", _close_modal)
@@ -569,7 +591,7 @@ func _show_pause() -> void:
 func _render_pause() -> void:
 	modal_kind = "pause"
 	_clear_modal()
-	_modal_text("PAUSA · " + GameState.code, 23)
+	_modal_heading("PAUSA · " + GameState.code, "pause")
 	var body := _preview_content()
 	_preview_text(body, SyncManager.status_label(), 15)
 	if SyncManager.configured:
