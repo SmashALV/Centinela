@@ -141,6 +141,8 @@ func _process(delta: float) -> void:
 		prompt_icon.visible = false
 		if modal_kind == "menu":
 			prompt.text = "Selecciona una ranura para comenzar"
+		elif modal_kind == "slot_confirm":
+			prompt.text = "Esc · cancelar   Elige una opción"
 		elif modal_kind == "prologue":
 			prompt.text = "Enter · continuar   P · pausa"
 		elif modal_kind in ["preview", "preview_unplaced"]:
@@ -149,16 +151,18 @@ func _process(delta: float) -> void:
 			prompt.text = "Esc · volver   P · pausa"
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event.is_action_pressed("pause_game") and modal_kind != "menu":
+	if event.is_action_pressed("pause_game") and modal_kind not in ["menu", "slot_confirm"]:
 		if modal_kind == "pause":
 			_resume_pause()
 		else:
 			_show_pause()
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("ui_cancel"):
-		if ["phone", "objective", "pause", "class", "desktop", "dialogue_history", "choice_confirm"].has(modal_kind):
+		if ["phone", "objective", "pause", "class", "desktop", "slot_confirm", "dialogue_history", "choice_confirm"].has(modal_kind):
 			if modal_kind == "pause":
 				_resume_pause()
+			elif modal_kind == "slot_confirm":
+				_show_menu()
 			elif modal_kind == "dialogue_history":
 				_render_dialogue(true)
 			elif modal_kind == "choice_confirm":
@@ -313,7 +317,7 @@ func _modal_heading(value: String, icon_key: String, size: int = 23) -> void:
 	label.add_theme_color_override("font_color", Color("fff3df"))
 	row.add_child(label)
 
-func _button(value: String, callback: Callable, icon_key: String = "") -> Button:
+func _button(value: String, callback: Callable, icon_key: String = "", parent: Control = null) -> Button:
 	var button := Button.new()
 	button.text = value
 	button.custom_minimum_size.y = 34
@@ -323,7 +327,10 @@ func _button(value: String, callback: Callable, icon_key: String = "") -> Button
 		button.expand_icon = true
 	button.add_theme_font_size_override("font_size", _scaled_text_size(16))
 	button.pressed.connect(callback)
-	modal_box.add_child(button)
+	if parent == null:
+		modal_box.add_child(button)
+	else:
+		parent.add_child(button)
 	return button
 
 func _show_menu() -> void:
@@ -337,19 +344,33 @@ func _show_menu() -> void:
 	hud.visible = false
 	_modal_heading("CENTINELA 2.0 · prototipo jugable", "controls", 24)
 	_modal_text("Día 0 con texto recuperado en vista previa. Falta validar el guion canónico completo.", 15)
-	var buttons: Array[Button] = []
+	var rows: Array[Dictionary] = []
 	for i in range(1, 4):
 		var chosen := i
 		var label := "Ranura %d · cargando..." % i if OS.has_feature("web") else SaveManager.slot_summary(i)
-		var button := _button(label, func(): _start_slot(chosen))
-		button.disabled = OS.has_feature("web")
-		buttons.append(button)
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 6)
+		row.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+		row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row.custom_minimum_size.y = 34
+		modal_box.add_child(row)
+		var play := _button(label, func(): _start_slot(chosen), "", row)
+		play.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		var redo := _button("Rehacer", func(): _confirm_slot_action(chosen, true), "", row)
+		var remove := _button("Borrar", func(): _confirm_slot_action(chosen, false), "", row)
+		redo.custom_minimum_size.x = 94
+		remove.custom_minimum_size.x = 94
+		var occupied := SaveManager.slot_exists(i)
+		play.disabled = OS.has_feature("web")
+		redo.disabled = OS.has_feature("web") or not occupied
+		remove.disabled = OS.has_feature("web") or not occupied
+		rows.append({"play": play, "redo": redo, "remove": remove})
 	if OS.has_feature("web"):
-		_refresh_web_menu(buttons)
+		_refresh_web_menu(rows)
 	else:
-		buttons[0].grab_focus()
+		rows[0].play.grab_focus()
 
-func _refresh_web_menu(buttons: Array[Button]) -> void:
+func _refresh_web_menu(rows: Array[Dictionary]) -> void:
 	var response: Dictionary = await SaveManager.list_slots_async()
 	if not is_inside_tree() or modal_kind != "menu":
 		return
@@ -362,11 +383,52 @@ func _refresh_web_menu(buttons: Array[Button]) -> void:
 	for i in 3:
 		var slot_number := i + 1
 		if records.has(slot_number):
-			buttons[i].text = "Ranura %d · %s · %s" % [slot_number, records[slot_number].code, records[slot_number].phase]
+			rows[i].play.text = "Ranura %d · %s · %s" % [slot_number, records[slot_number].code, records[slot_number].phase]
 		else:
-			buttons[i].text = "Ranura %d · nueva" % slot_number
-		buttons[i].disabled = false
-	buttons[0].grab_focus()
+			rows[i].play.text = "Ranura %d · nueva" % slot_number
+		rows[i].play.disabled = false
+		rows[i].redo.disabled = not records.has(slot_number)
+		rows[i].remove.disabled = not records.has(slot_number)
+	rows[0].play.grab_focus()
+
+func _confirm_slot_action(chosen: int, redo: bool) -> void:
+	if slot_loading:
+		return
+	modal_kind = "slot_confirm"
+	_clear_modal()
+	menu_background.visible = true
+	hud_icon.visible = false
+	hud.visible = false
+	_modal_heading("REHACER RANURA %d" % chosen if redo else "BORRAR RANURA %d" % chosen, "save")
+	_modal_text("Empezarás de nuevo desde el prólogo. Se perderá el progreso local de esta ranura." if redo else "Se eliminará el guardado local de esta ranura y quedará vacía.", 17)
+	var cancel := _button("Cancelar", _show_menu)
+	cancel.grab_focus()
+	_button("Sí, rehacer ranura" if redo else "Sí, borrar ranura", func(): _apply_slot_action(chosen, redo))
+
+func _apply_slot_action(chosen: int, redo: bool) -> void:
+	if slot_loading:
+		return
+	slot_loading = true
+	SyncManager.on_slot_closed()
+	var previous := GameState.snapshot()
+	var replacement: Dictionary = {}
+	if redo:
+		GameState.new_game(chosen)
+		replacement = GameState.snapshot()
+	var succeeded := await SaveManager.clear_slot_async(chosen, replacement)
+	slot_loading = false
+	if not is_inside_tree():
+		return
+	if not succeeded:
+		GameState.restore(previous)
+		_show_menu()
+		_toast("No se pudo modificar la ranura: " + SaveManager.last_error)
+		return
+	_show_menu()
+	if redo:
+		_start_slot(chosen)
+	else:
+		_toast("Ranura %d eliminada" % chosen)
 
 func _start_slot(chosen: int) -> void:
 	if slot_loading:

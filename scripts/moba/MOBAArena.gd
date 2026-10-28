@@ -220,6 +220,12 @@ func _resume_match() -> void:
 		return
 	_set_paused(false)
 
+func _leave_match_to_menu() -> void:
+	SyncManager.on_slot_closed()
+	await SaveManager.release_slot_async()
+	if is_inside_tree():
+		get_tree().change_scene_to_file("res://scenes/Main.tscn")
+
 func _set_paused(value: bool) -> void:
 	paused = value
 	pause_panel.visible = value
@@ -230,8 +236,8 @@ func _set_paused(value: bool) -> void:
 		pause_panel.get_node("Content/Continue").release_focus()
 
 func _add_audio_controls() -> void:
-	pause_panel.position = Vector2(200, 78)
-	pause_panel.size = Vector2(368, 280)
+	pause_panel.position = Vector2(200, 59)
+	pause_panel.size = Vector2(368, 330)
 	var box: VBoxContainer = pause_panel.get_node("Content")
 	music_button = Button.new()
 	music_button.name = "Music"
@@ -243,6 +249,13 @@ func _add_audio_controls() -> void:
 	effects_button.custom_minimum_size.y = 38
 	effects_button.pressed.connect(func(): _cycle_audio("effects"))
 	box.add_child(effects_button)
+	var menu_button := Button.new()
+	menu_button.name = "Menu"
+	menu_button.text = "Salir al menú"
+	menu_button.custom_minimum_size.y = 38
+	menu_button.add_theme_font_size_override("font_size", _font_size(18))
+	menu_button.pressed.connect(_leave_match_to_menu)
+	box.add_child(menu_button)
 	_refresh_audio_labels()
 
 func _refresh_audio_labels() -> void:

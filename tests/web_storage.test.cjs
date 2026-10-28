@@ -160,5 +160,29 @@ test("ranuras, bloqueo, transacción de decisión e idempotencia", async () => {
   assert.equal((await send(second, "acquire_lock", { slot: 1 })).result.generation, 3);
   assert.equal((await send(second, "save_snapshot", { slot: 1, generation: 2, snapshot: snapshot(1, "result") })).error.code, "LOCK_LOST");
   assert.equal((await send(second, "renew_lock", { slot: 1, generation: 3 })).success, true);
+  assert.equal((await send(second, "save_event_atomic", { slot: 1, generation: 3,
+    snapshot: snapshot(1, "result"), event: { event_id: "TEST_ONLY_pending", kind: "moba_result", sequence: 3 } })).success, true);
+  assert.equal(await outboxCount(), 1);
+  const freshGame = { ...snapshot(1), code: "CTN-999999" };
+  const reset = await send(second, "reset_slot", { slot: 1, generation: 3, snapshot: freshGame });
+  assert.equal(reset.success, true);
+  assert.notEqual(reset.result.save_id, committed.result.save_id);
+  assert.equal(reset.result.sequence, 0);
+  assert.equal((await send(second, "load_slot", { slot: 1 })).result.code, freshGame.code);
+  assert.equal((await send(second, "list_slots")).result.find((entry) => entry.slot === 1).sequence, 0);
+  assert.equal(await outboxCount(), 0);
+  assert.equal((await send(second, "save_snapshot", { slot: 1, generation: 3, snapshot: freshGame })).error.code, "LOCK_LOST");
+  assert.equal((await send(first, "delete_slot", { slot: 1, generation: 1 })).error.code, "LOCK_LOST");
+  const freshLock = await send(second, "acquire_lock", { slot: 1 });
+  assert.equal(freshLock.result.generation, 4);
+  assert.equal((await send(second, "get_credential", { slot: 1, generation: 4 })).result, null);
+  assert.equal((await send(second, "get_sync_status", { slot: 1, generation: 4 })).result, null);
+  assert.equal((await send(second, "save_snapshot", { slot: 1, generation: 4,
+    snapshot: freshGame }, "TEST_ONLY_decision_1")).success, true);
+  assert.equal((await send(second, "delete_slot", { slot: 1, generation: 4 })).success, true);
+  assert.equal((await send(second, "load_slot", { slot: 1 })).result, null);
+  assert.equal((await send(second, "list_slots")).result.length, 1);
+  assert.equal((await send(second, "list_slots")).result[0].slot, 2);
+  assert.equal((await send(second, "delete_slot", { slot: 1, generation: 4 })).error.code, "LOCK_LOST");
   assert.equal((await send(second, "unknown")).error.code, "INVALID_REQUEST");
 });

@@ -307,7 +307,7 @@
               tx.objectStore("event_outbox").put({ event_id: payload.event.event_id,
                 slot, sequence: nextSequence, payload: payload.event });
             }
-            tx.objectStore("request_log").put({ request_id: requestId, operation, signature, result });
+            tx.objectStore("request_log").put({ request_id: requestId, slot, operation, signature, result });
             done(result);
             };
           };
@@ -318,6 +318,57 @@
               else continueWrite();
             };
           } else continueWrite();
+        };
+      };
+    });
+  }
+
+  async function clearSlot(payload, replace) {
+    const { slot, generation, snapshot } = payload;
+    if (!validSlot(slot) || !Number.isInteger(generation))
+      throw failure("INVALID_REQUEST", "Ranura o generación inválida");
+    if (replace) validateSnapshot(snapshot, slot);
+    const db = await openDatabase();
+    const stores = ["locks", "save_slots", "save_snapshots", "event_outbox",
+      "sync_status", "save_credentials", "request_log"];
+    return runTransaction(db, stores, "readwrite", (tx, done, abort) => {
+      const lockRequest = tx.objectStore("locks").get(slot);
+      lockRequest.onsuccess = () => {
+        try { checkLock(lockRequest.result, generation); }
+        catch (error) { abort(error.code, error.message); return; }
+        const metaRequest = tx.objectStore("save_slots").get(slot);
+        metaRequest.onsuccess = () => {
+          if (!metaRequest.result) { abort("SLOT_EMPTY", "La ranura ya está vacía"); return; }
+          const outboxRequest = tx.objectStore("event_outbox").getAll();
+          outboxRequest.onsuccess = () => {
+            for (const event of outboxRequest.result) {
+              if (event.slot === slot) tx.objectStore("event_outbox").delete(event.event_id);
+            }
+          };
+          const logRequest = tx.objectStore("request_log").getAll();
+          logRequest.onsuccess = () => {
+            for (const record of logRequest.result) {
+              let loggedSlot = record.slot;
+              if (loggedSlot === undefined) {
+                try { loggedSlot = JSON.parse(record.signature).slot; } catch (_) { /* registro antiguo */ }
+              }
+              if (loggedSlot === slot) tx.objectStore("request_log").delete(record.request_id);
+            }
+          };
+          tx.objectStore("save_credentials").delete(slot);
+          tx.objectStore("sync_status").delete(slot);
+          tx.objectStore("locks").put({ ...lockRequest.result, expires_at: 0 });
+          if (replace) {
+            const saveId = root.crypto.randomUUID();
+            tx.objectStore("save_slots").put({ slot, save_id: saveId,
+              code: snapshot.code, phase: snapshot.phase, sequence: 0 });
+            tx.objectStore("save_snapshots").put({ slot, snapshot });
+            done({ slot, save_id: saveId, sequence: 0, replaced: true });
+          } else {
+            tx.objectStore("save_slots").delete(slot);
+            tx.objectStore("save_snapshots").delete(slot);
+            done({ slot, deleted: true });
+          }
         };
       };
     });
@@ -403,6 +454,8 @@
       case "renew_lock": return renewLock(payload.slot, payload.generation);
       case "release_lock": return releaseLock(payload.slot, payload.generation);
       case "save_snapshot": return writeSnapshot(request.request_id, payload, "none");
+      case "reset_slot": return clearSlot(payload, true);
+      case "delete_slot": return clearSlot(payload, false);
       case "save_decision_atomic": return writeSnapshot(request.request_id, payload, "decision");
       case "save_event_atomic": return writeSnapshot(request.request_id, payload, "descriptive");
       case "get_slot_meta": case "get_credential": case "put_credential": case "peek_outbox":

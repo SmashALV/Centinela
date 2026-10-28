@@ -166,6 +166,11 @@ func _run() -> void:
 	GameState.new_game(1)
 	_check(SaveManager.slot_exists(2) and SaveManager.load_slot(2) and GameState.snapshot() == saved, "copia recupera ranura sin archivo principal")
 	_check(SaveManager.save_slot(), "ranura sin principal se repara al guardar")
+	GameState.new_game(2)
+	_check(SaveManager.replace_slot() and not FileAccess.file_exists(SaveManager.backup_path(2)), "rehacer ranura elimina la copia de la partida anterior")
+	GameState.new_game(1)
+	_check(SaveManager.load_slot(2) and GameState.flags.is_empty() and GameState.phase == "bedroom", "ranura rehecha vuelve al comienzo")
+	_check(SaveManager.delete_slot(2) and not SaveManager.slot_exists(2), "borrar ranura elimina principal y copia")
 	GameState.restore(saved)
 	var bad_save := saved.duplicate(true)
 	bad_save.player_position = "corrupto"
@@ -469,6 +474,8 @@ func _run() -> void:
 	var resumed_arena: Node2D = Arena.instantiate()
 	get_tree().root.add_child(resumed_arena)
 	_check(GameState.phase == "moba" and GameState.moba_class == "Soporte" and resumed_arena.elapsed == 0.0 and resumed_arena.countdown == 3.0, "MOBA reanuda desde inicio con clase conservada")
+	resumed_arena._set_paused(true)
+	_check(resumed_arena.pause_panel.get_node("Content/Menu").text == "Salir al menú", "MOBA permite volver al menú para rehacer la ranura")
 	resumed_arena.queue_free()
 	var main: Node2D = MainScene.instantiate()
 	get_tree().root.add_child(main)
@@ -702,6 +709,16 @@ func _run() -> void:
 	var bad_draft := GameState.snapshot()
 	bad_draft.draft_content_version = "PLAYABLE_DRAFT_v0.0"
 	_check(not GameState.restore(bad_draft), "versión de borrador incompatible rechazada")
+	var previous_code := GameState.code
+	main._show_menu()
+	main._confirm_slot_action(1, true)
+	_check(main.modal_kind == "slot_confirm" and main.modal_box.get_child(0).get_child(1).text.contains("REHACER"), "menú pide confirmación para rehacer")
+	await main._apply_slot_action(1, true)
+	_check(GameState.phase == "bedroom" and GameState.flags.is_empty() and GameState.code != previous_code and main.modal_kind == "prologue", "rehacer inicia una partida desde el prólogo")
+	main._show_menu()
+	main._confirm_slot_action(1, false)
+	await main._apply_slot_action(1, false)
+	_check(not SaveManager.slot_exists(1) and main.modal_kind == "menu", "borrar desde menú deja la ranura vacía")
 	main.queue_free()
 	_finish_tests()
 

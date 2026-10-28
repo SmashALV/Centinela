@@ -46,6 +46,63 @@ async function main() {
     const canvas = await page.locator("canvas").boundingBox();
     assert(canvas, "Godot canvas missing");
     await page.screenshot({ path: "build/web/smoke.png" });
+    await page.evaluate(async () => {
+      const send = (operation, payload) => new Promise((resolve, reject) => {
+        const request_id = crypto.randomUUID();
+        CentinelaStorage.request(JSON.stringify({ protocol_version: 1, request_id, operation, payload }), (raw) => {
+          const result = JSON.parse(raw);
+          if (result.success) resolve(result.result);
+          else reject(new Error(result.error?.code || "STORAGE_ERROR"));
+        });
+      });
+      const lock = await send("acquire_lock", { slot: 2 });
+      await send("save_snapshot", { slot: 2, generation: lock.generation,
+        snapshot: { schema_version: 1, narrative_version: "provisional-d0-1", slot: 2,
+          code: "CTN-000002", phase: "courtyard", flags: {}, player_position: [140, 300], phone_messages: [] } });
+      await send("release_lock", { slot: 2, generation: lock.generation });
+    });
+    await page.reload();
+    await page.waitForFunction(() => !!globalThis.CentinelaStorage);
+    await page.waitForTimeout(1100);
+    await page.screenshot({ path: "build/web/slot_management_menu.png" });
+    await page.mouse.click(canvas.x + canvas.width * 0.73, canvas.y + canvas.height * 0.50);
+    await page.waitForTimeout(200);
+    await page.screenshot({ path: "build/web/slot_reset_confirmation.png" });
+    await page.keyboard.press("Tab");
+    await page.keyboard.press("Enter");
+    await page.waitForTimeout(900);
+    const resetRecord = await page.evaluate(async () => {
+      const db = await new Promise((resolve, reject) => {
+        const request = indexedDB.open("centinela_2_local_v1");
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+      try {
+        return await new Promise((resolve, reject) => {
+          const request = db.transaction("save_snapshots").objectStore("save_snapshots").get(2);
+          request.onsuccess = () => resolve(request.result);
+          request.onerror = () => reject(request.error);
+        });
+      } finally { db.close(); }
+    });
+    assert.equal(resetRecord.snapshot.phase, "bedroom");
+    assert.notEqual(resetRecord.snapshot.code, "CTN-000002");
+    await page.reload();
+    await page.waitForFunction(() => !!globalThis.CentinelaStorage);
+    await page.waitForTimeout(1100);
+    await page.mouse.click(canvas.x + canvas.width * 0.83, canvas.y + canvas.height * 0.50);
+    await page.waitForTimeout(200);
+    await page.keyboard.press("Tab");
+    await page.keyboard.press("Enter");
+    await page.waitForTimeout(700);
+    const afterDelete = await page.evaluate(() => new Promise((resolve) => {
+      const request_id = crypto.randomUUID();
+      CentinelaStorage.request(JSON.stringify({ protocol_version: 1, request_id,
+        operation: "list_slots", payload: {} }), (raw) => resolve(JSON.parse(raw).result));
+    }));
+    assert(!afterDelete.some((entry) => entry.slot === 2), "slot 2 was not deleted through the menu");
+    await page.screenshot({ path: "build/web/slot_after_delete.png" });
+    await page.waitForTimeout(600);
     await page.mouse.click(canvas.x + canvas.width * 0.5, canvas.y + canvas.height * 0.41);
     const readStore = async (storeName, key) => page.evaluate(async ({ storeName, key }) => {
       const db = await new Promise((resolve, reject) => {
@@ -74,7 +131,7 @@ async function main() {
     };
     await waitForStore("save_snapshots", 1,
       (record) => record?.snapshot?.phase === "bedroom" &&
-        !record.snapshot.flags.prologue_seen && !record.snapshot.dialogue_key);
+        !record.snapshot.flags.prologue_seen && !record.snapshot.dialogue_key, 30000);
     await page.waitForTimeout(300);
     await page.screenshot({ path: "build/web/prologue.png" });
     for (const step of [1, 2]) {

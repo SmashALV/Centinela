@@ -110,6 +110,36 @@ func save_slot_async() -> bool:
 	last_error = ""
 	return true
 
+func clear_slot_async(chosen_slot: int, replacement: Dictionary = {}) -> bool:
+	if chosen_slot < 1 or chosen_slot > 3:
+		last_error = "INVALID_SLOT"
+		return false
+	if not replacement.is_empty() and (replacement.get("slot") != chosen_slot or GameState.slot != chosen_slot):
+		last_error = "INVALID_SLOT"
+		return false
+	if not OS.has_feature("web"):
+		return replace_slot() if not replacement.is_empty() else delete_slot(chosen_slot)
+	if not await acquire_slot_async(chosen_slot):
+		return false
+	while _write_busy:
+		await get_tree().process_frame
+	_write_busy = true
+	var operation := "reset_slot" if not replacement.is_empty() else "delete_slot"
+	var payload := {"slot": chosen_slot, "generation": web_generation}
+	if not replacement.is_empty():
+		payload["snapshot"] = replacement
+	var response: Dictionary = await WebBridge.request(operation, payload)
+	_write_busy = false
+	if not response.get("success", false):
+		_handle_web_error(response)
+		await release_slot_async()
+		return false
+	web_slot = -1
+	web_generation = 0
+	web_sequence = 0
+	last_error = ""
+	return true
+
 func save_moba_result_async(event_id: String, request_id: String,
 		occurred_at: String, frozen_snapshot: Dictionary) -> bool:
 	if not OS.has_feature("web") or not SyncManager.configured:
@@ -186,6 +216,28 @@ func save_slot() -> bool:
 		DirAccess.remove_absolute(_global_path(temporary))
 		return false
 	recovered_slot = -1
+	last_error = ""
+	return true
+
+func replace_slot() -> bool:
+	if not save_slot():
+		return false
+	var backup := backup_path(GameState.slot)
+	if FileAccess.file_exists(backup) and DirAccess.remove_absolute(_global_path(backup)) != OK:
+		push_warning("No se pudo retirar la copia anterior de la ranura " + str(GameState.slot))
+		last_error = "OLD_BACKUP_REMAINS"
+	return true
+
+func delete_slot(chosen_slot: int) -> bool:
+	if chosen_slot < 1 or chosen_slot > 3:
+		last_error = "INVALID_SLOT"
+		return false
+	for path in [slot_path(chosen_slot), backup_path(chosen_slot), slot_path(chosen_slot) + ".tmp"]:
+		if FileAccess.file_exists(path) and DirAccess.remove_absolute(_global_path(path)) != OK:
+			last_error = "DELETE_FAILED"
+			return false
+	if recovered_slot == chosen_slot:
+		recovered_slot = -1
 	last_error = ""
 	return true
 
