@@ -89,6 +89,8 @@ func _run() -> void:
 	bad_audio.effects_volume = 30
 	_check(not GameState.restore(bad_audio) and GameState.snapshot() == saved, "nivel de audio inválido rechazado sin alterar partida")
 	_check(ResourceLoader.exists("res://assets/audio/explore_loop.wav") and ResourceLoader.exists("res://assets/audio/ability.wav"), "audio provisional importado")
+	for portrait_name in ["sofi", "mateo", "bruno", "camila", "sebas"]:
+		_check(load("res://assets/portraits/%s_neutral.png" % portrait_name) is Texture2D, "retrato %s importado" % portrait_name)
 	var bad_modal := saved.duplicate(true)
 	bad_modal.ui_modal = "class"
 	_check(not GameState.restore(bad_modal) and GameState.snapshot() == saved, "panel incompatible con fase rechazado sin alterar partida")
@@ -307,6 +309,8 @@ func _run() -> void:
 	main._show_menu()
 	main._start_slot(1)
 	_check(main.modal_kind == "dialogue" and main.dialogue_key == "wakeup", "partida nueva inicia diálogo de despertar")
+	var dialogue_body: VBoxContainer = main.modal_box.get_child(1).get_child(0)
+	_check(dialogue_body.get_child(0).has_node("PortraitFrame/Portrait"), "diálogo D0 muestra retrato de Sofi")
 	main._show_pause()
 	await main._cycle_text_size()
 	_check(GameState.text_size == "large" and main.modal_kind == "pause", "tamaño de texto grande se guarda desde pausa")

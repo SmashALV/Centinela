@@ -11,6 +11,14 @@ from scripts import release
 
 
 class ReleaseTests(unittest.TestCase):
+    def test_portraits_are_tracked_as_export_inputs(self):
+        expected = {f"assets/portraits/{name}_neutral.png{suffix}" for name in
+                    ("sofi", "mateo", "bruno", "camila", "sebas")
+                    for suffix in ("", ".import")}
+        self.assertTrue(expected.issubset(release.source_hashes()))
+        inputs = {path.relative_to(release.ROOT).as_posix() for path in release.export_inputs()}
+        self.assertTrue(expected.issubset(inputs))
+
     def test_stale_web_export_is_rejected(self):
         with tempfile.TemporaryDirectory(dir=release.ROOT / "build") as temporary:
             newer = Path(temporary) / "changed.gd"

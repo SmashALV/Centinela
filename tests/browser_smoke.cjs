@@ -75,6 +75,7 @@ async function main() {
     const initialDialogue = await waitForStore("save_snapshots", 1,
       (record) => record?.snapshot?.dialogue_key === "wakeup");
     await page.waitForTimeout(300);
+    await page.screenshot({ path: "build/web/dialogue_portrait.png" });
     let saved = null;
     for (let attempt = 0; attempt < 3 && !saved; attempt++) {
       await page.keyboard.press("Enter");

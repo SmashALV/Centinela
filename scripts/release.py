@@ -107,7 +107,8 @@ def source_hashes() -> dict[str, str]:
     paths += sorted((ROOT / "supabase/migrations").glob("*.sql"))
     paths += sorted((ROOT / "supabase/functions").rglob("*.ts"))
     paths += sorted((ROOT / "data/narrative").glob("*.json"))
-    paths += sorted((ROOT / "assets/audio").glob("*.wav"))
+    paths += sorted((ROOT / "assets/audio").glob("*.wav*"))
+    paths += sorted((ROOT / "assets/portraits").glob("*.png*"))
     paths.append(ROOT / "icon.svg")
     return {path.relative_to(ROOT).as_posix(): sha256(path) for path in paths}
 
@@ -118,7 +119,8 @@ def export_inputs() -> list[Path]:
                             ("data/narrative", "*.json"), ("web", "*.js")):
         paths += list((ROOT / folder).rglob(pattern))
     paths.append(ROOT / "web/backend_config.json")
-    paths += list((ROOT / "assets/audio").glob("*.wav"))
+    paths += list((ROOT / "assets/audio").glob("*.wav*"))
+    paths += list((ROOT / "assets/portraits").glob("*.png*"))
     return paths
 
 

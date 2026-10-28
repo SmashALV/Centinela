@@ -5,6 +5,13 @@ const NarrativeScript = preload("res://scripts/narrative/NarrativeManager.gd")
 const PreviewCatalogScript = preload("res://scripts/narrative/RecoveredPreviewCatalog.gd")
 const DisplayGuardScript = preload("res://scripts/DisplayGuard.gd")
 const DAY_0_PREVIEW := "res://data/narrative/day_0_RECOVERED_PREVIEW.json"
+const PORTRAITS := {
+	"Sofi": "res://assets/portraits/sofi_neutral.png",
+	"Mateo": "res://assets/portraits/mateo_neutral.png",
+	"Bruno": "res://assets/portraits/bruno_neutral.png",
+	"Camila": "res://assets/portraits/camila_neutral.png",
+	"Sebas": "res://assets/portraits/sebas_neutral.png"
+}
 
 var world: Node2D
 var canvas: CanvasLayer
@@ -675,12 +682,9 @@ func _render_dialogue(preserve_reveal: bool = false) -> void:
 		dialogue_visible = 0.0
 	_modal_text("TEXTO RECUPERADO · VISTA PREVIA", 16)
 	var body := _preview_content()
-	if not str(node.get("speaker", "")).is_empty():
-		_preview_text(body, str(node.speaker), 21)
 	var message: String = str(node.get("text", ""))
-	dialogue_text_label = null
-	if not message.is_empty():
-		dialogue_text_label = _preview_text(body, message, 18)
+	dialogue_text_label = _dialogue_line(body, str(node.get("speaker", "")), message)
+	if is_instance_valid(dialogue_text_label):
 		dialogue_text_label.visible_characters = int(dialogue_visible)
 	var revealing: bool = dialogue_visible < message.length()
 	var choices: Array = node.get("choices", [])
@@ -698,6 +702,41 @@ func _render_dialogue(preserve_reveal: bool = false) -> void:
 	else:
 		_preview_button(body, "Continuar", _complete_dialogue).grab_focus()
 	_preview_button(body, "Historial de esta conversación", _render_dialogue_history)
+
+func _dialogue_line(parent: VBoxContainer, speaker: String, message: String) -> Label:
+	var path: String = PORTRAITS.get(speaker, "")
+	var portrait: Texture2D = load(path) as Texture2D if not path.is_empty() else null
+	var text_parent: VBoxContainer = parent
+	var width := 545
+	if portrait != null:
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 12)
+		parent.add_child(row)
+		var frame := PanelContainer.new()
+		frame.name = "PortraitFrame"
+		frame.custom_minimum_size = Vector2(112, 112)
+		var frame_style := StyleBoxFlat.new()
+		frame_style.bg_color = Color("263550")
+		frame_style.border_color = Color("78bdbb")
+		frame_style.set_border_width_all(1)
+		frame.add_theme_stylebox_override("panel", frame_style)
+		row.add_child(frame)
+		var picture := TextureRect.new()
+		picture.name = "Portrait"
+		picture.texture = portrait
+		picture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		picture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		picture.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+		picture.custom_minimum_size = Vector2(110, 110)
+		picture.tooltip_text = "Retrato provisional de " + speaker
+		frame.add_child(picture)
+		text_parent = VBoxContainer.new()
+		text_parent.custom_minimum_size.x = 420
+		row.add_child(text_parent)
+		width = 420
+	if not speaker.is_empty():
+		_preview_text(text_parent, speaker, 21, width)
+	return _preview_text(text_parent, message, 18, width) if not message.is_empty() else null
 
 func _reveal_dialogue() -> void:
 	dialogue_visible = float(str(dialogue_story.current_node().get("text", "")).length())
