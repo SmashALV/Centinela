@@ -156,7 +156,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			_show_pause()
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("ui_cancel"):
-		if ["phone", "objective", "pause", "class", "dialogue_history", "choice_confirm"].has(modal_kind):
+		if ["phone", "objective", "pause", "class", "desktop", "dialogue_history", "choice_confirm"].has(modal_kind):
 			if modal_kind == "pause":
 				_resume_pause()
 			elif modal_kind == "dialogue_history":
@@ -270,7 +270,7 @@ func _clear_modal() -> void:
 	world.enabled = false
 
 func _close_modal() -> void:
-	if modal_kind in ["phone", "objective", "class"] and not GameState.ui_modal.is_empty():
+	if modal_kind in ["phone", "objective", "class", "desktop"] and not GameState.ui_modal.is_empty():
 		if save_in_progress:
 			return
 		save_in_progress = true
@@ -430,6 +430,7 @@ func _start_slot(chosen: int) -> void:
 			"phone": _render_phone()
 			"objective": _render_objective()
 			"class": _render_class()
+			"desktop": _render_desktop()
 	elif GameState.phase == "bedroom" and not GameState.flags.get("prologue_seen", false) and not GameState.flags.get("wakeup_seen", false):
 		_render_prologue()
 	elif GameState.phase == "bedroom" and not GameState.flags.get("wakeup_seen", false):
@@ -517,10 +518,7 @@ func _on_interacted(target: String) -> void:
 					_toast("Primero acércate al grupo")
 		"computer":
 			if target == "pc":
-				if GameState.flags.get("d0_chat_done", false):
-					_show_class()
-				else:
-					_show_dialogue("group_chat")
+				_show_desktop()
 
 func _transition(next_phase: String, position: Vector2) -> void:
 	var old_phase: String = GameState.phase
@@ -728,6 +726,7 @@ func _resume_pause() -> void:
 		"phone": _render_phone()
 		"objective": _render_objective()
 		"class": _render_class()
+		"desktop": _render_desktop()
 		"dialogue": _render_dialogue(true)
 		"dialogue_history": _render_dialogue_history()
 		"choice_confirm": _render_choice_confirm()
@@ -794,6 +793,31 @@ func _advance_prologue() -> void:
 		save_in_progress = false
 		_toast("No se pudo guardar el prólogo; reintenta")
 
+func _show_desktop() -> void:
+	await _open_ui_modal("desktop", Callable(self, "_render_desktop"))
+
+func _render_desktop() -> void:
+	modal_kind = "desktop"
+	_clear_modal()
+	_modal_heading("ESCRITORIO · PC DE SOFI", "controls")
+	_modal_text("Mensajes y juego del grupo", 18)
+	var chat_done: bool = GameState.flags.get("d0_chat_done", false)
+	var chat_button := _button("Ver chat guardado" if chat_done else "Abrir chat del grupo", _open_desktop_chat, "phone")
+	var play_button := _button("Elegir clase e iniciar partida", _show_class, "ability")
+	play_button.disabled = not chat_done
+	if chat_done:
+		play_button.grab_focus()
+	else:
+		chat_button.grab_focus()
+		_modal_text("Primero conversa con el grupo para preparar la partida.", 15)
+	_button("Cerrar escritorio", _close_modal)
+
+func _open_desktop_chat() -> void:
+	if GameState.flags.get("d0_chat_done", false):
+		_show_phone()
+	else:
+		_show_dialogue("group_chat")
+
 func _show_class() -> void:
 	await _open_ui_modal("class", Callable(self, "_render_class"))
 
@@ -807,7 +831,7 @@ func _render_class() -> void:
 		class_button.custom_minimum_size.y = 54
 		if hero_class == "Atacante":
 			class_button.grab_focus()
-	_button("Volver", _close_modal)
+	_button("Volver al escritorio", _show_desktop)
 
 func _show_dialogue(key: String) -> void:
 	if save_in_progress:
@@ -822,6 +846,7 @@ func _show_dialogue(key: String) -> void:
 	GameState.dialogue_position = dialogue_story.position
 	GameState.dialogue_choice = ""
 	GameState.dialogue_history = []
+	GameState.ui_modal = ""
 	if await SaveManager.save_slot_async():
 		dialogue_key = key
 		dialogue_choice = ""
@@ -1076,7 +1101,7 @@ func _complete_dialogue() -> void:
 	var finished_key := dialogue_key
 	dialogue_key = ""
 	if finished_key == "group_chat":
-		_show_class()
+		_show_desktop()
 	else:
 		_close_modal()
 

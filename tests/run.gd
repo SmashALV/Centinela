@@ -220,6 +220,9 @@ func _run() -> void:
 	var bad_modal := saved.duplicate(true)
 	bad_modal.ui_modal = "class"
 	_check(not GameState.restore(bad_modal) and GameState.snapshot() == saved, "panel incompatible con fase rechazado sin alterar partida")
+	var bad_desktop := saved.duplicate(true)
+	bad_desktop.ui_modal = "desktop"
+	_check(not GameState.restore(bad_desktop) and GameState.snapshot() == saved, "escritorio fuera de computadora rechazado")
 	var bad_hint := saved.duplicate(true)
 	bad_hint.hint_level = 3
 	_check(not GameState.restore(bad_hint) and GameState.snapshot() == saved, "nivel de pista inválido rechazado")
@@ -565,6 +568,19 @@ func _run() -> void:
 	_check(GameState.flags.get("friends", false), "presentación del grupo guardada")
 	main._transition("computer", Vector2(384, 320))
 	main._on_interacted("pc")
+	_check(main.modal_kind == "desktop" and GameState.ui_modal == "desktop" and main.modal_box.get_child(3).disabled, "PC abre escritorio con juego bloqueado antes del chat")
+	main._show_menu()
+	main._start_slot(1)
+	_check(main.modal_kind == "desktop" and GameState.ui_modal == "desktop", "escritorio se reabre desde guardado")
+	main._open_desktop_chat()
+	_check(main.modal_kind == "dialogue" and GameState.ui_modal.is_empty(), "chat se abre desde escritorio sin guardar dos paneles")
+	var chat_before_shortcuts := GameState.snapshot()
+	for shortcut in [KEY_F, KEY_E]:
+		var shortcut_event := InputEventKey.new()
+		shortcut_event.keycode = shortcut
+		shortcut_event.pressed = true
+		main._unhandled_input(shortcut_event)
+	_check(main.modal_kind == "dialogue" and GameState.snapshot() == chat_before_shortcuts, "F y E no interrumpen el diálogo ni modifican el guardado")
 	while main.dialogue_story.current_node().get("next", null) != null:
 		main._advance_dialogue()
 	_check(main.dialogue_story.current_node().get("choices", []).size() == 3, "chat muestra tres opciones recuperadas")
@@ -583,7 +599,9 @@ func _run() -> void:
 	main._start_slot(1)
 	_check(main.modal_kind == "dialogue" and main.dialogue_choice == "D0_05_A_OPT_B", "recarga conserva opción del chat antes de completar")
 	main._complete_dialogue()
-	_check(main.modal_kind == "class" and GameState.flags.get("d0_chat_choice", "") == "D0_05_A_OPT_B", "elección provisional habilita clase")
+	_check(main.modal_kind == "desktop" and not main.modal_box.get_child(3).disabled and GameState.flags.get("d0_chat_choice", "") == "D0_05_A_OPT_B", "chat terminado habilita juego en escritorio")
+	main._show_class()
+	_check(main.modal_kind == "class", "juego del escritorio abre selección de clase")
 	main._show_menu()
 	main._start_slot(1)
 	_check(main.modal_kind == "class" and GameState.ui_modal == "class", "recarga reabre selección de clase")

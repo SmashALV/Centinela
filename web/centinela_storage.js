@@ -169,9 +169,9 @@
     const hint = snapshot.hint_level ?? 0;
     const size = snapshot.text_size ?? "normal";
     const speed = snapshot.dialogue_speed ?? "normal";
-    if (!["", "phone", "objective", "class"].includes(uiModal) ||
+    if (!["", "phone", "objective", "class", "desktop"].includes(uiModal) ||
         (dialogue && uiModal) ||
-        (uiModal === "class" && snapshot.phase !== "computer") ||
+        (["class", "desktop"].includes(uiModal) && snapshot.phase !== "computer") ||
         (["phone", "objective"].includes(uiModal) &&
           !["bedroom", "courtyard", "computer"].includes(snapshot.phase) && !flags.draft_exploring) ||
         !Number.isInteger(hint) || hint < 0 || hint > 2 ||

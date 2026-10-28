@@ -410,6 +410,17 @@ async function main() {
     };
     await showExplorationPhase("bedroom", [384, 280], { wakeup_seen: true }, "bedroom_objects.png");
     await showExplorationPhase("computer", [384, 320], { wakeup_seen: true, alarm: true, backpack: true, friends: true }, "computer_object.png");
+    await showExplorationPhase("computer", [382, 225], { wakeup_seen: true, alarm: true, backpack: true, friends: true }, "computer_near_pc.png");
+    await page.keyboard.press("f");
+    await waitForStore("save_snapshots", 1, (record) => record?.snapshot?.ui_modal === "desktop");
+    await page.screenshot({ path: "build/web/computer_desktop_locked.png" });
+    await page.reload();
+    await page.waitForFunction(() => !!globalThis.CentinelaStorage);
+    await page.waitForTimeout(1000);
+    await page.mouse.click(canvas.x + canvas.width * 0.5, canvas.y + canvas.height * 0.41);
+    await page.waitForTimeout(800);
+    assert.equal((await readStore("save_snapshots", 1)).snapshot.ui_modal, "desktop");
+    await page.screenshot({ path: "build/web/computer_desktop_restored.png" });
     await showExplorationPhase("computer", [384, 320], { wakeup_seen: true, alarm: true, backpack: true, friends: true }, "class_selection.png", "", 0, "class");
     await showExplorationPhase("moba", [384, 320], { wakeup_seen: true, alarm: true, backpack: true, friends: true }, "moba_teams.png", "Defensor", 3500);
     assert.equal((await readStore("save_snapshots", 1)).snapshot.phase, "moba");

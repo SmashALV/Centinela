@@ -59,6 +59,10 @@ test("ranuras, bloqueo, transacción de decisión e idempotencia", async () => {
   const committed = await send(first, "save_snapshot", firstWrite, "TEST_ONLY_save_1");
   assert.equal(committed.success, true);
   assert.equal((await send(first, "load_slot", { slot: 1 })).result.phase, "bedroom");
+  const desktop = { ...snapshot(1, "computer"), ui_modal: "desktop" };
+  assert.equal((await send(first, "save_snapshot", { slot: 1, generation: 1, snapshot: desktop })).success, true);
+  assert.equal((await send(first, "load_slot", { slot: 1 })).result.ui_modal, "desktop");
+  assert.equal((await send(first, "save_snapshot", firstWrite)).success, true);
   for (const malformed of [
     { ...snapshot(1), code: "CTN-+12345" },
     { ...snapshot(1), player_position: [Infinity, 2] },
@@ -72,6 +76,7 @@ test("ranuras, bloqueo, transacción de decisión e idempotencia", async () => {
     { ...snapshot(1), preview_step: 1.5 },
     { ...snapshot(1), dialogue_key: "wakeup", dialogue_position: 8 },
     { ...snapshot(1), ui_modal: "class" },
+    { ...snapshot(1), ui_modal: "desktop" },
     { ...snapshot(1), text_size: "enorme" },
     { ...snapshot(1), music_volume: 30 }
   ]) {

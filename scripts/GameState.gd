@@ -156,14 +156,14 @@ func restore(data: Dictionary) -> bool:
 			last_visited = int(visited)
 	if not active_choice.is_empty() and active_choice not in ["D0_05_A_OPT_A", "D0_05_A_OPT_B", "D0_05_A_OPT_C"]:
 		return false
-	if typeof(saved_modal) != TYPE_STRING or saved_modal not in ["", "phone", "objective", "class"] or \
+	if typeof(saved_modal) != TYPE_STRING or saved_modal not in ["", "phone", "objective", "class", "desktop"] or \
 		typeof(saved_hint) not in [TYPE_FLOAT, TYPE_INT] or int(saved_hint) < 0 or int(saved_hint) > 2 or float(saved_hint) != float(int(saved_hint)):
 		return false
 	for level in [saved_music, saved_effects]:
 		if typeof(level) not in [TYPE_INT, TYPE_FLOAT] or int(level) not in [0, 25, 50, 75, 100] or float(level) != float(int(level)):
 			return false
 	if (not active_dialogue.is_empty() and not saved_modal.is_empty()) or \
-		(saved_modal == "class" and data.get("phase") != "computer") or \
+		(saved_modal in ["class", "desktop"] and data.get("phase") != "computer") or \
 		(saved_modal in ["phone", "objective"] and data.get("phase") not in ["bedroom", "courtyard", "computer"] and not data.flags.get("draft_exploring", false)):
 		return false
 	if (active_dialogue == "wakeup" and data.get("phase") != "bedroom") or \
