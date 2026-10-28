@@ -230,6 +230,17 @@ func _run() -> void:
 		_finish_tests()
 		return
 	_check(arena.heroes.size() == 10, "MOBA 5v5")
+	_check(arena.LIMIT == 60.0 and arena.timer_hud.text == "60s", "MOBA presenta un minuto desde la cuenta atrás")
+	var timer_probe: Node2D = Arena.instantiate()
+	get_tree().root.add_child(timer_probe)
+	timer_probe.countdown = 0.0
+	timer_probe.elapsed = 29.9
+	timer_probe._process(0.1)
+	_check(timer_probe.timer_hud.text == "30s" and timer_probe.notice.text == "Últimos 30 segundos", "aviso del último medio minuto")
+	timer_probe.elapsed = 49.9
+	timer_probe._process(0.1)
+	_check(timer_probe.timer_hud.text == "10s" and timer_probe.notice.text == "Últimos 10 segundos", "aviso de los últimos diez segundos")
+	timer_probe.queue_free()
 	var ally_accents := {}
 	for hero_index in 5:
 		ally_accents[arena.ALLY_ACCENTS[arena.heroes[hero_index].name]] = true
@@ -374,6 +385,33 @@ func _run() -> void:
 	_check(not geometry._has_line_of_sight(Vector2(500, 320), Vector2(650, 320)), "obstáculo bloquea visión")
 	var route: PackedVector2Array = geometry.navigation.get_point_path(Vector2i(15, 10), Vector2i(20, 10))
 	_check(route.size() > 2, "IA encuentra ruta alrededor del obstáculo")
+	var wall_approach_left: Dictionary = geometry._hero("Prueba izquierda", 0, Vector2(526, 320))
+	var wall_approach_right: Dictionary = geometry._hero("Prueba derecha", 1, Vector2(626, 320))
+	for navigation_step in 120:
+		geometry.elapsed += 0.1
+		wall_approach_left = geometry._move_ai(wall_approach_left, Vector2(700, 320), 0.1)
+		wall_approach_right = geometry._move_ai(wall_approach_right, Vector2(450, 320), 0.1)
+	_check(wall_approach_left.pos.x > 620.0 and wall_approach_right.pos.x < 532.0, "IA rodea muro desde ambos lados sin atascarse")
+	var moving_goal_runner: Dictionary = geometry._hero("Prueba persecución", 0, Vector2(526, 320))
+	for navigation_step in 120:
+		geometry.elapsed += 0.1
+		moving_goal_runner = geometry._move_ai(moving_goal_runner, Vector2(700, 320 + 32 * sin(navigation_step * 0.1)), 0.1)
+	_check(moving_goal_runner.pos.x > 620.0, "IA rodea muro al perseguir objetivo móvil")
+	var lane_runner: Dictionary = geometry._hero("Prueba carril", 0, Vector2(160, 224))
+	for navigation_step in 200:
+		geometry.elapsed += 0.1
+		lane_runner = geometry._move_ai(lane_runner, Vector2(852, 320), 0.1)
+	_check(lane_runner.pos.x > 740.0, "IA avanza por el carril hasta torre rival")
+	var retreat_runner: Dictionary = geometry._hero("Prueba retirada", 0, Vector2(212.3911, 294.9304))
+	for navigation_step in 40:
+		geometry.elapsed += 0.1
+		retreat_runner = geometry._move_ai(retreat_runner, Vector2(120, 320), 0.1)
+	_check(retreat_runner.pos.x < 160.0, "IA alcanza zona segura al retirarse")
+	geometry.heroes[0].hp = 20.0
+	geometry.heroes[0].pos = Vector2(212.3911, 294.9304)
+	geometry.elapsed = 0.0
+	geometry._update_heroes(0.1)
+	_check(geometry.heroes[0].retreating and geometry.heroes[0].pos.x < 212.3911, "héroe herido se mueve hacia zona segura")
 	geometry.heroes[5].pos = Vector2(650, 320)
 	geometry.shots.append(geometry._shot(Vector2(500, 320), Vector2.RIGHT, 0, 12.0, 384.0, 192.0, false, false))
 	geometry._update_shots(0.5)
@@ -390,27 +428,31 @@ func _run() -> void:
 	get_tree().root.add_child(simulation)
 	simulation.countdown = 0.0
 	var furthest_ally_x := 0.0
+	var furthest_rival_x := INF
 	for step in 400:
 		if simulation.ended:
 			break
 		simulation._process(0.1)
 		for ally_index in [0, 1, 3, 4]:
 			furthest_ally_x = maxf(furthest_ally_x, simulation.heroes[ally_index].pos.x)
+		for rival_index in range(5, 10):
+			furthest_rival_x = minf(furthest_rival_x, simulation.heroes[rival_index].pos.x)
 	_check(furthest_ally_x > 620.0, "IA aliada cruza el obstáculo en simulación de 40 s")
+	_check(furthest_rival_x < 532.0, "IA rival cruza el obstáculo en simulación de 40 s")
 	simulation.queue_free()
 	GameState.phase = "moba"
 	GameState.moba_class = "Atacante"
 	var full_match: Node2D = Arena.instantiate()
 	get_tree().root.add_child(full_match)
 	full_match.countdown = 0.0
-	for step in 1800:
+	for step in 600:
 		if full_match.ended:
 			break
 		full_match._process(0.1)
-	print("MOBA 180 s: resultado=", GameState.moba_result, " tiempo=", full_match.elapsed,
+	print("MOBA 60 s: resultado=", GameState.moba_result, " tiempo=", full_match.elapsed,
 		" daño_estructural=", full_match.effective_damage,
 		" HP_bases=", [full_match.buildings[2].hp, full_match.buildings[5].hp])
-	_check(full_match.ended and full_match.elapsed <= 180.1, "MOBA finaliza a más tardar a los 180 s")
+	_check(full_match.ended and full_match.elapsed <= 60.1, "MOBA finaliza a más tardar a los 60 s")
 	_check(full_match.effective_damage[0] + full_match.effective_damage[1] > 0.0, "MOBA registra daño estructural real")
 	_check(full_match.result_panel.visible and full_match.result_panel.get_node("Content/Title").text.begins_with("Resultado: "), "resultado visible al finalizar MOBA")
 	full_match.queue_free()

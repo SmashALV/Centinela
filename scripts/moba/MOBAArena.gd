@@ -3,7 +3,7 @@ extends Node2D
 const DisplayGuardScript = preload("res://scripts/DisplayGuard.gd")
 
 const ARENA := Vector2(1152, 640)
-const LIMIT := 180.0
+const LIMIT := 60.0
 const HERO_SPEED := 96.0
 const COLORS := [Color("74c9c2"), Color("dc827d")]
 const ALLY_ACCENTS := {
@@ -103,6 +103,7 @@ func _ready() -> void:
 	hud_panel.add_child(hud_row)
 	hud = _hud_chip(hud_row, HUD_ICONS.get(GameState.moba_class, HUD_ICONS["Atacante"]))
 	timer_hud = _hud_chip(hud_row, HUD_ICONS["timer"])
+	timer_hud.text = "%ds" % int(LIMIT)
 	health_hud = _hud_chip(hud_row, HUD_ICONS["health"])
 	ability_hud = _hud_chip(hud_row, HUD_ICONS["ability"])
 	var objective_icon := TextureRect.new()
@@ -260,15 +261,17 @@ func _build_navigation() -> void:
 	navigation = AStarGrid2D.new()
 	navigation.region = Rect2i(Vector2i.ZERO, MAP_CELLS)
 	navigation.cell_size = Vector2(TILE_SIZE, TILE_SIZE)
+	navigation.offset = Vector2(TILE_SIZE * 0.5, TILE_SIZE * 0.5)
 	navigation.diagonal_mode = AStarGrid2D.DIAGONAL_MODE_ONLY_IF_NO_OBSTACLES
 	navigation.update()
 	for obstacle in STATIC_OBSTACLES:
 		_mark_solid_cells(obstacle)
 
 func _mark_solid_cells(cells: Rect2i) -> void:
-	# Los héroes tienen radio 13 px: la navegación necesita una casilla de margen.
-	for x in range(maxi(0, cells.position.x - 1), mini(MAP_CELLS.x, cells.end.x + 1)):
-		for y in range(maxi(0, cells.position.y - 1), mini(MAP_CELLS.y, cells.end.y + 1)):
+	# El centro de la casilla vecina queda a 16 px del muro, más que el radio de 13 px.
+	# Marcarla también como sólida deja a la IA en una celda inválida antes de chocar.
+	for x in range(maxi(0, cells.position.x), mini(MAP_CELLS.x, cells.end.x)):
+		for y in range(maxi(0, cells.position.y), mini(MAP_CELLS.y, cells.end.y)):
 			navigation.set_point_solid(Vector2i(x, y), true)
 
 func _ruin_cells(building: Dictionary) -> Rect2i:
@@ -433,7 +436,7 @@ func _move_ai(hero: Dictionary, goal: Vector2, delta: float) -> Dictionary:
 			hero.nav_index += 1
 		waypoint = hero.nav_path[hero.nav_index]
 	var speed := HERO_SPEED * (1.25 if hero.buff_until > elapsed else 1.0)
-	var motion: Vector2 = hero.pos.direction_to(waypoint) * speed * delta
+	var motion: Vector2 = hero.pos.direction_to(waypoint) * minf(speed * delta, hero.pos.distance_to(waypoint))
 	if motion.length_squared() > 0.0:
 		hero.facing = _facing_from_motion(motion)
 	hero.pos = _sweep_move(hero.pos, motion)
@@ -484,7 +487,8 @@ func _update_heroes(delta: float) -> void:
 			goal = _next_enemy_building(hero.side).pos
 			if target >= 0 and hero.pos.distance_to(heroes[target].pos) < 192:
 				goal = heroes[target].pos
-		if hero.pos.distance_to(goal) > 100 or not _has_line_of_sight(hero.pos, goal):
+		var stop_distance := 20.0 if hero.retreating else 100.0
+		if hero.pos.distance_to(goal) > stop_distance or not _has_line_of_sight(hero.pos, goal):
 			hero = _move_ai(hero, goal, delta)
 		hero.attack_cd -= delta
 		hero.q_cd = maxf(0.0, hero.q_cd - delta)

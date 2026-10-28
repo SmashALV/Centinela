@@ -19,7 +19,7 @@
 
 **Público:** adolescentes de 13–16 años en un contexto académico supervisado; uso principal en PC con teclado y ratón; no se orienta al consumo abierto sin supervisión como objetivo de investigación, aunque la URL ordinaria del juego no exige credenciales de estudiante.
 
-**Duración objetivo:** 20–30 minutos de relato completo; partida MOBA de máximo 180 segundos. El tiempo de interacción real puede variar según lectura, pausas y exploración.
+**Duración objetivo:** 20–30 minutos de relato completo; partida MOBA de máximo 60 segundos, según la actualización solicitada el 28/10/2026. El tiempo de interacción real puede variar según lectura, pausas y exploración.
 
 **Objetivo pedagógico:** apoyar el reconocimiento temprano de conductas de grooming y el ejercicio de respuestas de protección. **No constituye una herramienta diagnóstica**, no identifica agresores reales, no analiza comunicaciones privadas auténticas y no sustituye el apoyo de profesionales o adultos de confianza.
 
@@ -121,7 +121,7 @@ Variables narrativas conocidas: `CONFIANZA_MATEO_SOFI`, `RECONOCE_MANIPULACION` 
 | Tipo | Una única línea horizontal central, sin jungla ni tres líneas. |
 | Arena | 36×20 casillas de 32 px = 1152×640 px lógicos. |
 | Cámara | Vista 24×14 casillas = 768×448 px lógicos, seguimiento suave de Sofi. |
-| Duración máxima | 180 segundos por partida. |
+| Duración máxima | 60 segundos por partida. |
 | Equipos | 5 héroes aliados / 5 enemigos controlados por IA, salvo Sofi. |
 | Aliados | Mateo, Bruno, Sofi, Camila y Sebas, desplegados verticalmente con Sofi centrada. |
 | Enemigos | 3 atacantes, 1 defensor y 1 soporte. |
@@ -171,7 +171,7 @@ Si Sofi muere, la cámara sigue al compañero vivo más cercano, pudiendo cambia
 | Torre interior | 240 | Igual que exterior; sin regeneración. |
 | Base | 400 | No ataca; regenera 4 HP/s tras 5 s sin daño efectivo. |
 
-Los proyectiles de torres son dirigidos al héroe enemigo visible más cercano, viajan a 12 tiles/s y pueden impactar obstáculos o ruinas. El orden de vulnerabilidad es **torre exterior → interior → base**; ataques contra estructuras aún bloqueadas no cuentan como daño efectivo. La victoria inmediata se produce al destruir la base enemiga; la derrota si cae la propia. Tras 180 s sin destrucción de base, se comparan primero torres enemigas destruidas y luego daño estructural acumulado **efectivo** (incluido daño luego regenerado por base); igualdad de ambos criterios: empate. El resultado del MOBA se registra descriptivamente y no aumenta ni reduce la puntuación educativa de grooming.
+Los proyectiles de torres son dirigidos al héroe enemigo visible más cercano, viajan a 12 tiles/s y pueden impactar obstáculos o ruinas. El orden de vulnerabilidad es **torre exterior → interior → base**; ataques contra estructuras aún bloqueadas no cuentan como daño efectivo. La victoria inmediata se produce al destruir la base enemiga; la derrota si cae la propia. Tras 60 s sin destrucción de base, se comparan primero torres enemigas destruidas y luego daño estructural acumulado **efectivo** (incluido daño luego regenerado por base); igualdad de ambos criterios: empate. El resultado del MOBA se registra descriptivamente y no aumenta ni reduce la puntuación educativa de grooming.
 
 **Interrupción:** si el navegador se cierra a mitad de partida, al continuar se mantiene la clase elegida pero se reinicia íntegramente el estado del combate tras un nuevo 3–2–1; no se restauran posiciones, HP o cronómetro a mitad de MOBA. Solo se registra resultado final al terminar; intentos reiniciados no deben confundirse con resultado completado.
 
@@ -317,7 +317,7 @@ Tres entornos independientes **development**, **staging**, **production** con pr
 | QA-01 | Completar al menos una ruta del Día 0 al 4 y alcanzar F01/F02/F03 de forma coherente. |
 | QA-02 | Todas las decisiones educativas evaluables y alternativas están cubiertas por pruebas definidas. |
 | QA-03 | El validador JSON bloquea destinos inexistentes, variables desconocidas, decisiones duplicadas y migraciones inconsistentes. |
-| QA-04 | Duración MOBA ≤180 s; tiempos de CD, daño, curación, torres y condiciones de victoria se corresponden con el GDD. |
+| QA-04 | Duración MOBA ≤60 s; tiempos de CD, daño, curación, torres y condiciones de victoria se corresponden con el GDD. |
 | QA-05 | Pausa P/Esc, pérdida de foco, tamaño mínimo, menús superpuestos y texto ajustable sin saltar escenas. |
 | QA-06 | Después de guardado+reinicio, el snapshot y las variables equivalen al estado anterior; MOBA reinicia con clase retenida. |
 | QA-07 | Fallo en transacción IndexedDB impide avanzar y no genera evento parcial. |

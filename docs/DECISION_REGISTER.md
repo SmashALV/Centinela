@@ -46,3 +46,7 @@ El contenido exacto individual de GAME-001 a GAME-212 no se recuperó en forma l
 | GAME-250 | C | desarrollo híbrido |
 
 **Regla de precedencia:** acuerdos más recientes corrigen las iteraciones anteriores y no implican reiniciar diseño. Cualquier cambio posterior se formaliza como incidencia o ADR de implementación, no como GAME-251.
+
+## Actualización P2 · 28/10/2026
+
+Por solicitud directa del usuario, el límite de la partida MOBA pasa de 180 a **60 segundos**. Se conservan la cuenta atrás de 3 segundos, los avisos de últimos 30 y 10 segundos y el desempate por estructuras y daño efectivo. La navegación IA usa el centro de cada casilla y evita marcar como sólidas las casillas libres contiguas al muro. Los héroes heridos avanzan hasta su zona segura antes de esperar la recuperación.

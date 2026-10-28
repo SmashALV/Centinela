@@ -84,13 +84,13 @@ centinela-2/
 
 **Prompt Codex P1:**
 
-> Construye un vertical slice de Día 0 sobre P0. Implementa escenas y UI reutilizables, interacción obligatoria de habitación, patio, computador, selección de clase y combate MOBA inicial de hasta 180 s. Introduce guardado local con IndexedDB y WebBridge; no implementes el combate fuera de sus parámetros aprobados ni inventes diálogos ausentes. Prueba en exportación web, documenta qué assets son temporales y registra evidencias de DoD.
+> Construye un vertical slice de Día 0 sobre P0. Implementa escenas y UI reutilizables, interacción obligatoria de habitación, patio, computador, selección de clase y combate MOBA inicial de hasta 60 s (actualización del 28/10/2026). Introduce guardado local con IndexedDB y WebBridge; no implementes el combate fuera de sus parámetros aprobados ni inventes diálogos ausentes. Prueba en exportación web, documenta qué assets son temporales y registra evidencias de DoD.
 
 ## 5. Fase P2 — MOBA completo con IA y pruebas de reglas
 
 **Objetivo:** reemplazar el combate inicial por las reglas oficiales del GDD.
 
-**Entregables:** arena 36×20, cámara 24×14, colisiones y bloqueos, 5+5 héroes, 3 clases y Q, IA simétrica, regeneración/retirada, towers/base, proyectiles con obstáculos, derrumbe a ruinas, respawn, invulnerabilidad, victoria inmediata o desempate a 180 s, narración/pantalla de resultados y nueve variantes de reacción Camila enlazadas a los textos canónicos.
+**Entregables:** arena 36×20, cámara 24×14, colisiones y bloqueos, 5+5 héroes, 3 clases y Q, IA simétrica, regeneración/retirada, towers/base, proyectiles con obstáculos, derrumbe a ruinas, respawn, invulnerabilidad, victoria inmediata o desempate a 60 s, narración/pantalla de resultados y nueve variantes de reacción Camila enlazadas a los textos canónicos.
 
 **Pruebas:** daño básico 12; rango 6, CD 1; Q archer 24 vs héroes/12 vs estructuras y penetración2; escudos 20/10, 4s; aura 25%, 5s; torres 240HP, 12 cada1.5s, rango7; base400HP y regen; tie-break; cámara ante muerte de Sofi; eventos MOBA resultado único. Test determinista de simulación con seeds y registros, sin afectar métricas educativas.
 
