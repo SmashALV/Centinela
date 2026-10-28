@@ -366,17 +366,33 @@ func _load_phase() -> void:
 	if world_phase == "result":
 		world_phase = "computer"
 	elif world_phase == "preview":
-		world_phase = "courtyard"
+		world_phase = _draft_world_key() if GameState.flags.get("draft_mode", false) else "courtyard"
 	world.configure(world_phase, GameState.player_position)
 	_update_hud()
 	if GameState.phase == "result":
 		_show_result()
 	elif GameState.phase == "preview":
-		_render_preview()
+		if GameState.flags.get("draft_exploring", false):
+			modal_kind = ""
+			modal.visible = false
+			world.enabled = true
+		else:
+			_render_preview()
+
+func _draft_world_key() -> String:
+	match GameState.preview_scene:
+		"D1_02_A": return "draft_d1"
+		"D2_03_A": return "draft_d2"
+		"D3_01_A": return "draft_d3"
+		_: return "draft_d4"
 
 func _update_hud() -> void:
 	if GameState.phase == "preview":
-		hud.text = ("BORRADOR · %s · %s" if GameState.flags.get("draft_mode", false) else "VISTA PREVIA · %s · %s") % [GameState.code, GameState.preview_scene]
+		if GameState.flags.get("draft_exploring", false):
+			var day_number: int = int(GameState.preview_scene.substr(1, 1))
+			hud.text = "DÍA %d · BORRADOR · %s | %s" % [day_number, GameState.code, _objective_text()]
+		else:
+			hud.text = ("BORRADOR · %s · %s" if GameState.flags.get("draft_mode", false) else "VISTA PREVIA · %s · %s") % [GameState.code, GameState.preview_scene]
 		return
 	var place: String = {"bedroom": "HABITACIÓN", "courtyard": "PATIO", "computer": "COMPUTADORA", "result": "RESULTADO"}.get(GameState.phase, GameState.phase.to_upper())
 	hud.text = "DÍA 0  ·  %s  ·  %s  |  %s" % [GameState.code, place, _objective_text()]
@@ -392,11 +408,14 @@ func _objective_text() -> String:
 			return "Ve a la salida"
 		"computer": return "Usa la computadora"
 		"result": return "Continúa la historia D1–D4"
-		"preview": return "Fragmentos recuperados; conectores pendientes"
+		"preview": return "Habla con Mateo" if GameState.flags.get("draft_exploring", false) else "Fragmentos recuperados; conectores pendientes"
 	return ""
 
 func _on_interacted(target: String) -> void:
 	match GameState.phase:
+		"preview":
+			if GameState.flags.get("draft_exploring", false) and target == "mateo":
+				_commit_preview(GameState.preview_scene, 0)
 		"bedroom":
 			if ["alarm", "backpack"].has(target):
 				_commit_flag(target, "Interacción registrada: " + world.target_label(target))
@@ -501,22 +520,18 @@ func _render_phone() -> void:
 	modal_kind = "phone"
 	_clear_modal()
 	_modal_text("CELULAR · chats y contactos", 23)
+	var body := _preview_content()
 	if GameState.phone_messages.is_empty():
-		_modal_text("No hay mensajes guardados. La conversación recuperada del Día 0 aparece al usar la computadora.", 16)
+		_preview_text(body, "No hay mensajes guardados. La conversación recuperada del Día 0 aparece al usar la computadora.", 16)
 	else:
-		_modal_text("Los chicos · texto recuperado, vista previa", 15)
-		var scroll := ScrollContainer.new()
-		scroll.custom_minimum_size = Vector2(460, 170)
-		var lines := VBoxContainer.new()
+		_preview_text(body, "Los chicos · texto recuperado, vista previa", 15)
 		for message in GameState.phone_messages:
-			var line := Label.new()
-			line.text = "%s: %s" % [message.get("speaker", ""), message.get("text", "")]
-			line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-			line.custom_minimum_size.x = 444
-			line.add_theme_font_size_override("font_size", _scaled_text_size(14))
-			lines.add_child(line)
-		scroll.add_child(lines)
-		modal_box.add_child(scroll)
+			_preview_text(body, "%s: %s" % [message.get("speaker", ""), message.get("text", "")], 14)
+	if GameState.flags.get("draft_mode", false):
+		if GameState.preview_choices.has("D2_03_A"):
+			_preview_text(body, "La captura la mostró Mateo en su propio teléfono. No se guardó en el celular de Sofi.", 15)
+		elif GameState.flags.get("draft_exploring", false) and GameState.preview_scene == "D2_03_A":
+			_preview_text(body, "Mateo tiene una captura en su propio teléfono. Acércate a él para verla.", 15)
 	_button("Cerrar", _close_modal)
 
 func _show_objective() -> void:
@@ -537,7 +552,10 @@ func _advance_hint() -> void:
 	var previous: int = GameState.hint_level
 	GameState.hint_level = mini(previous + 1, 2)
 	if await SaveManager.save_slot_async():
-		_toast("Busca el objeto señalado" if GameState.hint_level == 1 else "Acércate al objeto marcado y pulsa F")
+		if GameState.flags.get("draft_exploring", false):
+			_toast("Busca a Mateo en el escenario" if GameState.hint_level == 1 else "Acércate a Mateo y pulsa F")
+		else:
+			_toast("Busca el objeto señalado" if GameState.hint_level == 1 else "Acércate al objeto marcado y pulsa F")
 	else:
 		GameState.hint_level = previous
 		_toast("No se pudo guardar la pista; reintenta")
@@ -966,12 +984,12 @@ func _start_playable_draft() -> bool:
 	GameState.flags.draft_completed = false
 	GameState.flags.draft_ending = ""
 	GameState.preview_choices.clear()
-	if await _commit_preview("D1_02_A", 0):
+	if await _commit_preview("D1_02_A", 0, "", false, true):
 		return true
 	GameState.restore(previous)
 	return false
 
-func _commit_preview(next_scene: String, next_step: int, choice_key: String = "", mark_reviewed: bool = false) -> bool:
+func _commit_preview(next_scene: String, next_step: int, choice_key: String = "", mark_reviewed: bool = false, explore: bool = false) -> bool:
 	if save_in_progress or preview_catalog.scenes.is_empty():
 		return false
 	save_in_progress = true
@@ -980,6 +998,11 @@ func _commit_preview(next_scene: String, next_step: int, choice_key: String = ""
 	GameState.ui_modal = ""
 	GameState.preview_scene = next_scene
 	GameState.preview_step = next_step
+	if GameState.flags.get("draft_mode", false):
+		GameState.flags.draft_exploring = explore
+		if explore:
+			GameState.player_position = Vector2(90, 315)
+			GameState.hint_level = 0
 	if not choice_key.is_empty():
 		GameState.preview_choices[next_scene] = choice_key
 	if mark_reviewed:
@@ -1200,7 +1223,8 @@ func _render_preview_terminal(body: VBoxContainer, scene_id: String, scene: Dict
 		elif scene_id == "F01_A":
 			next_id = "F01_B"
 		if not next_id.is_empty():
-			_preview_button(body, "Continuar historia: " + next_id, func(): _commit_preview(next_id, 0)).grab_focus()
+			var next_explore: bool = DraftFlowScript.EXPLORATION_IDS.has(next_id) and scene_id not in ["D4_01_A", "D4_02_A"]
+			_preview_button(body, "Continuar historia: " + next_id, func(): _commit_preview(next_id, 0, "", false, next_explore)).grab_focus()
 		elif scene_id in ["F01_B", "F02", "F03"]:
 			_preview_button(body, "Terminar borrador jugable", _finish_draft).grab_focus()
 		_preview_button(body, "Volver al menú", _return_to_menu)

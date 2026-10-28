@@ -519,7 +519,32 @@ func _run() -> void:
 		var result_body: VBoxContainer = main.modal_box.get_child(2).get_child(0)
 		_check(result_body.get_child(2) is Button and not result_body.get_child(2).disabled, "resultado ofrece continuar borrador jugable")
 		_check(await main._start_playable_draft() and GameState.flags.draft_mode and GameState.preview_scene == "D1_02_A", "borrador inicia y limpia opciones")
+		_check(GameState.flags.get("draft_exploring", false) and main.modal_kind == "" and main.world.scene_key == "draft_d1", "Día 1 inicia en exploración")
+		var exploring_saved := GameState.snapshot()
+		main._show_menu()
+		main._start_slot(1)
+		_check(GameState.snapshot() == exploring_saved and main.world.enabled and main.modal_kind == "", "exploración reanuda desde guardado")
+		var invalid_exploration := exploring_saved.duplicate(true)
+		invalid_exploration.preview_step = 3
+		_check(not GameState.restore(invalid_exploration), "exploración con paso narrativo inválido rechazada")
 		for scene_id in main.preview_catalog.MAIN_ORDER:
+			if main.draft_flow.EXPLORATION_IDS.has(scene_id):
+				if scene_id != "D1_02_A":
+					await main._commit_preview(scene_id, 0, "", false, true)
+				_check(GameState.flags.get("draft_exploring", false) and main.modal_kind == "" and main.world.scene_key == "draft_d" + scene_id.substr(1, 1), "escenario explorable: " + scene_id)
+				await main._show_phone()
+				_check(main.modal_kind == "phone" and GameState.ui_modal == "phone", "celular accesible durante exploración: " + scene_id)
+				if scene_id == "D2_03_A":
+					var phone_saved := GameState.snapshot()
+					main._show_menu()
+					main._start_slot(1)
+					_check(GameState.snapshot() == phone_saved and main.modal_kind == "phone", "celular contextual se reabre tras cargar")
+				await main._close_modal()
+				main.world.player_pos = Vector2(520, 225)
+				main.world._physics_process(0.0)
+				_check(main.world.nearby == "mateo", "Mateo queda al alcance en " + scene_id)
+				main.world.interact()
+				_check(not GameState.flags.get("draft_exploring", false) and main.modal_kind == "preview", "interacción abre escena: " + scene_id)
 			var scene_data: Dictionary = main.preview_catalog.get_scene(scene_id)
 			_check(not main.draft_flow.connector(scene_id).is_empty(), "conector presente: " + scene_id)
 			for option in ["A", "B", "C"]:

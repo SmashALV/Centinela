@@ -5,6 +5,7 @@ class_name PlayableDraftFlow
 const VERSION := "PLAYABLE_DRAFT_v0.1"
 const PATH := "res://data/narrative/playable_draft_v0_1.json"
 const MAIN_IDS := ["D1_02_A", "D2_03_A", "D3_01_A", "D4_01_A", "D4_02_A", "D4_03_A"]
+const EXPLORATION_IDS := ["D1_02_A", "D2_03_A", "D3_01_A", "D4_01_A"]
 const ENDING_IDS := ["F01_A", "F01_B", "F02", "F03"]
 
 var content: Dictionary = {}

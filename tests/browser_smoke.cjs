@@ -533,7 +533,26 @@ async function main() {
     await page.screenshot({ path: "build/web/draft_entry.png" });
     await page.keyboard.press("Enter");
     await waitForStore("save_snapshots", 1, (record) =>
-      record?.snapshot?.flags?.draft_mode === true && record?.snapshot?.preview_scene === "D1_02_A");
+      record?.snapshot?.flags?.draft_mode === true &&
+      record?.snapshot?.flags?.draft_exploring === true &&
+      record?.snapshot?.preview_scene === "D1_02_A");
+    await page.screenshot({ path: "build/web/draft_exploration_d1.png" });
+    await page.keyboard.press("e");
+    await waitForStore("save_snapshots", 1, (record) => record?.snapshot?.ui_modal === "phone");
+    await page.waitForTimeout(500);
+    await page.keyboard.press("Escape");
+    await waitForStore("save_snapshots", 1, (record) => record?.snapshot?.ui_modal === "");
+    await page.keyboard.down("d");
+    await page.waitForTimeout(2700);
+    await page.keyboard.up("d");
+    await page.keyboard.down("w");
+    await page.waitForTimeout(600);
+    await page.keyboard.up("w");
+    await page.keyboard.press("f");
+    await waitForStore("save_snapshots", 1, (record) =>
+      record?.snapshot?.flags?.draft_exploring === false &&
+      record?.snapshot?.preview_scene === "D1_02_A" && record.snapshot.preview_step === 0);
+    await page.screenshot({ path: "build/web/draft_d1_scene.png" });
     console.log("Canvas:", canvas);
     console.log("Browser:", path.basename(executablePath));
     console.log("Persisted slot:", { slot: saved.snapshot.slot, phase: saved.snapshot.phase });

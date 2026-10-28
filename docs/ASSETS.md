@@ -6,6 +6,7 @@
 |---|---|---|
 | Sofi y amistades en exploración | PNG transparente, 4 direcciones, fotogramas de 32×32 px; una hoja por personaje | `assets/characters/`; reemplaza círculos de `World.gd` |
 | Habitación, patio y computadora | Tiles PNG de 32×32 px, capas suelo/objetos/colisión; tamaños según escenas 768×448 | `assets/world/`; reemplaza fondos y muebles de `World.gd` |
+| Escenarios D1–D4 | Tiles PNG de 32×32 px para lobby, exterior del colegio con árbol, pasillo y patio; capas de suelo, mobiliario y colisión | `assets/world/`; reemplaza `World.gd::_draw_draft_environment()` conservando la posición e interacción de Mateo |
 | Objetos interactivos | PNG transparente de 32×32 o 64×64 px: alarma, mochila, escritorio, foto, puerta, grupo, PC | `assets/objects/`; mantener posiciones e IDs definidos en `World.gd::configure()` |
 | Héroes MOBA | PNG transparente con siluetas claramente distintas para Atacante, Defensor y Soporte; 4 direcciones, 32×32 px | `assets/moba/heroes/`; deben distinguir equipos aliado y rival |
 | Torres, bases y ruinas | PNG transparente de 64×64 px; estado intacto y destruido por estructura | `assets/moba/structures/`; reemplaza rectángulos en `MOBAArena.gd` |

@@ -113,7 +113,7 @@
     const flags = snapshot.flags;
     if (!flags || typeof flags !== "object" || Array.isArray(flags))
       throw failure("INVALID_REQUEST", "Indicadores inválidos");
-    for (const name of ["wakeup_seen", "alarm", "backpack", "friends", "d0_chat_done", "preview_reviewed", "draft_mode", "draft_completed"]) {
+    for (const name of ["wakeup_seen", "alarm", "backpack", "friends", "d0_chat_done", "preview_reviewed", "draft_mode", "draft_completed", "draft_exploring"]) {
       if (name in flags && typeof flags[name] !== "boolean")
         throw failure("INVALID_REQUEST", "Indicador inválido");
     }
@@ -137,6 +137,9 @@
     const choices = snapshot.preview_choices ?? {};
     const previewScenes = ["D1_02_A", "D2_03_A", "D3_01_A", "D4_01_A", "D4_02_A",
       "D4_03_A", "ENDINGS_INDEX", "F01_A", "F01_B", "F02", "F03"];
+    if (flags.draft_exploring && (!flags.draft_mode || snapshot.phase !== "preview" ||
+        !["D1_02_A", "D2_03_A", "D3_01_A", "D4_01_A"].includes(scene) || step !== 0))
+      throw failure("INVALID_REQUEST", "Exploración de borrador inválida");
     if (typeof scene !== "string" || (scene && !previewScenes.includes(scene)) ||
         (snapshot.phase === "preview" && !scene) ||
         !Number.isInteger(step) || step < 0 || step > 100 ||
@@ -170,7 +173,7 @@
         (dialogue && uiModal) ||
         (uiModal === "class" && snapshot.phase !== "computer") ||
         (["phone", "objective"].includes(uiModal) &&
-          !["bedroom", "courtyard", "computer"].includes(snapshot.phase)) ||
+          !["bedroom", "courtyard", "computer"].includes(snapshot.phase) && !flags.draft_exploring) ||
         !Number.isInteger(hint) || hint < 0 || hint > 2 ||
         !["small", "normal", "large"].includes(size) ||
         !["slow", "normal", "fast"].includes(speed) ||

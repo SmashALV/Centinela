@@ -89,9 +89,11 @@ func restore(data: Dictionary) -> bool:
 	for index in range(4, 10):
 		if data.code.unicode_at(index) < 48 or data.code.unicode_at(index) > 57:
 			return false
-	for flag in ["wakeup_seen", "alarm", "backpack", "friends", "d0_chat_done", "preview_reviewed", "draft_mode", "draft_completed"]:
+	for flag in ["wakeup_seen", "alarm", "backpack", "friends", "d0_chat_done", "preview_reviewed", "draft_mode", "draft_completed", "draft_exploring"]:
 		if data.flags.has(flag) and typeof(data.flags[flag]) != TYPE_BOOL:
 			return false
+	if data.flags.get("draft_exploring", false) and (not data.flags.get("draft_mode", false) or data.get("phase") != "preview" or data.get("preview_scene", "") not in ["D1_02_A", "D2_03_A", "D3_01_A", "D4_01_A"] or data.get("preview_step", 0) != 0):
+		return false
 	if data.flags.has("draft_ending") and data.flags.draft_ending not in ["", "F01", "F02", "F03"]:
 		return false
 	if data.flags.has("d0_chat_choice") and data.flags.d0_chat_choice not in ["D0_05_A_OPT_A", "D0_05_A_OPT_B", "D0_05_A_OPT_C"]:
@@ -158,7 +160,7 @@ func restore(data: Dictionary) -> bool:
 			return false
 	if (not active_dialogue.is_empty() and not saved_modal.is_empty()) or \
 		(saved_modal == "class" and data.get("phase") != "computer") or \
-		(saved_modal in ["phone", "objective"] and data.get("phase") not in ["bedroom", "courtyard", "computer"]):
+		(saved_modal in ["phone", "objective"] and data.get("phase") not in ["bedroom", "courtyard", "computer"] and not data.flags.get("draft_exploring", false)):
 		return false
 	if (active_dialogue == "wakeup" and data.get("phase") != "bedroom") or \
 		(active_dialogue == "courtyard" and data.get("phase") != "courtyard") or \

@@ -4,6 +4,8 @@ Tras el MOBA, **Continuar borrador jugable** permite recorrer los seis fragmento
 
 El archivo nuevo contiene nueve reacciones de Camila (resultado del MOBA × clase), un conector para cada una de las seis escenas y los cuatro extractos de final, y 18 reacciones breves (A/B/C en cada escena). El jugador puede guardar y reanudar cada línea y opción. Las líneas recuperadas cuya posición no consta permanecen accesibles por separado.
 
+Antes de las escenas principales de D1, D2, D3 y D4, Sofi explora un mapa provisional con WASD y abre la conversación al acercarse a Mateo y pulsar F. Cada mapa tiene ambientación propia dibujada por código; D2 sitúa a Mateo junto a un árbol. D4-01, D4-02 y D4-03 continúan sin interrumpirse con otro mapa. La posición y el estado de exploración se guardan en la ranura. Durante la exploración funcionan el celular (E), el objetivo y las pistas de navegación (Tab), además de la pausa. El celular de Sofi conserva el chat grupal; la captura privada de D2 se muestra en la escena desde el teléfono de Mateo y no se copia al de Sofi.
+
 ## Regla temporal de desenlace
 
 La última opción de `D4_03_A` determina el extracto siguiente: A → `F01_A` → `F01_B` → resumen F01; B → F02; C → F03. Las decisiones anteriores se conservan y aparecen en el resumen, pero no alteran esa ruta. Esta regla solo permite probar un recorrido completo. No representa la fórmula oficial de finales ni una puntuación educativa. El borrador no genera eventos de decisión, no asigna `story_completed` ni `ending_assigned` y no se envía a Supabase.

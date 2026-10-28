@@ -8,7 +8,7 @@ const ROOM := Rect2(30, 56, 708, 338)
 const TARGET_LABELS := {
 	"alarm": "Alarma", "backpack": "Mochila", "desk": "Escritorio",
 	"photo": "Foto", "door": "Puerta", "friends": "Grupo",
-	"exit": "Salida", "pc": "Computadora"
+	"exit": "Salida", "pc": "Computadora", "mateo": "Mateo"
 }
 const FRIENDS := [
 	{"name": "Mateo", "offset": Vector2(-60, 28), "jacket": "2f568c", "skin": "dc9f71", "style": "curly"},
@@ -31,6 +31,8 @@ func configure(key: String, position: Vector2) -> void:
 			"desk": Vector2(278, 146), "photo": Vector2(494, 140), "door": Vector2(698, 230)}
 	elif key == "courtyard":
 		objects = {"friends": Vector2(374, 175), "exit": Vector2(690, 227)}
+	elif key.begins_with("draft_d"):
+		objects = {"mateo": Vector2(520, 225)}
 	else:
 		objects = {"pc": Vector2(382, 180)}
 	queue_redraw()
@@ -46,7 +48,7 @@ func _physics_process(delta: float) -> void:
 	nearby = ""
 	var best := 1.0
 	for key in objects:
-		var reach := 84.0 if key == "friends" else 49.0
+		var reach := 84.0 if key in ["friends", "mateo"] else 49.0
 		var distance: float = player_pos.distance_to(objects[key]) / reach
 		if distance < best:
 			best = distance
@@ -70,6 +72,8 @@ func objective_target() -> String:
 			return "exit" if GameState.flags.get("friends", false) else "friends"
 		"computer":
 			return "pc"
+		"draft_d1", "draft_d2", "draft_d3", "draft_d4":
+			return "mateo"
 	return ""
 
 func _draw() -> void:
@@ -78,6 +82,12 @@ func _draw() -> void:
 		floor_color = Color("312d49")
 	elif scene_key == "computer":
 		floor_color = Color("253148")
+	elif scene_key == "draft_d1":
+		floor_color = Color("30465e")
+	elif scene_key == "draft_d3":
+		floor_color = Color("3d4256")
+	elif scene_key == "draft_d4":
+		floor_color = Color("31524a")
 	draw_rect(Rect2(Vector2.ZERO, Vector2(768, 448)), Color("14182b"))
 	draw_rect(ROOM, floor_color)
 	for x in range(30, 738, 32):
@@ -91,6 +101,8 @@ func _draw() -> void:
 	elif scene_key == "courtyard":
 		for p in [Vector2(90, 112), Vector2(620, 114), Vector2(560, 325)]:
 			draw_circle(p, 33, Color("386b55"))
+	elif scene_key.begins_with("draft_d"):
+		_draw_draft_environment()
 	else:
 		draw_rect(Rect2(311, 103, 142, 73), Color("425d77"))
 		draw_rect(Rect2(552, 96, 98, 77), Color("8ec9c2"))
@@ -106,12 +118,49 @@ func _draw() -> void:
 			if key == objective_target():
 				_draw_objective_marker(pos + Vector2(0, -50))
 			continue
+		if key == "mateo":
+			var mateo_color := Color("f5d479") if active else Color("8ec9c2")
+			draw_arc(pos, 28, 0, TAU, 24, mateo_color, 2.0)
+			draw_string(ThemeDB.fallback_font, pos + Vector2(-36, -39), "F · Mateo", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, mateo_color)
+			_draw_objective_marker(pos + Vector2(0, 31))
+			continue
 		_draw_object(key, pos, active)
 	if scene_key == "courtyard":
 		for friend in FRIENDS:
 			_draw_character(Vector2(objects.friends) + friend.offset, str(friend.name),
 				Color(friend.jacket), Color(friend.skin), str(friend.style))
+	elif scene_key.begins_with("draft_d"):
+		_draw_character(objects.mateo, "Mateo", Color("2f568c"), Color("dc9f71"), "curly")
+		if scene_key == "draft_d1":
+			_draw_character(Vector2(330, 245), "Camila", Color("d9696a"), Color("dfa47b"), "ponytail")
+			_draw_character(Vector2(260, 250), "Bruno", Color("87334d"), Color("c98b61"), "glasses")
+			_draw_character(Vector2(400, 250), "Sebas", Color("e2ad36"), Color("e4ae80"), "spiky")
 	_draw_character(player_pos, "Sofi", Color("258999"), Color("e2a477"), "long_hair")
+
+func _draw_draft_environment() -> void:
+	var caption: String = str({"draft_d1": "DÍA 1 · LOBBY", "draft_d2": "DÍA 2 · EXTERIOR DEL COLEGIO", "draft_d3": "DÍA 3 · PASILLO", "draft_d4": "DÍA 4 · PATIO"}.get(scene_key, ""))
+	draw_string(ThemeDB.fallback_font, Vector2(65, 83), caption, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color("fff3df"))
+	match scene_key:
+		"draft_d1":
+			for x in [182, 288, 394]:
+				draw_rect(Rect2(x - 38, 122, 76, 34), Color("a3c8ca"))
+				draw_rect(Rect2(x - 33, 127, 66, 24), Color("182a48"))
+				draw_rect(Rect2(x - 52, 164, 104, 10), Color("77675f"))
+		"draft_d2":
+			draw_circle(Vector2(570, 125), 53, Color("356d4e"))
+			draw_rect(Rect2(562, 157, 16, 69), Color("755b42"))
+			draw_rect(Rect2(112, 126, 178, 94), Color("c6af80"))
+			draw_rect(Rect2(132, 145, 42, 48), Color("577e8c"))
+			draw_rect(Rect2(202, 145, 42, 48), Color("577e8c"))
+		"draft_d3":
+			draw_rect(Rect2(102, 118, 190, 92), Color("7c7f8b"))
+			draw_rect(Rect2(120, 134, 42, 55), Color("adc0c1"))
+			draw_rect(Rect2(188, 134, 42, 55), Color("adc0c1"))
+			draw_rect(Rect2(340, 181, 100, 12), Color("8a715e"))
+		"draft_d4":
+			for p in [Vector2(112, 145), Vector2(290, 122), Vector2(625, 132)]:
+				draw_circle(p, 34, Color("397352"))
+			draw_rect(Rect2(320, 304, 142, 12), Color("8d7359"))
 
 func _draw_objective_marker(pos: Vector2) -> void:
 	var marker := Color("f5d479")

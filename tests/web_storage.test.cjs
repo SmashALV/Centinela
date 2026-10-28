@@ -64,6 +64,8 @@ test("ranuras, bloqueo, transacción de decisión e idempotencia", async () => {
     { ...snapshot(1), player_position: [Infinity, 2] },
     { ...snapshot(1), flags: { alarm: "sí" } },
     { ...snapshot(1), flags: { draft_mode: true } },
+    { ...snapshot(1), flags: { draft_mode: true, draft_exploring: true },
+      draft_content_version: "PLAYABLE_DRAFT_v0.1" },
     { ...snapshot(1), flags: { draft_ending: "F99" } },
     { ...snapshot(1), phone_messages: [42] },
     { ...snapshot(1), moba_class: "desconocida" },
