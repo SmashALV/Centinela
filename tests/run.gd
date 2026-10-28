@@ -134,6 +134,12 @@ func _run() -> void:
 		_finish_tests()
 		return
 	_check(arena.heroes.size() == 10, "MOBA 5v5")
+	var ally_accents := {}
+	for hero_index in 5:
+		ally_accents[arena.ALLY_ACCENTS[arena.heroes[hero_index].name]] = true
+	_check(ally_accents.size() == 5, "cinco aliados tienen marcas visuales distintas en MOBA")
+	_check(arena.objective_label.text.contains("destruir la base rival"), "MOBA muestra objetivo durante el combate")
+	_check(arena.camera.limit_left == 0 and arena.camera.limit_top == 0 and arena.camera.limit_right == 1152 and arena.camera.limit_bottom == 640, "cámara MOBA limitada a la arena")
 	_check(arena.pause_panel.get_node("Content/Music") is Button and arena.pause_panel.get_node("Content/Effects") is Button, "pausa MOBA incluye ajustes de audio")
 	_check(arena.result_panel.has_node("Content/Title"), "panel de resultado tiene título accesible")
 	arena._set_paused(true)

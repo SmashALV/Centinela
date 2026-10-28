@@ -6,6 +6,10 @@ const ARENA := Vector2(1152, 640)
 const LIMIT := 180.0
 const HERO_SPEED := 96.0
 const COLORS := [Color("74c9c2"), Color("dc827d")]
+const ALLY_ACCENTS := {
+	"Mateo": "2f568c", "Bruno": "87334d", "Sofi": "258999",
+	"Camila": "d9696a", "Sebas": "e2ad36"
+}
 const TILE_SIZE := 32
 const MAP_CELLS := Vector2i(36, 20)
 const STATIC_OBSTACLES := [Rect2i(17, 8, 2, 4)]
@@ -30,6 +34,7 @@ var player_index := 2
 var camera: Camera2D
 var layer: CanvasLayer
 var hud: Label
+var objective_label: Label
 var notice: Label
 var pause_panel: PanelContainer
 var result_panel: PanelContainer
@@ -47,6 +52,10 @@ func _ready() -> void:
 	camera = Camera2D.new()
 	camera.position = heroes[player_index].pos
 	camera.enabled = true
+	camera.limit_left = 0
+	camera.limit_top = 0
+	camera.limit_right = int(ARENA.x)
+	camera.limit_bottom = int(ARENA.y)
 	camera.position_smoothing_enabled = true
 	camera.position_smoothing_speed = 5.0
 	add_child(camera)
@@ -57,6 +66,13 @@ func _ready() -> void:
 	hud.size = Vector2(748, 35)
 	hud.add_theme_font_size_override("font_size", _font_size(16))
 	layer.add_child(hud)
+	objective_label = Label.new()
+	objective_label.position = Vector2(10, 418)
+	objective_label.size = Vector2(748, 26)
+	objective_label.text = "Objetivo: destruir la base rival · WASD mover · clic atacar · Q habilidad · P pausa"
+	objective_label.add_theme_font_size_override("font_size", _font_size(12))
+	objective_label.add_theme_color_override("font_color", Color("fff3df"))
+	layer.add_child(objective_label)
 	notice = Label.new()
 	notice.position = Vector2(180, 46)
 	notice.size = Vector2(408, 40)
@@ -276,7 +292,8 @@ func _process(delta: float) -> void:
 		_towers_fire()
 		tower_cd += 1.5
 	var remaining := maxi(0, ceili(LIMIT - elapsed))
-	hud.text = "%s  ·  %ds  ·  HP %d  ·  Q %.1fs  ·  clic: atacar  P: pausa" % [GameState.moba_class, remaining, ceili(heroes[player_index].hp), q_cd]
+	var q_status := "lista" if q_cd <= 0.0 else "%.1fs" % q_cd
+	hud.text = "%s  ·  %ds  ·  HP %d/80  ·  Q %s" % [GameState.moba_class, remaining, ceili(heroes[player_index].hp), q_status]
 	if remaining <= 10:
 		notice.text = "Últimos 10 segundos"
 	elif remaining <= 30:
@@ -712,7 +729,11 @@ func _draw() -> void:
 			color = Color("5d625d")
 		var width := 32 if building.tier == 2 else 24
 		draw_rect(Rect2(building.pos - Vector2(width, width), Vector2(width * 2, width * 2)), color)
+		var structure_name := "BASE" if building.tier == 2 else "T%d" % (building.tier + 1)
+		draw_string(ThemeDB.fallback_font, building.pos + Vector2(-width, 5), structure_name,
+			HORIZONTAL_ALIGNMENT_CENTER, width * 2, 13, Color("172534"))
 		if building.hp > 0:
+			draw_rect(Rect2(building.pos + Vector2(-25, -width - 12), Vector2(50, 5)), Color("182a38"))
 			draw_rect(Rect2(building.pos + Vector2(-25, -width - 12), Vector2(50 * building.hp / building.max_hp, 5)), Color("d6e99f"))
 	for hero in heroes:
 		if hero.hp <= 0: continue
@@ -725,10 +746,17 @@ func _draw() -> void:
 			draw_arc(hero.pos, 25, 0, TAU, 32, Color.WHITE, 2.0)
 		if hero.name == "Sofi":
 			draw_arc(hero.pos, 29, 0, TAU, 32, Color.WHITE, 2.0)
+			_draw_player_marker(hero.pos)
+		draw_rect(Rect2(hero.pos + Vector2(-17, -24), Vector2(34, 4)), Color("182a38"))
 		draw_rect(Rect2(hero.pos + Vector2(-17, -24), Vector2(34 * hero.hp / 80.0, 4)), Color("d6e99f"))
 		draw_string(ThemeDB.fallback_font, hero.pos + Vector2(-25, 29), hero.name, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color.WHITE)
 	for shot in shots:
 		draw_circle(shot.pos, 5, Color("fff0a6") if shot.side == 0 else Color("ffa6b2"))
+
+func _draw_player_marker(pos: Vector2) -> void:
+	draw_colored_polygon(PackedVector2Array([
+		pos + Vector2(-5, -37), pos + Vector2(5, -37), pos + Vector2(0, -30)
+	]), Color("fff3df"))
 
 func _draw_hero_symbol(hero: Dictionary) -> void:
 	var position: Vector2 = hero.pos
@@ -750,3 +778,9 @@ func _draw_hero_symbol(hero: Dictionary) -> void:
 			]), color)
 		_:
 			draw_circle(position, 13, color)
+	if hero.side == 0:
+		draw_circle(position, 5, Color("fff3df"))
+		draw_circle(position, 3, Color(ALLY_ACCENTS.get(hero.name, "258999")))
+	else:
+		draw_line(position + Vector2(-4, -4), position + Vector2(4, 4), Color("172534"), 2.0)
+		draw_line(position + Vector2(4, -4), position + Vector2(-4, 4), Color("172534"), 2.0)

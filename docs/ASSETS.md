@@ -1,6 +1,6 @@
 # Recursos visuales provisionales y reemplazo
 
-`scripts/World.gd::_draw()` dibuja habitación, patio, computadora, iconos de objetos y personajes con colores, peinados y nombres provisionales distintos; `scripts/moba/MOBAArena.gd::_draw()` dibuja arena, héroes, torres, bases y proyectiles. Estas formas son provisionales. Los cinco retratos neutros de diálogo fueron generados con imagegen y están incluidos en el proyecto. Se reemplazarán por arte definitivo sin cambiar los IDs de interacción, la marca del siguiente objetivo ni las reglas del combate.
+`scripts/World.gd::_draw()` dibuja habitación, patio, computadora, iconos de objetos y personajes con colores, peinados y nombres provisionales distintos; `scripts/moba/MOBAArena.gd::_draw()` dibuja arena, héroes con marcas propias para los cinco aliados y una X para rivales, torres y bases rotuladas, y proyectiles. Estas formas son provisionales. Los cinco retratos neutros de diálogo fueron generados con imagegen y están incluidos en el proyecto. Se reemplazarán por arte definitivo sin cambiar los IDs de interacción, la marca del siguiente objetivo ni las reglas del combate.
 
 | Recurso a entregar | Formato y tamaño sugeridos | Uso y ubicación futura |
 |---|---|---|

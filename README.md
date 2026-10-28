@@ -12,6 +12,8 @@ Controles: **WASD** movimiento, **F** interacción, **E** celular, **Tab** objet
 
 En la exploración del Día 0, cada objeto tiene un icono y un nombre en español. Una marca señala el siguiente objetivo obligatorio; alarma y mochila muestran una marca de completado después de guardarse.
 
+En el MOBA, cada aliado conserva una marca de color propia, los rivales llevan una X y Sofi tiene una flecha de jugador. Las torres y bases están rotuladas y el objetivo de la partida permanece visible.
+
 Para ejecutar las pruebas sin abrir la ventana:
 
 ```powershell
@@ -64,7 +66,7 @@ npm run test:dashboard-browser
 
 ## QA técnico
 
-La [matriz P7 con evidencia por caso](docs/P7_QA_2026-10-27.md) registra qué funcionó en `0.7.0-preview` y qué sigue bloqueado por el guion/rúbrica definitivos, Supabase de desarrollo y staging. El build local actual es `0.13.0-preview`. El menú de pausa permite cambiar entre texto pequeño, mediano y grande, y ajustar la velocidad de los diálogos D0; una ventana menor de 768×448 pausa el juego y exige pulsar **Continuar** después de ampliarla. Los diálogos D0 guardan el nodo activo y el historial de la conversación actual antes de avanzar y se reanudan tras recargar. Mientras aparece una línea, un toque la revela completa; una vez visible, el siguiente avanza. Las respuestas D0 y de fragmentos D1–D4 requieren confirmación neutral antes de guardarse; **Esc/Volver** cancela sin modificar la ranura. También se recuperan el celular, el objetivo, la selección de clase y el nivel de pista si estaban abiertos.
+La [matriz P7 con evidencia por caso](docs/P7_QA_2026-10-27.md) registra qué funcionó en `0.7.0-preview` y qué sigue bloqueado por el guion/rúbrica definitivos, Supabase de desarrollo y staging. El build local actual es `0.14.0-preview`. El menú de pausa permite cambiar entre texto pequeño, mediano y grande, y ajustar la velocidad de los diálogos D0; una ventana menor de 768×448 pausa el juego y exige pulsar **Continuar** después de ampliarla. Los diálogos D0 guardan el nodo activo y el historial de la conversación actual antes de avanzar y se reanudan tras recargar. Mientras aparece una línea, un toque la revela completa; una vez visible, el siguiente avanza. Las respuestas D0 y de fragmentos D1–D4 requieren confirmación neutral antes de guardarse; **Esc/Volver** cancela sin modificar la ranura. También se recuperan el celular, el objetivo, la selección de clase y el nivel de pista si estaban abiertos.
 
 ## Entrega P8
 
