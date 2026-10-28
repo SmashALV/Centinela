@@ -6,7 +6,7 @@
 |---|---|---|
 | Sofi y amistades en exploración | PNG transparente, 4 direcciones, fotogramas de 32×32 px; una hoja por personaje | `assets/characters/`; reemplaza círculos de `World.gd` |
 | Habitación, patio y computadora | Tiles PNG de 32×32 px, capas suelo/objetos/colisión; tamaños según escenas 768×448 | `assets/world/`; reemplaza fondos y muebles de `World.gd` |
-| Escenarios D1–D4 | Fondos PNG completos y cuatro tiles transparentes de suelo de 32×32 px; para arte final, atlas modulares de suelo y mobiliario con polígonos de colisión ajustados | `assets/world/` y `assets/world/tiles/`; conserva la posición e interacción de Mateo y actualiza `World.gd::DRAFT_BLOCKS` al cambiar los muebles |
+| Escenarios D1–D4 | Fondos PNG completos y cuatro atlas transparentes con cuatro variantes de suelo de 32×32 px cada uno; para arte final, atlas modulares de suelo y mobiliario con polígonos de colisión ajustados | `assets/world/` y `assets/world/tiles/`; conserva la posición e interacción de Mateo y actualiza `World.gd::DRAFT_BLOCKS` al cambiar los muebles |
 | Objetos interactivos | PNG transparente de 32×32 o 64×64 px: alarma, mochila, escritorio, foto, puerta, grupo, PC | `assets/objects/`; mantener posiciones e IDs definidos en `World.gd::configure()` |
 | Héroes MOBA | PNG transparente con siluetas claramente distintas para Atacante, Defensor y Soporte; 4 direcciones, 32×32 px | `assets/moba/heroes/`; deben distinguir equipos aliado y rival |
 | Torres, bases y ruinas | PNG transparente de 64×64 px; estado intacto y destruido por estructura | `assets/moba/structures/`; reemplaza rectángulos en `MOBAArena.gd` |

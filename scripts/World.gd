@@ -18,10 +18,10 @@ const GROUND_TILES := {
 	"draft_d4": "res://assets/world/tiles/day4_courtyard_paving.png"
 }
 const DRAFT_BLOCKS := {
-	"draft_d1": [[30, 56, 708, 123], [30, 215, 99, 150], [681, 205, 57, 165]],
-	"draft_d2": [[30, 56, 375, 124], [530, 125, 35, 60], [434, 197, 68, 28], [30, 345, 142, 49], [620, 346, 118, 48]],
+	"draft_d1": [[30, 56, 708, 123], [30, 178, 130, 42], [30, 215, 99, 150], [681, 205, 57, 165]],
+	"draft_d2": [[30, 56, 375, 124], [30, 180, 154, 64], [530, 125, 35, 60], [434, 197, 68, 28], [30, 345, 142, 49], [620, 346, 118, 48]],
 	"draft_d3": [[30, 56, 708, 117], [30, 342, 122, 52], [626, 342, 112, 52]],
-	"draft_d4": [[30, 56, 708, 107], [80, 163, 112, 34], [625, 163, 113, 34], [30, 349, 145, 45], [616, 349, 122, 45]]
+	"draft_d4": [[30, 56, 708, 107], [80, 163, 112, 34], [185, 163, 115, 50], [575, 163, 100, 50], [625, 163, 113, 34], [30, 349, 145, 45], [616, 349, 122, 45]]
 }
 const TARGET_LABELS := {
 	"alarm": "Alarma", "backpack": "Mochila", "desk": "Escritorio",
@@ -123,12 +123,13 @@ func _configure_ground_tiles() -> void:
 	var atlas := TileSetAtlasSource.new()
 	atlas.texture = tile_texture
 	atlas.texture_region_size = Vector2i(32, 32)
-	atlas.create_tile(Vector2i.ZERO)
+	for variant in 4:
+		atlas.create_tile(Vector2i(variant, 0))
 	var source_id: int = tiles.add_source(atlas)
 	ground_layer.tile_set = tiles
 	for x in 22:
 		for y in 10:
-			ground_layer.set_cell(Vector2i(x, y), source_id, Vector2i.ZERO)
+			ground_layer.set_cell(Vector2i(x, y), source_id, Vector2i((x * 13 + y * 7 + x * y) % 4, 0))
 
 func _add_obstacle(rect: Rect2) -> void:
 	var body := StaticBody2D.new()

@@ -1,6 +1,6 @@
 extends SceneTree
 
-# Creates exact 32×32 translucent floor tiles. The painted maps remain the backdrop.
+# Creates four exact 32×32 translucent variants per map. The painted maps remain the backdrop.
 const OUTPUT := "res://assets/world/tiles"
 const SPECS := [
 	{"name": "day1_lobby_floor.png", "grout": Color(0.62, 0.78, 0.83, 0.24), "detail": Color(0.78, 0.86, 0.88, 0.10), "seed": 101},
@@ -16,17 +16,19 @@ func _initialize() -> void:
 		quit(1)
 		return
 	for spec in SPECS:
-		var image := Image.create(32, 32, false, Image.FORMAT_RGBA8)
+		var image := Image.create(128, 32, false, Image.FORMAT_RGBA8)
 		image.fill(Color.TRANSPARENT)
-		for coordinate in 32:
-			image.set_pixel(coordinate, 0, spec.grout)
-			image.set_pixel(0, coordinate, spec.grout)
-		var random := RandomNumberGenerator.new()
-		random.seed = int(spec.seed)
-		for point in 24:
-			var px: int = random.randi_range(2, 29)
-			var py: int = random.randi_range(2, 29)
-			image.set_pixel(px, py, spec.detail)
+		for variant in 4:
+			var offset: int = variant * 32
+			var random := RandomNumberGenerator.new()
+			random.seed = int(spec.seed) + variant * 97
+			for coordinate in 32:
+				image.set_pixel(offset + coordinate, 0, spec.grout)
+				image.set_pixel(offset, coordinate, spec.grout)
+			for point in 16 + variant * 3:
+				var px: int = random.randi_range(2, 29)
+				var py: int = random.randi_range(2, 29)
+				image.set_pixel(offset + px, py, spec.detail)
 		var path: String = OUTPUT + "/" + str(spec.name)
 		if image.save_png(path) != OK:
 			printerr("No se pudo guardar " + path)

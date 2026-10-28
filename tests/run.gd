@@ -77,6 +77,8 @@ func _run() -> void:
 	add_child(physics_world)
 	physics_world.configure("draft_d1", Vector2(160, 250))
 	_check(physics_world.ground_layer.get_used_cells().size() == 220 and physics_world.collision_root.get_child_count() >= 3, "suelo en tiles y obstáculos físicos separados")
+	var tile_source: TileSetAtlasSource = physics_world.ground_layer.tile_set.get_source(physics_world.ground_layer.tile_set.get_source_id(0))
+	_check(tile_source.get_tiles_count() == 4 and physics_world.ground_layer.get_cell_atlas_coords(Vector2i(0, 0)) != physics_world.ground_layer.get_cell_atlas_coords(Vector2i(1, 0)), "cuatro variantes de tile alternan sobre el fondo")
 	await get_tree().physics_frame
 	Input.action_press("move_left")
 	await get_tree().create_timer(0.45).timeout
@@ -85,7 +87,7 @@ func _run() -> void:
 	for collision_case in [
 		{"map": "draft_d2", "start": Vector2(520, 210), "minimum": 511.0, "label": "banca del exterior"},
 		{"map": "draft_d3", "start": Vector2(170, 360), "minimum": 161.0, "label": "escalera del pasillo"},
-		{"map": "draft_d4", "start": Vector2(215, 185), "minimum": 201.0, "label": "banca del patio"}
+		{"map": "draft_d4", "start": Vector2(320, 185), "minimum": 309.0, "label": "jardinera del patio"}
 	]:
 		physics_world.configure(collision_case.map, collision_case.start)
 		_check(physics_world.ground_layer.get_used_cells().size() == 220 and physics_world.collision_root.get_child_count() >= 3, "capas de tiles y colisión: " + collision_case.map)
@@ -94,6 +96,14 @@ func _run() -> void:
 		await get_tree().create_timer(0.28).timeout
 		Input.action_release("move_left")
 		_check(physics_world.player_pos.x >= float(collision_case.minimum) and physics_world.player_pos.x < collision_case.start.x, "colisión real: " + collision_case.label)
+	for day in ["draft_d1", "draft_d2", "draft_d3", "draft_d4"]:
+		physics_world.configure(day, Vector2(180, 315))
+		await get_tree().physics_frame
+		var route_start := Transform2D(0.0, Vector2(180, 315))
+		var route_turn := Transform2D(0.0, Vector2(520, 315))
+		_check(not physics_world.player_body.test_move(route_start, Vector2(340, 0)) and not physics_world.player_body.test_move(route_turn, Vector2(0, -90)), "ruta física de Sofi a Mateo despejada: " + day)
+	physics_world.configure("draft_d4", Vector2(200, 185))
+	_check(physics_world.player_pos == Vector2(180, 315), "guardado dentro de jardinera recupera posición segura")
 	physics_world.queue_free()
 	await get_tree().process_frame
 	var bad_destination := content.duplicate(true)
