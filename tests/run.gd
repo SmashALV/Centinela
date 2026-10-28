@@ -493,6 +493,56 @@ func _run() -> void:
 	_check(main.modal_kind == "preview", "pausa recupera vista previa")
 	await main._commit_preview("ENDINGS_INDEX", 0)
 	_check(main.modal_kind == "preview" and GameState.preview_scene == "ENDINGS_INDEX", "finales se consultan desde índice manual")
+	_check(main.preview_catalog.terminal_step("F02") == main.preview_catalog.get_scene("F02").get("lines", []).size(), "fin de extracto F02 calculado desde líneas recuperadas")
+	await main._commit_preview("F02", 0)
+	var before_finish := GameState.snapshot()
+	_check(not await main._finish_preview() and GameState.snapshot() == before_finish, "no se cierra vista previa antes de leer el extracto")
+	await main._commit_preview("F02", main.preview_catalog.terminal_step("F02"))
+	_check(await main._finish_preview() and GameState.flags.get("preview_reviewed", false) and GameState.preview_scene == "ENDINGS_INDEX" and GameState.preview_step == 1, "recorrido de vista previa cierra y se guarda")
+	var reviewed := GameState.snapshot()
+	main._show_menu()
+	main._start_slot(1)
+	_check(main.modal_kind == "preview" and GameState.snapshot() == reviewed, "resumen de vista previa reabre tras cargar ranura")
+	_check(not GameState.flags.has("story_completed") and not GameState.flags.has("ending_assigned"), "cierre de vista previa no declara final canónico")
+	var bad_reviewed := reviewed.duplicate(true)
+	bad_reviewed.flags.preview_reviewed = "sí"
+	_check(not GameState.restore(bad_reviewed) and GameState.snapshot() == reviewed, "marca de lectura inválida rechazada")
+	_check(main.draft_flow.content.get("draft_version") == "PLAYABLE_DRAFT_v0.1", "borrador separado carga versión provisional")
+	for outcome in ["victoria", "derrota", "empate"]:
+		for role_name in ["Atacante", "Defensor", "Soporte"]:
+			_check(not main.draft_flow.camila_reaction(outcome, role_name).is_empty(), "Camila responde a %s/%s" % [outcome, role_name])
+	for letter in ["A", "B", "C"]:
+		_check(main.draft_flow.ending_for(letter) == {"A": "F01_A", "B": "F02", "C": "F03"}[letter], "ruta provisional %s" % letter)
+		GameState.moba_result = "victoria"
+		GameState.moba_class = "Atacante"
+		main._show_result()
+		var result_body: VBoxContainer = main.modal_box.get_child(2).get_child(0)
+		_check(result_body.get_child(2) is Button and not result_body.get_child(2).disabled, "resultado ofrece continuar borrador jugable")
+		_check(await main._start_playable_draft() and GameState.flags.draft_mode and GameState.preview_scene == "D1_02_A", "borrador inicia y limpia opciones")
+		for scene_id in main.preview_catalog.MAIN_ORDER:
+			var scene_data: Dictionary = main.preview_catalog.get_scene(scene_id)
+			_check(not main.draft_flow.connector(scene_id).is_empty(), "conector presente: " + scene_id)
+			for option in ["A", "B", "C"]:
+				_check(not main.draft_flow.choice_reaction(scene_id, option).is_empty(), "reacción presente: %s/%s" % [scene_id, option])
+			await main._commit_preview(scene_id, scene_data.lines.size() + 1, letter)
+			await main._commit_preview(scene_id, main._draft_terminal_step(scene_id))
+			_check(GameState.preview_choices.get(scene_id) == letter and main.modal_kind == "preview", "escena jugable y opción guardada: " + scene_id)
+		_check(main.draft_flow.ending_for(str(GameState.preview_choices.get("D4_03_A", ""))) == {"A": "F01_A", "B": "F02", "C": "F03"}[letter], "desenlace calculado desde decisión D4")
+		var ending_scene: String = main.draft_flow.ending_for(letter)
+		await main._commit_preview(ending_scene, main._draft_terminal_step(ending_scene))
+		if ending_scene == "F01_A":
+			_check(not await main._finish_draft(), "F01 exige segunda escena")
+			ending_scene = "F01_B"
+			await main._commit_preview(ending_scene, main._draft_terminal_step(ending_scene))
+		_check(await main._finish_draft() and GameState.flags.draft_completed and GameState.flags.draft_ending == ("F01" if letter == "A" else ending_scene), "borrador termina con desenlace %s" % letter)
+		var draft_saved := GameState.snapshot()
+		main._show_menu()
+		main._start_slot(1)
+		_check(GameState.snapshot() == draft_saved and main.modal_kind == "preview", "resumen del borrador persiste tras recarga")
+		_check(not GameState.flags.has("story_completed") and not GameState.flags.has("ending_assigned"), "borrador no declara final aprobado")
+	var bad_draft := GameState.snapshot()
+	bad_draft.draft_content_version = "PLAYABLE_DRAFT_v0.0"
+	_check(not GameState.restore(bad_draft), "versión de borrador incompatible rechazada")
 	main.queue_free()
 	_finish_tests()
 

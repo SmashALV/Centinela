@@ -3,6 +3,7 @@ extends Node2D
 const WorldScript = preload("res://scripts/World.gd")
 const NarrativeScript = preload("res://scripts/narrative/NarrativeManager.gd")
 const PreviewCatalogScript = preload("res://scripts/narrative/RecoveredPreviewCatalog.gd")
+const DraftFlowScript = preload("res://scripts/narrative/PlayableDraftFlow.gd")
 const DisplayGuardScript = preload("res://scripts/DisplayGuard.gd")
 const DAY_0_PREVIEW := "res://data/narrative/day_0_RECOVERED_PREVIEW.json"
 const PORTRAITS := {
@@ -26,6 +27,7 @@ var toast_time := 0.0
 var autosave_elapsed := 0.0
 var dialogue_story: RefCounted
 var preview_catalog: RefCounted
+var draft_flow: RefCounted
 var dialogue_key := ""
 var dialogue_choice := ""
 var pending_choice: Dictionary = {}
@@ -45,6 +47,10 @@ func _ready() -> void:
 	var preview_errors: Array[String] = preview_catalog.load_catalog()
 	if not preview_errors.is_empty():
 		push_error("Vista previa narrativa inválida: " + "; ".join(preview_errors))
+	draft_flow = DraftFlowScript.new()
+	var draft_errors: Array[String] = draft_flow.load_draft()
+	if not draft_errors.is_empty():
+		push_error("Borrador jugable inválido: " + "; ".join(draft_errors))
 	world = WorldScript.new()
 	add_child(world)
 	world.interacted.connect(_on_interacted)
@@ -370,7 +376,7 @@ func _load_phase() -> void:
 
 func _update_hud() -> void:
 	if GameState.phase == "preview":
-		hud.text = "VISTA PREVIA · %s · %s" % [GameState.code, GameState.preview_scene]
+		hud.text = ("BORRADOR · %s · %s" if GameState.flags.get("draft_mode", false) else "VISTA PREVIA · %s · %s") % [GameState.code, GameState.preview_scene]
 		return
 	var place: String = {"bedroom": "HABITACIÓN", "courtyard": "PATIO", "computer": "COMPUTADORA", "result": "RESULTADO"}.get(GameState.phase, GameState.phase.to_upper())
 	hud.text = "DÍA 0  ·  %s  ·  %s  |  %s" % [GameState.code, place, _objective_text()]
@@ -385,7 +391,7 @@ func _objective_text() -> String:
 			if not GameState.flags.get("friends", false): return "Acércate al grupo"
 			return "Ve a la salida"
 		"computer": return "Usa la computadora"
-		"result": return "Fin del tramo disponible"
+		"result": return "Continúa la historia D1–D4"
 		"preview": return "Fragmentos recuperados; conectores pendientes"
 	return ""
 
@@ -940,14 +946,32 @@ func _show_result() -> void:
 	_clear_modal()
 	_modal_text("PARTIDA FINALIZADA", 23)
 	_modal_text("Resultado: " + GameState.moba_result, 19)
-	_modal_text("La reacción de Camila y los conectores de D1–D4 siguen pendientes. Puedes explorar los fragmentos literales recuperados en vista previa.", 16)
-	var preview_button := _button("Ver fragmentos D1–D4", func(): _commit_preview("D1_02_A", 0))
+	var body := _preview_content()
+	_preview_text(body, "BORRADOR · Camila: " + draft_flow.camila_reaction(GameState.moba_result, GameState.moba_class), 16)
+	_preview_text(body, "Puedes continuar la historia provisional D1–D4. Los conectores y desenlaces aún requieren aprobación.", 16)
+	var draft_button := _preview_button(body, "Continuar borrador jugable", _start_playable_draft)
+	draft_button.disabled = preview_catalog.scenes.is_empty() or draft_flow.content.is_empty()
+	if not draft_button.disabled:
+		draft_button.grab_focus()
+		body.get_parent().set_deferred("scroll_vertical", 0)
+	var preview_button := _preview_button(body, "Ver fragmentos D1–D4", func(): _commit_preview("D1_02_A", 0))
 	preview_button.disabled = preview_catalog.scenes.is_empty()
-	if not preview_button.disabled:
-		preview_button.grab_focus()
-	_button("Volver al menú", _return_to_menu)
+	_preview_button(body, "Volver al menú", _return_to_menu)
 
-func _commit_preview(next_scene: String, next_step: int, choice_key: String = "") -> bool:
+func _start_playable_draft() -> bool:
+	if save_in_progress or draft_flow.content.is_empty() or preview_catalog.scenes.is_empty():
+		return false
+	var previous := GameState.snapshot()
+	GameState.flags.draft_mode = true
+	GameState.flags.draft_completed = false
+	GameState.flags.draft_ending = ""
+	GameState.preview_choices.clear()
+	if await _commit_preview("D1_02_A", 0):
+		return true
+	GameState.restore(previous)
+	return false
+
+func _commit_preview(next_scene: String, next_step: int, choice_key: String = "", mark_reviewed: bool = false) -> bool:
 	if save_in_progress or preview_catalog.scenes.is_empty():
 		return false
 	save_in_progress = true
@@ -958,6 +982,8 @@ func _commit_preview(next_scene: String, next_step: int, choice_key: String = ""
 	GameState.preview_step = next_step
 	if not choice_key.is_empty():
 		GameState.preview_choices[next_scene] = choice_key
+	if mark_reviewed:
+		GameState.flags.preview_reviewed = true
 	if await SaveManager.save_slot_async():
 		save_in_progress = false
 		if is_inside_tree():
@@ -1024,13 +1050,20 @@ func _preview_line(parent: VBoxContainer, line: Dictionary) -> void:
 func _render_preview() -> void:
 	modal_kind = "preview"
 	_clear_modal()
-	_modal_text("TEXTO RECUPERADO · VISTA PREVIA", 17)
+	var draft_mode: bool = GameState.flags.get("draft_mode", false)
+	_modal_text("BORRADOR JUGABLE · PROVISIONAL" if draft_mode else "TEXTO RECUPERADO · VISTA PREVIA", 17)
 	if preview_catalog.scenes.is_empty():
 		_modal_text("No se pudieron cargar los fragmentos.", 16)
 		return
 	var body := _preview_content()
 	var scene_id: String = GameState.preview_scene
 	if scene_id == "ENDINGS_INDEX":
+		if draft_mode and GameState.preview_step == 2 and GameState.flags.get("draft_completed", false):
+			_render_draft_summary(body)
+			return
+		if GameState.preview_step == 1 and GameState.flags.get("preview_reviewed", false):
+			_render_preview_summary(body)
+			return
 		_preview_text(body, "Finales recuperados · selección manual", 21)
 		_preview_text(body, "Las condiciones para asignar un final no están confirmadas. Elige un fragmento para leerlo; esta selección no establece el final de la partida.", 15)
 		for ending_id in PreviewCatalogScript.ENDING_ORDER:
@@ -1048,6 +1081,8 @@ func _render_preview() -> void:
 	_preview_text(body, "%s · %s" % [day_label, str(scene.get("title", scene_id))], 21)
 	var fragment_note := "conversación continua confirmada; reacciones parciales" if scene_id in ["D4_01_A", "D4_02_A", "D4_03_A"] else "orden y conectores provisionales"
 	_preview_text(body, "Fragmento %s · %s" % [scene_id, fragment_note], 14)
+	if draft_mode:
+		_preview_text(body, "BORRADOR · conector: " + draft_flow.connector(scene_id), 15)
 	var lines: Array = scene.get("lines", [])
 	var choices: Array = scene.get("choices", [])
 	var after_choice: Array = scene.get("after_choice", [])
@@ -1076,9 +1111,12 @@ func _render_preview() -> void:
 			if not found:
 				_preview_text(body, "La opción guardada no está disponible.")
 			_preview_button(body, "Continuar", func(): _commit_preview(scene_id, step + 1))
-		elif step < lines.size() + 2 + after_choice.size():
+		elif draft_mode and step == lines.size() + 2:
+			_preview_text(body, "BORRADOR · reacción: " + draft_flow.choice_reaction(scene_id, str(GameState.preview_choices.get(scene_id, ""))), 18)
+			_preview_button(body, "Continuar", func(): _commit_preview(scene_id, step + 1))
+		elif step < lines.size() + 2 + after_choice.size() + (1 if draft_mode else 0):
 			_preview_text(body, "Continuación recuperada: no consta su enlace con la opción elegida.", 14)
-			_preview_line(body, after_choice[step - lines.size() - 2])
+			_preview_line(body, after_choice[step - lines.size() - 2 - (1 if draft_mode else 0)])
 			_preview_button(body, "Continuar", func(): _commit_preview(scene_id, step + 1))
 		else:
 			terminal = true
@@ -1096,7 +1134,77 @@ func _render_preview() -> void:
 	if terminal:
 		_render_preview_terminal(body, scene_id, scene)
 
+func _render_draft_summary(body: VBoxContainer) -> void:
+	_preview_text(body, "BORRADOR JUGABLE TERMINADO", 21)
+	_preview_text(body, "Desenlace provisional: " + str(GameState.flags.get("draft_ending", "")), 19)
+	_preview_text(body, "Regla temporal: la última respuesta del Día 4 determina este desenlace. No hay puntuación educativa ni final canónico asignado.", 15)
+	_preview_text(body, "Resultado de la partida: " + GameState.moba_result + " · clase: " + GameState.moba_class, 15)
+	for scene_id in PreviewCatalogScript.MAIN_ORDER:
+		var selected: String = str(GameState.preview_choices.get(scene_id, ""))
+		if not selected.is_empty():
+			_preview_text(body, "%s: opción %s" % [scene_id, selected], 15)
+	_preview_button(body, "Jugar de nuevo el borrador D1–D4", _start_playable_draft)
+	_preview_button(body, "Volver al menú", _return_to_menu)
+
+func _draft_terminal_step(scene_id: String) -> int:
+	return preview_catalog.terminal_step(scene_id) + (1 if DraftFlowScript.MAIN_IDS.has(scene_id) else 0)
+
+func _finish_draft() -> bool:
+	if not GameState.flags.get("draft_mode", false) or GameState.preview_scene not in ["F01_B", "F02", "F03"] or GameState.preview_step < _draft_terminal_step(GameState.preview_scene):
+		return false
+	var previous := GameState.snapshot()
+	GameState.flags.draft_completed = true
+	GameState.flags.draft_ending = draft_flow.ending_code(GameState.preview_scene)
+	if await _commit_preview("ENDINGS_INDEX", 2):
+		return true
+	GameState.restore(previous)
+	return false
+
+func _render_preview_summary(body: VBoxContainer) -> void:
+	_preview_text(body, "RECORRIDO DE VISTA PREVIA TERMINADO", 21)
+	_preview_text(body, "Leíste un extracto de final recuperado. Esta lectura no asigna un final oficial ni completa la historia canónica; faltan sus reglas y parlamentos aprobados.", 15)
+	_preview_text(body, "Resultado del MOBA: " + GameState.moba_result, 16)
+	_preview_text(body, "Respuestas literales guardadas en esta ranura:", 16)
+	var any_choice := false
+	for scene_id in PreviewCatalogScript.MAIN_ORDER:
+		var selected: String = str(GameState.preview_choices.get(scene_id, ""))
+		if selected.is_empty():
+			continue
+		var scene: Dictionary = preview_catalog.get_scene(scene_id)
+		for choice in scene.get("choices", []):
+			if str(choice.get("key", "")) == selected:
+				_preview_text(body, "Día %d · %s · %s: %s" % [int(scene.get("day", 0)), scene_id, selected, choice.get("text", "")], 15)
+				any_choice = true
+				break
+	if not any_choice:
+		_preview_text(body, "No se registraron respuestas en los fragmentos recuperados.", 15)
+	_preview_button(body, "Releer fragmentos D1–D4", func(): _commit_preview("D1_02_A", 0))
+	_preview_button(body, "Revisar finales recuperados", func(): _commit_preview("ENDINGS_INDEX", 0))
+	_preview_button(body, "Volver al menú", _return_to_menu)
+
+func _finish_preview() -> bool:
+	if not PreviewCatalogScript.ENDING_ORDER.has(GameState.preview_scene):
+		return false
+	if GameState.preview_step < preview_catalog.terminal_step(GameState.preview_scene):
+		return false
+	return await _commit_preview("ENDINGS_INDEX", 1, "", true)
+
 func _render_preview_terminal(body: VBoxContainer, scene_id: String, scene: Dictionary) -> void:
+	if GameState.flags.get("draft_mode", false):
+		_preview_text(body, "Fin de escena · recorrido provisional. Los textos recuperados permanecen literales; los conectores y reacciones son borrador.", 15)
+		if scene.has("unplaced_lines"):
+			_preview_button(body, "Leer líneas sin posición confirmada", _render_unplaced_preview)
+		var next_id: String = preview_catalog.next_main(scene_id)
+		if scene_id == "D4_03_A":
+			next_id = draft_flow.ending_for(str(GameState.preview_choices.get(scene_id, "")))
+		elif scene_id == "F01_A":
+			next_id = "F01_B"
+		if not next_id.is_empty():
+			_preview_button(body, "Continuar historia: " + next_id, func(): _commit_preview(next_id, 0)).grab_focus()
+		elif scene_id in ["F01_B", "F02", "F03"]:
+			_preview_button(body, "Terminar borrador jugable", _finish_draft).grab_focus()
+		_preview_button(body, "Volver al menú", _return_to_menu)
+		return
 	if ["D4_01_A", "D4_02_A"].has(scene_id):
 		_preview_text(body, "Fin del fragmento. El guion confirma que la conversación del Día 4 continúa, pero no reconstruye todas las reacciones a cada respuesta.", 15)
 	else:
@@ -1110,6 +1218,7 @@ func _render_preview_terminal(body: VBoxContainer, scene_id: String, scene: Dict
 		else:
 			_preview_button(body, "Siguiente fragmento recuperado: " + next_id, func(): _commit_preview(next_id, 0))
 	else:
+		_preview_button(body, "Terminar recorrido de vista previa", _finish_preview).grab_focus()
 		_preview_button(body, "Volver al índice de finales", func(): _commit_preview("ENDINGS_INDEX", 0))
 	_preview_button(body, "Volver al menú", _return_to_menu)
 

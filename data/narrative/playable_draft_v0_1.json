@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "draft_version": "PLAYABLE_DRAFT_v0.1",
+  "provisional": true,
+  "ready_for_publication": false,
+  "camila_reactions": {
+    "victoria": {
+      "Atacante": "¡Buena partida, Sofi! Tu ataque abrió espacio para el equipo.",
+      "Defensor": "¡Ganamos! Aguantaste cuando más lo necesitábamos.",
+      "Soporte": "¡Salió bien! Estuviste pendiente de todos hasta el final."
+    },
+    "derrota": {
+      "Atacante": "No salió esta vez. Atacaste con ganas; ahora toca escuchar al equipo.",
+      "Defensor": "Perdimos, pero cubriste al grupo en los momentos difíciles.",
+      "Soporte": "Qué pena la derrota. Ayudaste a que nadie quedara solo."
+    },
+    "empate": {
+      "Atacante": "Quedamos iguales. Tu ataque nos mantuvo en la partida.",
+      "Defensor": "Empate. Tu defensa nos dio tiempo para reorganizarnos.",
+      "Soporte": "Empate. Tu apoyo mantuvo al equipo unido."
+    }
+  },
+  "connectors": {
+    "D1_02_A": "Al día siguiente, Sofi vuelve al grupo. Mateo presenta a alguien con quien jugó en línea.",
+    "D2_03_A": "Más adelante, Mateo enseña a Sofi un mensaje que recibió en su celular.",
+    "D3_01_A": "Otro día, Mateo busca un momento tranquilo para contarle a Sofi qué le preocupa.",
+    "D4_01_A": "En el patio, Mateo muestra una nueva conversación. La propuesta de verse en persona lo inquieta.",
+    "D4_02_A": "La conversación sigue en el patio. Sofi escucha a Mateo antes de decidir qué hacer juntos.",
+    "D4_03_A": "Mateo aún conserva los mensajes. Sofi y él vuelven a hablar de los próximos pasos.",
+    "F01_A": "Sofi y Mateo deciden pedir ayuda a una persona adulta de confianza y llevar los mensajes.",
+    "F01_B": "La conversación con una persona adulta continúa. Mateo y Sofi revisan cómo cuidarse.",
+    "F02": "Mateo decide marcar un límite claro. Sofi permanece a su lado mientras revisan el chat.",
+    "F03": "La situación queda sin resolver por ahora. Los mensajes siguen presentes y la inquietud continúa."
+  },
+  "choice_reactions": {
+    "D1_02_A": {"A": "Mateo sonríe y deja espacio para que el grupo se presente.", "B": "Mateo empieza a contar cómo fue la partida anterior.", "C": "La visita se suma a la conversación del grupo."},
+    "D2_03_A": {"A": "Mateo vuelve a mirar la oferta en la pantalla, todavía entusiasmado.", "B": "Mateo admite que no sabe bien por qué le ofrecen ese regalo.", "C": "Mateo escucha la cautela de Sofi y guarda el celular un momento."},
+    "D3_01_A": {"A": "Mateo reconoce que el secreto le incomoda.", "B": "Mateo asiente, aunque la duda no desaparece.", "C": "Mateo acepta pensar con Sofi en alguien con quien hablar."},
+    "D4_01_A": {"A": "Mateo se alivia al oír que puede pedir ayuda y conservar el chat.", "B": "Mateo considera decir que no quiere encontrarse con Kairo.", "C": "Mateo mira el teléfono; todavía le preocupa que le pidan guardar el encuentro en secreto."},
+    "D4_02_A": {"A": "Mateo agradece que Sofi se ofrezca a acompañarlo.", "B": "Mateo piensa en cómo escribir un límite claro.", "C": "Mateo guarda el teléfono, aunque sigue inquieto."},
+    "D4_03_A": {"A": "Mateo acepta conservar los mensajes y buscar apoyo junto con Sofi.", "B": "Mateo prepara un mensaje para rechazar el encuentro y conserva el chat.", "C": "Mateo decide esperar, pero no logra dejar de pensar en los mensajes."}
+  },
+  "ending_by_last_choice": {"A": "F01_A", "B": "F02", "C": "F03"}
+}

@@ -6,7 +6,7 @@ Proyecto 2D de escritorio y Web en desarrollo. El diseño de referencia está en
 
 1. Abrir `project.godot` con Godot 4.4.1 o una versión compatible de Godot 4.
 2. Ejecutar la escena principal con **F6** o el proyecto con **F5**.
-3. Elegir una de las tres ranuras. En la habitación: alarma y mochila; en el patio: grupo; después, computadora, clase y MOBA. Tras el resultado, **Ver fragmentos D1–D4** abre la vista previa narrativa.
+3. Elegir una de las tres ranuras. En la habitación: alarma y mochila; en el patio: grupo; después, computadora, clase y MOBA. Tras el resultado, **Continuar borrador jugable** recorre D1–D4 hasta un desenlace provisional. **Ver fragmentos D1–D4** mantiene la lectura independiente de la fuente recuperada.
 
 Controles: **WASD** movimiento, **F** interacción, **E** celular, **Tab** objetivo, **P** pausa, **Esc** volver, **Q** habilidad en MOBA y **clic izquierdo** ataque.
 
@@ -70,13 +70,15 @@ npm run test:dashboard-browser
 
 ## QA técnico
 
-La [matriz P7 con evidencia por caso](docs/P7_QA_2026-10-27.md) registra qué funcionó en `0.7.0-preview` y qué sigue bloqueado por el guion/rúbrica definitivos, Supabase de desarrollo y staging. El build local actual es `0.16.0-preview`. El menú de pausa permite cambiar entre texto pequeño, mediano y grande, y ajustar la velocidad de los diálogos D0; una ventana menor de 768×448 pausa el juego y exige pulsar **Continuar** después de ampliarla. Los diálogos D0 guardan el nodo activo y el historial de la conversación actual antes de avanzar y se reanudan tras recargar. Mientras aparece una línea, un toque la revela completa; una vez visible, el siguiente avanza. Las respuestas D0 y de fragmentos D1–D4 requieren confirmación neutral antes de guardarse; **Esc/Volver** cancela sin modificar la ranura. También se recuperan el celular, el objetivo, la selección de clase y el nivel de pista si estaban abiertos.
+La [matriz P7 con evidencia por caso](docs/P7_QA_2026-10-27.md) registra qué funcionó en `0.7.0-preview` y qué sigue bloqueado por el guion/rúbrica definitivos, Supabase de desarrollo y staging. El build local actual es `0.17.0-preview`. El menú de pausa permite cambiar entre texto pequeño, mediano y grande, y ajustar la velocidad de los diálogos D0; una ventana menor de 768×448 pausa el juego y exige pulsar **Continuar** después de ampliarla. Los diálogos D0 guardan el nodo activo y el historial de la conversación actual antes de avanzar y se reanudan tras recargar. Mientras aparece una línea, un toque la revela completa; una vez visible, el siguiente avanza. Las respuestas D0 y de fragmentos D1–D4 requieren confirmación neutral antes de guardarse; **Esc/Volver** cancela sin modificar la ranura. También se recuperan el celular, el objetivo, la selección de clase y el nivel de pista si estaban abiertos.
 
 ## Entrega P8
 
 El [procedimiento de construcción, staging y operación](docs/P8_OPERATIONS.md) incluye un paquete con manifiesto SHA-256, workflow de CI preparado, guardia que bloquea contenido provisional, manuales y [procedimiento de recuperación](docs/RECOVERY.md). El paquete local de vista previa puede generarse con `python scripts/release.py package --channel preview --output build/mi-paquete-preview` después de exportar Web; el destino debe ser una carpeta nueva. Hay un repositorio Git local sin remoto. El workflow aún no se ha ejecutado en GitHub; staging y producción no están desplegados.
 
 ## Estado actual
+
+El [borrador jugable D1–D4](docs/PLAYABLE_DRAFT.md) conecta los fragmentos recuperados, guarda las opciones y llega a un desenlace provisional. Sus reacciones, conectores y regla de final están separados del guion literal y requieren sustitución antes de publicar.
 
 - Recorrido técnico de Día 0 hasta el resultado del MOBA, tres ranuras locales y tests de narrativa y mecánicas básicas. Despertar, patio y chat grupal usan texto literal del [guion recuperado v0.2](docs/recovered/Guion_Literal_Recuperado_Ampliado_D0_D4_v0_2.md) en una **vista previa provisional**. La opción elegida se conserva en el guardado y el chat puede releerse en el celular.
 - P5 permite leer seis fragmentos D1–D4, elegir sus opciones literales y explorar cuatro extractos de finales desde un índice manual. Se guardan escena, línea y opción para reanudar la lectura. Las [lagunas de la fuente y requisitos de sustitución](docs/P5_SOURCE_GAPS.md) están documentados; este recorrido no asigna finales ni puntuación educativa.

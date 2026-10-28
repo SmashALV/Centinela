@@ -4,6 +4,7 @@ const SCHEMA_VERSION := 1
 const NARRATIVE_VERSION := "provisional-d0-1"
 const PREVIEW_CONTENT_VERSION := "RECOVERED_PREVIEW_D0_v0.2"
 const PREVIEW_PACK_VERSION := "RECOVERED_PREVIEW_D0_D4_v0.2"
+const DRAFT_CONTENT_VERSION := "PLAYABLE_DRAFT_v0.1"
 const PREVIEW_SCENES := ["D1_02_A", "D2_03_A", "D3_01_A", "D4_01_A", "D4_02_A", "D4_03_A", "ENDINGS_INDEX", "F01_A", "F01_B", "F02", "F03"]
 
 var slot: int = 1
@@ -55,6 +56,7 @@ func snapshot() -> Dictionary:
 	return {"schema_version": SCHEMA_VERSION, "narrative_version": NARRATIVE_VERSION,
 		"preview_content_version": PREVIEW_CONTENT_VERSION,
 		"preview_pack_version": PREVIEW_PACK_VERSION,
+		"draft_content_version": DRAFT_CONTENT_VERSION,
 		"slot": slot, "code": code, "phase": phase, "flags": flags.duplicate(true),
 		"player_position": [player_position.x, player_position.y],
 		"moba_class": moba_class, "moba_result": moba_result,
@@ -74,6 +76,8 @@ func restore(data: Dictionary) -> bool:
 		return false
 	if data.has("preview_pack_version") and data.preview_pack_version != PREVIEW_PACK_VERSION:
 		return false
+	if typeof(data.get("flags")) == TYPE_DICTIONARY and data.flags.get("draft_mode", false) and data.get("draft_content_version") != DRAFT_CONTENT_VERSION:
+		return false
 	if typeof(data.get("slot")) != TYPE_FLOAT and typeof(data.get("slot")) != TYPE_INT:
 		return false
 	if int(data.slot) < 1 or int(data.slot) > 3 or float(data.slot) != float(int(data.slot)) or typeof(data.get("flags")) != TYPE_DICTIONARY:
@@ -85,9 +89,11 @@ func restore(data: Dictionary) -> bool:
 	for index in range(4, 10):
 		if data.code.unicode_at(index) < 48 or data.code.unicode_at(index) > 57:
 			return false
-	for flag in ["wakeup_seen", "alarm", "backpack", "friends", "d0_chat_done"]:
+	for flag in ["wakeup_seen", "alarm", "backpack", "friends", "d0_chat_done", "preview_reviewed", "draft_mode", "draft_completed"]:
 		if data.flags.has(flag) and typeof(data.flags[flag]) != TYPE_BOOL:
 			return false
+	if data.flags.has("draft_ending") and data.flags.draft_ending not in ["", "F01", "F02", "F03"]:
+		return false
 	if data.flags.has("d0_chat_choice") and data.flags.d0_chat_choice not in ["D0_05_A_OPT_A", "D0_05_A_OPT_B", "D0_05_A_OPT_C"]:
 		return false
 	if data.phone_messages.size() > 100:

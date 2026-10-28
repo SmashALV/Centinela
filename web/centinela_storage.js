@@ -113,10 +113,13 @@
     const flags = snapshot.flags;
     if (!flags || typeof flags !== "object" || Array.isArray(flags))
       throw failure("INVALID_REQUEST", "Indicadores inválidos");
-    for (const name of ["wakeup_seen", "alarm", "backpack", "friends", "d0_chat_done"]) {
+    for (const name of ["wakeup_seen", "alarm", "backpack", "friends", "d0_chat_done", "preview_reviewed", "draft_mode", "draft_completed"]) {
       if (name in flags && typeof flags[name] !== "boolean")
         throw failure("INVALID_REQUEST", "Indicador inválido");
     }
+    if ((flags.draft_mode && snapshot.draft_content_version !== "PLAYABLE_DRAFT_v0.1") ||
+        ("draft_ending" in flags && !["", "F01", "F02", "F03"].includes(flags.draft_ending)))
+      throw failure("INVALID_REQUEST", "Borrador inválido");
     if ("d0_chat_choice" in flags &&
         !["D0_05_A_OPT_A", "D0_05_A_OPT_B", "D0_05_A_OPT_C"].includes(flags.d0_chat_choice))
       throw failure("INVALID_REQUEST", "Elección inválida");

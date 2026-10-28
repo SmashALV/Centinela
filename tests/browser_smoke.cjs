@@ -297,8 +297,9 @@ async function main() {
     const arrowSelected = await waitForStore("save_snapshots", 1, (record) =>
       record?.snapshot?.preview_choices?.D2_03_A === "B");
     assert.equal(arrowSelected.snapshot.preview_step, 10);
+    await page.waitForTimeout(600);
     await page.keyboard.press("p");
-    await page.waitForTimeout(350);
+    await page.waitForTimeout(800);
     await page.keyboard.press("ArrowDown");
     await page.keyboard.press("ArrowDown");
     await page.keyboard.press("Enter");
@@ -398,6 +399,141 @@ async function main() {
     await showExplorationPhase("computer", [384, 320], { wakeup_seen: true, alarm: true, backpack: true, friends: true }, "computer_object.png");
     await showExplorationPhase("moba", [384, 320], { wakeup_seen: true, alarm: true, backpack: true, friends: true }, "moba_teams.png", "Defensor", 3500);
     assert.equal((await readStore("save_snapshots", 1)).snapshot.phase, "moba");
+    await page.evaluate(async () => {
+      const db = await new Promise((resolve, reject) => {
+        const request = indexedDB.open("centinela_2_local_v1");
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+      try {
+        await new Promise((resolve, reject) => {
+          const transaction = db.transaction("save_snapshots", "readwrite");
+          const store = transaction.objectStore("save_snapshots");
+          const request = store.get(1);
+          request.onsuccess = () => {
+            const record = request.result;
+            Object.assign(record.snapshot, { phase: "preview", moba_result: "empate",
+              preview_scene: "F02", preview_step: 9, preview_choices: { D1_02_A: "B" },
+              ui_modal: "", dialogue_key: "", dialogue_position: 0,
+              dialogue_choice: "", dialogue_history: [] });
+            store.put(record);
+          };
+          transaction.oncomplete = resolve;
+          transaction.onerror = () => reject(transaction.error);
+        });
+      } finally { db.close(); }
+    });
+    await page.reload();
+    await page.waitForFunction(() => !!globalThis.CentinelaStorage);
+    await page.waitForTimeout(1000);
+    await page.mouse.click(canvas.x + canvas.width * 0.5, canvas.y + canvas.height * 0.41);
+    await page.waitForTimeout(500);
+    await page.keyboard.press("Enter");
+    await waitForStore("save_snapshots", 1, (record) =>
+      record?.snapshot?.flags?.preview_reviewed === true &&
+      record?.snapshot?.preview_scene === "ENDINGS_INDEX" && record.snapshot.preview_step === 1);
+    await page.screenshot({ path: "build/web/preview_complete.png" });
+    await page.reload();
+    await page.waitForFunction(() => !!globalThis.CentinelaStorage);
+    await page.waitForTimeout(1000);
+    await page.mouse.click(canvas.x + canvas.width * 0.5, canvas.y + canvas.height * 0.41);
+    await page.waitForTimeout(500);
+    assert.equal((await readStore("save_snapshots", 1)).snapshot.flags.preview_reviewed, true);
+    await page.evaluate(async () => {
+      const db = await new Promise((resolve, reject) => {
+        const request = indexedDB.open("centinela_2_local_v1");
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+      try {
+        await new Promise((resolve, reject) => {
+          const transaction = db.transaction("save_snapshots", "readwrite");
+          const store = transaction.objectStore("save_snapshots");
+          const request = store.get(1);
+          request.onsuccess = () => {
+            const record = request.result;
+            Object.assign(record.snapshot, { phase: "preview", preview_scene: "D4_03_A",
+              preview_step: 7, preview_choices: { D4_03_A: "B" },
+              draft_content_version: "PLAYABLE_DRAFT_v0.1",
+              flags: { ...record.snapshot.flags, draft_mode: true, draft_completed: false, draft_ending: "" } });
+            store.put(record);
+          };
+          transaction.oncomplete = resolve;
+          transaction.onerror = () => reject(transaction.error);
+        });
+      } finally { db.close(); }
+    });
+    await page.reload();
+    await page.waitForFunction(() => !!globalThis.CentinelaStorage);
+    await page.waitForTimeout(1000);
+    await page.mouse.click(canvas.x + canvas.width * 0.5, canvas.y + canvas.height * 0.41);
+    await page.waitForTimeout(500);
+    await page.keyboard.press("Enter");
+    await waitForStore("save_snapshots", 1, (record) => record?.snapshot?.preview_scene === "F02");
+    await page.evaluate(async () => {
+      const db = await new Promise((resolve, reject) => {
+        const request = indexedDB.open("centinela_2_local_v1");
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+      try {
+        await new Promise((resolve, reject) => {
+          const transaction = db.transaction("save_snapshots", "readwrite");
+          const store = transaction.objectStore("save_snapshots");
+          const request = store.get(1);
+          request.onsuccess = () => {
+            const record = request.result;
+            record.snapshot.preview_step = 9;
+            store.put(record);
+          };
+          transaction.oncomplete = resolve;
+          transaction.onerror = () => reject(transaction.error);
+        });
+      } finally { db.close(); }
+    });
+    await page.reload();
+    await page.waitForFunction(() => !!globalThis.CentinelaStorage);
+    await page.waitForTimeout(1000);
+    await page.mouse.click(canvas.x + canvas.width * 0.5, canvas.y + canvas.height * 0.41);
+    await page.waitForTimeout(500);
+    await page.keyboard.press("Enter");
+    await waitForStore("save_snapshots", 1, (record) =>
+      record?.snapshot?.flags?.draft_completed === true &&
+      record?.snapshot?.flags?.draft_ending === "F02" &&
+      record?.snapshot?.preview_scene === "ENDINGS_INDEX" && record.snapshot.preview_step === 2);
+    await page.screenshot({ path: "build/web/draft_complete.png" });
+    await page.evaluate(async () => {
+      const db = await new Promise((resolve, reject) => {
+        const request = indexedDB.open("centinela_2_local_v1");
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+      try {
+        await new Promise((resolve, reject) => {
+          const transaction = db.transaction("save_snapshots", "readwrite");
+          const store = transaction.objectStore("save_snapshots");
+          const request = store.get(1);
+          request.onsuccess = () => {
+            const record = request.result;
+            Object.assign(record.snapshot, { phase: "result", preview_scene: "", preview_step: 0,
+              preview_choices: {}, flags: { ...record.snapshot.flags, draft_mode: false,
+                draft_completed: false, draft_ending: "" } });
+            store.put(record);
+          };
+          transaction.oncomplete = resolve;
+          transaction.onerror = () => reject(transaction.error);
+        });
+      } finally { db.close(); }
+    });
+    await page.reload();
+    await page.waitForFunction(() => !!globalThis.CentinelaStorage);
+    await page.waitForTimeout(1000);
+    await page.mouse.click(canvas.x + canvas.width * 0.5, canvas.y + canvas.height * 0.41);
+    await page.waitForTimeout(500);
+    await page.screenshot({ path: "build/web/draft_entry.png" });
+    await page.keyboard.press("Enter");
+    await waitForStore("save_snapshots", 1, (record) =>
+      record?.snapshot?.flags?.draft_mode === true && record?.snapshot?.preview_scene === "D1_02_A");
     console.log("Canvas:", canvas);
     console.log("Browser:", path.basename(executablePath));
     console.log("Persisted slot:", { slot: saved.snapshot.slot, phase: saved.snapshot.phase });

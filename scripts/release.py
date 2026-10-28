@@ -53,6 +53,7 @@ def metadata() -> dict:
         "save_schema_version": int(gd_constant(state, "SCHEMA_VERSION")),
         "narrative_version": gd_constant(state, "NARRATIVE_VERSION"),
         "preview_pack_version": gd_constant(state, "PREVIEW_PACK_VERSION"),
+        "draft_content_version": gd_constant(state, "DRAFT_CONTENT_VERSION"),
         "rubric_version": game_config.get("rubric_version", ""),
     }
 
@@ -81,6 +82,8 @@ def release_guard(channel: str) -> dict:
         main = (ROOT / "scripts/Main.gd").read_text(encoding="utf-8")
         if "DAY_0_PREVIEW" in main or "RecoveredPreviewCatalog" in main:
             errors.append("el recorrido jugable aún usa la vista previa recuperada")
+        if "PlayableDraftFlow" in main:
+            errors.append("el recorrido jugable aún usa conectores y desenlaces de borrador")
         for relative in CANONICAL_FILES:
             path = ROOT / relative
             if not path.is_file():

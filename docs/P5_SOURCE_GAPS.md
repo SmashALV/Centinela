@@ -1,5 +1,7 @@
 # P5 · Vista previa de D1–D4 y finales
 
+**Actualización:** existe un [borrador jugable separado](PLAYABLE_DRAFT.md) que conecta estos extractos para probar una partida completa. Los huecos enumerados aquí siguen pendientes de aprobación y sustitución.
+
 Esta fase incorpora únicamente los parlamentos literales recuperados del documento `Guion_Literal_Recuperado_Ampliado_D0_D4_v0_2.md`. La fuente está en `docs/recovered/` y los archivos de ejecución están en `data/narrative/`. Todos llevan `provisional: true` y `ready_for_publication: false`.
 
 Al terminar el MOBA del Día 0, el botón **Ver fragmentos D1–D4** abre seis escenas recuperadas. Cada línea y opción se puede recorrer; la escena, posición y letra elegida se guardan en la ranura. Las escenas D1, D2 y D3 se presentan como fragmentos sucesivos porque faltan los conectores entre días. La fuente sí confirma que D4-01, D4-02 y D4-03 forman una conversación continua, aunque no aporta todas las reacciones a las opciones.

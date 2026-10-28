@@ -63,6 +63,8 @@ test("ranuras, bloqueo, transacción de decisión e idempotencia", async () => {
     { ...snapshot(1), code: "CTN-+12345" },
     { ...snapshot(1), player_position: [Infinity, 2] },
     { ...snapshot(1), flags: { alarm: "sí" } },
+    { ...snapshot(1), flags: { draft_mode: true } },
+    { ...snapshot(1), flags: { draft_ending: "F99" } },
     { ...snapshot(1), phone_messages: [42] },
     { ...snapshot(1), moba_class: "desconocida" },
     { ...snapshot(1), preview_step: 1.5 },

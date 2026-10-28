@@ -77,3 +77,14 @@ func next_main(scene_id: String) -> String:
 	if index < 0 or index + 1 >= MAIN_ORDER.size():
 		return ""
 	return MAIN_ORDER[index + 1]
+
+func terminal_step(scene_id: String) -> int:
+	var scene: Dictionary = get_scene(scene_id)
+	if scene.is_empty():
+		return -1
+	var lines: int = scene.get("lines", []).size()
+	if not scene.get("choices", []).is_empty():
+		return lines + 2 + scene.get("after_choice", []).size()
+	if not scene.get("later_chat", []).is_empty():
+		return lines + 1 + scene.get("later_chat", []).size()
+	return lines
