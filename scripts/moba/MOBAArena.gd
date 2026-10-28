@@ -23,6 +23,17 @@ const PROJECTILE_SPRITE := preload("res://assets/moba/effects/projectile.png")
 const ATTACK_Q_SPRITE := preload("res://assets/moba/effects/attack_q.png")
 const SHIELD_Q_SPRITE := preload("res://assets/moba/effects/shield_q.png")
 const SUPPORT_Q_SPRITE := preload("res://assets/moba/effects/support_q.png")
+const HUD_ICONS := {
+	"Atacante": preload("res://assets/ui/class_attacker.png"),
+	"Defensor": preload("res://assets/ui/class_defender.png"),
+	"Soporte": preload("res://assets/ui/class_support.png"),
+	"health": preload("res://assets/ui/health.png"),
+	"timer": preload("res://assets/ui/timer.png"),
+	"ability": preload("res://assets/ui/ability.png"),
+	"objective": preload("res://assets/ui/objective.png"),
+	"pause": preload("res://assets/ui/pause.png"),
+	"result": preload("res://assets/ui/result.png")
+}
 const TILE_SIZE := 32
 const MAP_CELLS := Vector2i(36, 20)
 const STATIC_OBSTACLES := [Rect2i(17, 8, 2, 4)]
@@ -47,6 +58,9 @@ var player_index := 2
 var camera: Camera2D
 var layer: CanvasLayer
 var hud: Label
+var timer_hud: Label
+var health_hud: Label
+var ability_hud: Label
 var objective_label: Label
 var notice: Label
 var pause_panel: PanelContainer
@@ -75,14 +89,33 @@ func _ready() -> void:
 	add_child(camera)
 	layer = CanvasLayer.new()
 	add_child(layer)
-	hud = Label.new()
-	hud.position = Vector2(10, 8)
-	hud.size = Vector2(748, 35)
-	hud.add_theme_font_size_override("font_size", _font_size(16))
-	layer.add_child(hud)
+	var hud_panel := PanelContainer.new()
+	hud_panel.position = Vector2(8, 6)
+	var hud_style := StyleBoxFlat.new()
+	hud_style.bg_color = Color("10192b", 0.88)
+	hud_style.border_color = Color("78bdbb")
+	hud_style.set_border_width_all(1)
+	hud_style.set_content_margin_all(5)
+	hud_panel.add_theme_stylebox_override("panel", hud_style)
+	layer.add_child(hud_panel)
+	var hud_row := HBoxContainer.new()
+	hud_row.add_theme_constant_override("separation", 14)
+	hud_panel.add_child(hud_row)
+	hud = _hud_chip(hud_row, HUD_ICONS.get(GameState.moba_class, HUD_ICONS["Atacante"]))
+	timer_hud = _hud_chip(hud_row, HUD_ICONS["timer"])
+	health_hud = _hud_chip(hud_row, HUD_ICONS["health"])
+	ability_hud = _hud_chip(hud_row, HUD_ICONS["ability"])
+	var objective_icon := TextureRect.new()
+	objective_icon.texture = HUD_ICONS["objective"]
+	objective_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	objective_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	objective_icon.position = Vector2(6, 418)
+	objective_icon.size = Vector2(22, 22)
+	objective_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	layer.add_child(objective_icon)
 	objective_label = Label.new()
-	objective_label.position = Vector2(10, 418)
-	objective_label.size = Vector2(748, 26)
+	objective_label.position = Vector2(32, 418)
+	objective_label.size = Vector2(728, 26)
 	objective_label.text = "Objetivo: destruir la base rival · WASD mover · clic atacar · Q habilidad · P pausa"
 	objective_label.add_theme_font_size_override("font_size", _font_size(12))
 	objective_label.add_theme_color_override("font_color", Color("fff3df"))
@@ -110,6 +143,23 @@ func _font_size(base: int) -> int:
 		"large": return roundi(base * 1.3)
 	return base
 
+func _hud_chip(parent: HBoxContainer, icon_texture: Texture2D) -> Label:
+	var chip := HBoxContainer.new()
+	chip.add_theme_constant_override("separation", 4)
+	parent.add_child(chip)
+	var badge := TextureRect.new()
+	badge.texture = icon_texture
+	badge.custom_minimum_size = Vector2(24, 24)
+	badge.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	badge.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	badge.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	chip.add_child(badge)
+	var value := Label.new()
+	value.add_theme_font_size_override("font_size", _font_size(14))
+	value.add_theme_color_override("font_color", Color("fff3df"))
+	chip.add_child(value)
+	return value
+
 func _on_lock_lost() -> void:
 	ended = true
 	SyncManager.on_slot_closed()
@@ -126,6 +176,13 @@ func _create_panel(title: String, button_text: String, action: Callable) -> Pane
 	var box := VBoxContainer.new()
 	box.name = "Content"
 	panel.add_child(box)
+	var badge := TextureRect.new()
+	badge.texture = HUD_ICONS["pause" if title == "PAUSA" else "result"]
+	badge.custom_minimum_size = Vector2(32, 32)
+	badge.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	badge.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	badge.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	box.add_child(badge)
 	var label := Label.new()
 	label.name = "Title"
 	label.text = title
@@ -308,7 +365,10 @@ func _process(delta: float) -> void:
 		tower_cd += 1.5
 	var remaining := maxi(0, ceili(LIMIT - elapsed))
 	var q_status := "lista" if q_cd <= 0.0 else "%.1fs" % q_cd
-	hud.text = "%s  ·  %ds  ·  HP %d/80  ·  Q %s" % [GameState.moba_class, remaining, ceili(heroes[player_index].hp), q_status]
+	hud.text = GameState.moba_class
+	timer_hud.text = "%ds" % remaining
+	health_hud.text = "%d/80" % ceili(heroes[player_index].hp)
+	ability_hud.text = "Q %s" % q_status
 	if remaining <= 10:
 		notice.text = "Últimos 10 segundos"
 	elif remaining <= 30:

@@ -49,7 +49,10 @@ class ReleaseTests(unittest.TestCase):
         names += [f"assets/moba/effects/{name}.png" for name in
                   ("projectile", "attack_q", "shield_q", "support_q")]
         names += [f"assets/ui/{name}.png" for name in
-                  ("phone", "objective", "pause", "controls")]
+                  ("phone", "objective", "pause", "controls", "dialogue", "history",
+                   "decision", "save", "result", "interact", "health", "timer",
+                   "ability", "class_attacker", "class_defender", "class_support",
+                   "menu_banner")]
         expected = {name + suffix for name in names for suffix in ("", ".import")}
         self.assertTrue(expected.issubset(release.source_hashes()))
         inputs = {path.relative_to(release.ROOT).as_posix() for path in release.export_inputs()}

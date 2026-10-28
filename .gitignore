@@ -3,6 +3,7 @@
 /android/
 node_modules/
 build/
+docs/*.png.import
 __pycache__/
 *.pyc
 supabase/.env.local

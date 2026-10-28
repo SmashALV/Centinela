@@ -362,8 +362,8 @@ async function main() {
     await waitForStore("save_snapshots", 1, (record) => record?.snapshot?.dialogue_key === "courtyard");
     await page.waitForTimeout(250);
     await page.screenshot({ path: "build/web/courtyard_camila_dialogue.png" });
-    const showExplorationPhase = async (phase, position, flags, screenshotName, mobaClass = "", extraWait = 0) => {
-      await page.evaluate(async ({ phase, position, flags, mobaClass }) => {
+    const showExplorationPhase = async (phase, position, flags, screenshotName, mobaClass = "", extraWait = 0, uiModal = "") => {
+      await page.evaluate(async ({ phase, position, flags, mobaClass, uiModal }) => {
         const db = await new Promise((resolve, reject) => {
           const request = indexedDB.open("centinela_2_local_v1");
           request.onsuccess = () => resolve(request.result);
@@ -377,7 +377,7 @@ async function main() {
             request.onsuccess = () => {
               const record = request.result;
               Object.assign(record.snapshot, {
-                phase, player_position: position, flags, moba_class: mobaClass, moba_result: "", ui_modal: "", dialogue_key: "",
+                phase, player_position: position, flags, moba_class: mobaClass, moba_result: "", ui_modal: uiModal, dialogue_key: "",
                 dialogue_position: 0, dialogue_choice: "", dialogue_history: [],
                 preview_scene: "", preview_step: 0, preview_choices: {}
               });
@@ -387,7 +387,7 @@ async function main() {
             transaction.onerror = () => reject(transaction.error);
           });
         } finally { db.close(); }
-      }, { phase, position, flags, mobaClass });
+      }, { phase, position, flags, mobaClass, uiModal });
       await page.reload();
       await page.waitForFunction(() => !!globalThis.CentinelaStorage);
       await page.waitForTimeout(1000);
@@ -397,6 +397,7 @@ async function main() {
     };
     await showExplorationPhase("bedroom", [384, 280], { wakeup_seen: true }, "bedroom_objects.png");
     await showExplorationPhase("computer", [384, 320], { wakeup_seen: true, alarm: true, backpack: true, friends: true }, "computer_object.png");
+    await showExplorationPhase("computer", [384, 320], { wakeup_seen: true, alarm: true, backpack: true, friends: true }, "class_selection.png", "", 0, "class");
     await showExplorationPhase("moba", [384, 320], { wakeup_seen: true, alarm: true, backpack: true, friends: true }, "moba_teams.png", "Defensor", 3500);
     assert.equal((await readStore("save_snapshots", 1)).snapshot.phase, "moba");
     await page.evaluate(async () => {

@@ -10,6 +10,8 @@ Se usó la herramienta integrada `image_gen` para generar PNG con transparencia 
 | Estructuras y terreno | `assets/moba/structures/{tower,base,ruin}.png`, `assets/moba/terrain/barrier_2x4.png` | Torres, bases, ruinas y barrera central |
 | Efectos | `assets/moba/effects/{projectile,attack_q,shield_q,support_q}.png` | Disparos, proyectil perforante, escudo y apoyo |
 | Interfaz | `assets/ui/{phone,objective,pause,controls}.png` | Encabezados de celular, objetivo, pausa y menú |
+| Interfaz ampliada | `assets/ui/{dialogue,history,decision,save,result,interact,health,timer,ability}.png` y `class_{attacker,defender,support}.png` | Diálogo, historial, confirmación, guardado, interacción, clase y HUD del MOBA |
+| Menú | `assets/ui/menu_banner.png` | Ilustración de fondo del menú de ranuras |
 
 Las hojas de personajes y héroes usan la misma cuadrícula 2×2: **arriba izquierda = abajo/frente; arriba derecha = arriba/espalda; abajo izquierda = izquierda; abajo derecha = derecha**. Las dimensiones de los PNG fuente varían; `World.gd` y `MOBAArena.gd` calculan los cuadrantes a partir del tamaño de cada imagen. Se muestran a 46×46 y 54×54 px respectivamente. Son vistas de reposo: aún faltan fotogramas de caminar, animaciones de ataque y una limpieza pixel a pixel a resolución final.
 
@@ -23,6 +25,17 @@ Cada archivo tuvo una llamada independiente a `image_gen`, con `transparent_back
 - **Estructuras y terreno:** «Una estructura aislada de MOBA top down en piedra, latón y cristal teal, alfa transparente, silueta clara». Se especificó por separado torre, base, ruina y barrera vertical de 2×4 casillas.
 - **Efectos:** «Un efecto aislado de pixel art con transparencia, legible a 16–32 px». Se especificó por separado proyectil azul, tajo ámbar, aro de escudo cian y aro de apoyo verde.
 - **Interfaz:** «Un icono cuadrado aislado de pixel art, paleta marino/teal/crema, alfa transparente y lectura a 32 px». Se especificó por separado celular, objetivo, pausa y cruceta.
+
+## Ampliación de interfaz, 28-10-2026
+
+Se usó nuevamente la herramienta integrada `image_gen`: una llamada por PNG, con `transparent_background=true` para los doce iconos y falso para la ilustración panorámica. Los archivos seleccionados se copiaron a `assets/ui/`.
+
+- **Menú:** «Pasillo escolar al atardecer hacia una arena digital teal, cinco adolescentes de espaldas, pixel art 2D, tonos marino y ámbar, sin texto ni logotipos».
+- **Distintivos de clase:** «Insignia heráldica aislada de pixel art sobre transparencia, legible a 42 px, sin texto». Atacante: espada y relámpago ámbar; Defensor: escudo cian; Soporte: estrella y báculo verdes.
+- **Narrativa y guardado:** «Icono aislado de interfaz RPG en pixel art, marino/teal/crema, legible a 32 px, alfa transparente, sin texto». Variantes: dos bocadillos (`dialogue`), libro abierto (`history`), caminos y marca de confirmación (`decision`), cristal de guardado con candado (`save`) y tablero de dos equipos (`result`).
+- **Acción y HUD:** «Icono aislado de pixel art con silueta clara a 24 px, alfa transparente, sin texto». Variantes: mano hacia objeto (`interact`), corazón (`health`), reloj de arena (`timer`) y gema de habilidad (`ability`).
+
+`Main.gd` muestra el fondo al elegir ranura, los distintivos de clase, iconos en pantallas narrativas y señales de objetivo/interacción. `MOBAArena.gd` muestra clase, tiempo, vida y enfriamiento Q en un HUD con iconos; los paneles de pausa y resultado también los usan. El texto y los controles siguen siendo explícitos: los iconos no sustituyen información necesaria para jugar.
 
 ## Sustitución por arte final
 

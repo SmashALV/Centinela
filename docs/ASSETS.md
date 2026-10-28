@@ -13,7 +13,7 @@
 | Obstáculo de arena | Un PNG transparente para barrera de 2×4 casillas | `assets/moba/terrain/`; mantener la misma colisión y los pasos laterales |
 | Proyectiles y habilidad Q | Cuatro PNG transparentes para proyectil, ataque, escudo y apoyo | `assets/moba/effects/`; conservar señales de equipo y clase |
 | Retratos de diálogo | PNG transparente de al menos 256×256 px, cinco expresiones coherentes por personaje | `assets/portraits/`; el Día 0 usa un retrato neutro por Sofi, Mateo, Bruno, Camila y Sebas |
-| Iconos de interfaz | Cuatro PNG transparentes para celular, objetivo, pausa y controles | `assets/ui/`; usados en encabezados de paneles |
+| Iconos e ilustración de interfaz | Dieciséis PNG transparentes para paneles, clases, HUD y controles; un fondo panorámico para el menú | `assets/ui/`; conserva nombres y transparencia para sustituirlos sin cambiar código |
 | Música de exploración y MOBA | Bucle WAV u OGG de 6–12 s, sin voces, sin silencios bruscos al repetir; nivel moderado | Sustituir `assets/audio/explore_loop.wav` y `arena_loop.wav`; `AudioManager.gd` selecciona el contexto |
 | Efectos de interfaz y combate | WAV u OGG mono, 0,1–0,5 s, sin voces; cuatro archivos para confirmación, interacción, habilidad y resultado | Sustituir `assets/audio/confirm.wav`, `interact.wav`, `ability.wav` y `result.wav` |
 

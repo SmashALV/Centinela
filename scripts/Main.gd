@@ -17,13 +17,27 @@ const UI_ICONS := {
 	"phone": preload("res://assets/ui/phone.png"),
 	"objective": preload("res://assets/ui/objective.png"),
 	"pause": preload("res://assets/ui/pause.png"),
-	"controls": preload("res://assets/ui/controls.png")
+	"controls": preload("res://assets/ui/controls.png"),
+	"dialogue": preload("res://assets/ui/dialogue.png"),
+	"history": preload("res://assets/ui/history.png"),
+	"decision": preload("res://assets/ui/decision.png"),
+	"save": preload("res://assets/ui/save.png"),
+	"result": preload("res://assets/ui/result.png"),
+	"interact": preload("res://assets/ui/interact.png"),
+	"ability": preload("res://assets/ui/ability.png"),
+	"class_attacker": preload("res://assets/ui/class_attacker.png"),
+	"class_defender": preload("res://assets/ui/class_defender.png"),
+	"class_support": preload("res://assets/ui/class_support.png")
 }
+const MENU_BANNER := preload("res://assets/ui/menu_banner.png")
 
 var world: Node2D
 var canvas: CanvasLayer
+var menu_background: TextureRect
 var hud: Label
+var hud_icon: TextureRect
 var prompt: Label
+var prompt_icon: TextureRect
 var modal: PanelContainer
 var modal_box: VBoxContainer
 var modal_kind: String = ""
@@ -62,8 +76,18 @@ func _ready() -> void:
 	world.interacted.connect(_on_interacted)
 	canvas = CanvasLayer.new()
 	add_child(canvas)
-	hud = _label(Vector2(20, 10), Vector2(728, 42), 16)
-	prompt = _label(Vector2(20, 402), Vector2(728, 34), 17)
+	menu_background = TextureRect.new()
+	menu_background.texture = MENU_BANNER
+	menu_background.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	menu_background.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	menu_background.position = Vector2.ZERO
+	menu_background.size = Vector2(768, 448)
+	menu_background.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	canvas.add_child(menu_background)
+	hud_icon = _screen_icon("objective", Vector2(5, 12), 22)
+	hud = _label(Vector2(30, 10), Vector2(718, 42), 16)
+	prompt_icon = _screen_icon("interact", Vector2(5, 402), 24)
+	prompt = _label(Vector2(30, 402), Vector2(718, 34), 17)
 	toast = _label(Vector2(140, 354), Vector2(488, 40), 15)
 	toast.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	modal = PanelContainer.new()
@@ -107,7 +131,9 @@ func _process(delta: float) -> void:
 	if modal_kind == "":
 		var target_label: String = world.target_label(world.nearby)
 		prompt.text = "F · interactuar: " + target_label if not world.nearby.is_empty() else "WASD · mover   F · interactuar   E · celular   Tab · objetivo   P · pausa"
+		prompt_icon.visible = not world.nearby.is_empty()
 	else:
+		prompt_icon.visible = false
 		if modal_kind == "menu":
 			prompt.text = "Selecciona una ranura para comenzar"
 		elif modal_kind in ["preview", "preview_unplaced"]:
@@ -194,6 +220,18 @@ func _label(pos: Vector2, dimensions: Vector2, font_size: int) -> Label:
 	canvas.add_child(label)
 	return label
 
+func _screen_icon(key: String, pos: Vector2, icon_size: int) -> TextureRect:
+	var icon := TextureRect.new()
+	icon.texture = UI_ICONS[key]
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon.position = pos
+	icon.size = Vector2(icon_size, icon_size)
+	icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	canvas.add_child(icon)
+	return icon
+
 func _scaled_text_size(base: int) -> int:
 	match GameState.text_size:
 		"small": return maxi(12, roundi(base * 0.9))
@@ -214,6 +252,7 @@ func _panel_style() -> StyleBoxFlat:
 	return style
 
 func _clear_modal() -> void:
+	menu_background.visible = false
 	modal.position = Vector2(70, 38)
 	modal.custom_minimum_size = Vector2(628, 372)
 	modal.size = Vector2(628, 372)
@@ -238,6 +277,7 @@ func _close_modal() -> void:
 		save_in_progress = false
 	modal_kind = ""
 	modal.visible = false
+	menu_background.visible = false
 	world.enabled = true
 
 func _modal_text(value: String, size: int = 18) -> void:
@@ -258,6 +298,7 @@ func _modal_heading(value: String, icon_key: String, size: int = 23) -> void:
 	icon.custom_minimum_size = Vector2(32, 32)
 	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	row.add_child(icon)
 	var label := Label.new()
 	label.text = value
@@ -265,11 +306,14 @@ func _modal_heading(value: String, icon_key: String, size: int = 23) -> void:
 	label.add_theme_color_override("font_color", Color("fff3df"))
 	row.add_child(label)
 
-func _button(value: String, callback: Callable) -> Button:
+func _button(value: String, callback: Callable, icon_key: String = "") -> Button:
 	var button := Button.new()
 	button.text = value
 	button.custom_minimum_size.y = 34
 	button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	if not icon_key.is_empty():
+		button.icon = UI_ICONS[icon_key]
+		button.expand_icon = true
 	button.add_theme_font_size_override("font_size", _scaled_text_size(16))
 	button.pressed.connect(callback)
 	modal_box.add_child(button)
@@ -281,6 +325,9 @@ func _show_menu() -> void:
 	pending_choice.clear()
 	modal_kind = "menu"
 	_clear_modal()
+	menu_background.visible = true
+	hud_icon.visible = false
+	hud.visible = false
 	_modal_heading("CENTINELA 2.0 · prototipo jugable", "controls", 24)
 	_modal_text("Día 0 con texto recuperado en vista previa. Falta validar el guion canónico completo.", 15)
 	var buttons: Array[Button] = []
@@ -384,6 +431,9 @@ func _start_slot(chosen: int) -> void:
 		_toast("Partida recuperada de una copia local")
 
 func _load_phase() -> void:
+	menu_background.visible = false
+	hud_icon.visible = true
+	hud.visible = true
 	var world_phase := GameState.phase
 	if world_phase == "result":
 		world_phase = "computer"
@@ -604,7 +654,7 @@ func _render_pause() -> void:
 	_preview_button(body, "Efectos: %d %%" % GameState.effects_volume, func(): _cycle_audio("effects"))
 	var speed_label: String = {"slow": "Lenta", "normal": "Normal", "fast": "Rápida"}[GameState.dialogue_speed]
 	_preview_button(body, "Velocidad de diálogo: " + speed_label, _cycle_dialogue_speed)
-	_preview_button(body, "Guardar", _manual_save)
+	_preview_button(body, "Guardar", _manual_save, "save")
 	_preview_button(body, "Menú", _return_to_menu)
 
 func _cycle_text_size() -> void:
@@ -683,10 +733,11 @@ func _show_class() -> void:
 func _render_class() -> void:
 	modal_kind = "class"
 	_clear_modal()
-	_modal_text("ELIGE CLASE · MOBA", 23)
+	_modal_heading("ELIGE CLASE · MOBA", "ability")
 	for hero_class in ["Atacante", "Defensor", "Soporte"]:
 		var chosen: String = hero_class
-		var class_button := _button(hero_class, func(): _start_moba(chosen))
+		var class_button := _button(hero_class, func(): _start_moba(chosen), "class_" + {"Atacante": "attacker", "Defensor": "defender", "Soporte": "support"}[hero_class])
+		class_button.custom_minimum_size.y = 54
 		if hero_class == "Atacante":
 			class_button.grab_focus()
 	_button("Volver", _close_modal)
@@ -732,7 +783,7 @@ func _render_dialogue(preserve_reveal: bool = false) -> void:
 	var node: Dictionary = dialogue_story.current_node()
 	if not preserve_reveal:
 		dialogue_visible = 0.0
-	_modal_text("TEXTO RECUPERADO · VISTA PREVIA", 16)
+	_modal_heading("TEXTO RECUPERADO · VISTA PREVIA", "dialogue", 16)
 	var body := _preview_content()
 	var message: String = str(node.get("text", ""))
 	dialogue_text_label = _dialogue_line(body, str(node.get("speaker", "")), message)
@@ -753,7 +804,7 @@ func _render_dialogue(preserve_reveal: bool = false) -> void:
 		_preview_button(body, "Continuar", _advance_dialogue).grab_focus()
 	else:
 		_preview_button(body, "Continuar", _complete_dialogue).grab_focus()
-	_preview_button(body, "Historial de esta conversación", _render_dialogue_history)
+	_preview_button(body, "Historial de esta conversación", _render_dialogue_history, "history")
 
 func _dialogue_line(parent: VBoxContainer, speaker: String, message: String) -> Label:
 	var path: String = PORTRAITS.get(speaker, "")
@@ -797,7 +848,7 @@ func _reveal_dialogue() -> void:
 func _render_dialogue_history() -> void:
 	modal_kind = "dialogue_history"
 	_clear_modal()
-	_modal_text("HISTORIAL · conversación actual", 20)
+	_modal_heading("HISTORIAL · conversación actual", "history", 20)
 	var body := _preview_content()
 	var positions: Array = GameState.dialogue_history.duplicate()
 	if positions.is_empty():
@@ -840,7 +891,7 @@ func _render_choice_confirm() -> void:
 		return
 	modal_kind = "choice_confirm"
 	_clear_modal()
-	_modal_text("CONFIRMAR RESPUESTA", 21)
+	_modal_heading("CONFIRMAR RESPUESTA", "decision", 21)
 	var body := _preview_content()
 	_preview_text(body, "«" + str(pending_choice.get("text", "")) + "»", 19)
 	_preview_text(body, "La respuesta se guardará al confirmar.", 15)
@@ -984,7 +1035,7 @@ func _start_moba(hero_class: String) -> void:
 func _show_result() -> void:
 	modal_kind = "result"
 	_clear_modal()
-	_modal_text("PARTIDA FINALIZADA", 23)
+	_modal_heading("PARTIDA FINALIZADA", "result")
 	_modal_text("Resultado: " + GameState.moba_result, 19)
 	var body := _preview_content()
 	_preview_text(body, "BORRADOR · Camila: " + draft_flow.camila_reaction(GameState.moba_result, GameState.moba_class), 16)
@@ -1061,11 +1112,14 @@ func _preview_text(parent: VBoxContainer, value: String, size: int = 16, width: 
 	parent.add_child(label)
 	return label
 
-func _preview_button(parent: VBoxContainer, value: String, callback: Callable) -> Button:
+func _preview_button(parent: VBoxContainer, value: String, callback: Callable, icon_key: String = "") -> Button:
 	var button := Button.new()
 	button.text = value
 	button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	button.custom_minimum_size = Vector2(545, 44)
+	if not icon_key.is_empty():
+		button.icon = UI_ICONS[icon_key]
+		button.expand_icon = true
 	button.add_theme_font_size_override("font_size", _scaled_text_size(16))
 	button.pressed.connect(callback)
 	parent.add_child(button)
@@ -1096,7 +1150,7 @@ func _render_preview() -> void:
 	modal_kind = "preview"
 	_clear_modal()
 	var draft_mode: bool = GameState.flags.get("draft_mode", false)
-	_modal_text("BORRADOR JUGABLE · PROVISIONAL" if draft_mode else "TEXTO RECUPERADO · VISTA PREVIA", 17)
+	_modal_heading("BORRADOR JUGABLE · PROVISIONAL" if draft_mode else "TEXTO RECUPERADO · VISTA PREVIA", "dialogue", 17)
 	if preview_catalog.scenes.is_empty():
 		_modal_text("No se pudieron cargar los fragmentos.", 16)
 		return
@@ -1271,7 +1325,7 @@ func _render_preview_terminal(body: VBoxContainer, scene_id: String, scene: Dict
 func _render_unplaced_preview() -> void:
 	modal_kind = "preview_unplaced"
 	_clear_modal()
-	_modal_text("LÍNEAS SIN POSICIÓN CONFIRMADA", 17)
+	_modal_heading("LÍNEAS SIN POSICIÓN CONFIRMADA", "history", 17)
 	var body := _preview_content()
 	var scene: Dictionary = preview_catalog.get_scene(GameState.preview_scene)
 	_preview_text(body, "El guion conserva estas líneas, pero no indica después de qué opción aparecen.", 15)
