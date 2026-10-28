@@ -5,6 +5,11 @@ signal interacted(target_id: String)
 
 const SPEED := 152.0
 const ROOM := Rect2(30, 56, 708, 338)
+const TARGET_LABELS := {
+	"alarm": "Alarma", "backpack": "Mochila", "desk": "Escritorio",
+	"photo": "Foto", "door": "Puerta", "friends": "Grupo",
+	"exit": "Salida", "pc": "Computadora"
+}
 const FRIENDS := [
 	{"name": "Mateo", "offset": Vector2(-60, 28), "jacket": "2f568c", "skin": "dc9f71", "style": "curly"},
 	{"name": "Bruno", "offset": Vector2(-20, 28), "jacket": "87334d", "skin": "c98b61", "style": "glasses"},
@@ -52,8 +57,27 @@ func interact() -> void:
 	if enabled and not nearby.is_empty():
 		interacted.emit(nearby)
 
+func target_label(key: String) -> String:
+	return str(TARGET_LABELS.get(key, key))
+
+func objective_target() -> String:
+	match scene_key:
+		"bedroom":
+			if not GameState.flags.get("alarm", false): return "alarm"
+			if not GameState.flags.get("backpack", false): return "backpack"
+			return "door"
+		"courtyard":
+			return "exit" if GameState.flags.get("friends", false) else "friends"
+		"computer":
+			return "pc"
+	return ""
+
 func _draw() -> void:
-	var floor_color := Color("312d49") if scene_key == "bedroom" else Color("21453f")
+	var floor_color := Color("21453f")
+	if scene_key == "bedroom":
+		floor_color = Color("312d49")
+	elif scene_key == "computer":
+		floor_color = Color("253148")
 	draw_rect(Rect2(Vector2.ZERO, Vector2(768, 448)), Color("14182b"))
 	draw_rect(ROOM, floor_color)
 	for x in range(30, 738, 32):
@@ -69,6 +93,9 @@ func _draw() -> void:
 			draw_circle(p, 33, Color("386b55"))
 	else:
 		draw_rect(Rect2(311, 103, 142, 73), Color("425d77"))
+		draw_rect(Rect2(552, 96, 98, 77), Color("8ec9c2"))
+		draw_rect(Rect2(557, 101, 88, 67), Color("111b36"))
+		draw_line(Vector2(601, 101), Vector2(601, 168), Color("8ec9c2"), 3.0)
 	for key in objects:
 		var pos: Vector2 = objects[key]
 		var active: bool = key == nearby
@@ -76,14 +103,65 @@ func _draw() -> void:
 			var color := Color("f5d479") if active else Color("8ec9c2")
 			draw_rect(Rect2(pos + Vector2(-83, -12), Vector2(166, 67)), color, false, 2.0 if active else 1.0)
 			draw_string(ThemeDB.fallback_font, pos + Vector2(-31, -23), "F · Grupo", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, color)
+			if key == objective_target():
+				_draw_objective_marker(pos + Vector2(0, -50))
 			continue
-		draw_circle(pos, 18 if active else 14, Color("f5d479") if active else Color("8ec9c2"))
-		draw_string(ThemeDB.fallback_font, pos + Vector2(-25, -23), key, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color.WHITE)
+		_draw_object(key, pos, active)
 	if scene_key == "courtyard":
 		for friend in FRIENDS:
 			_draw_character(Vector2(objects.friends) + friend.offset, str(friend.name),
 				Color(friend.jacket), Color(friend.skin), str(friend.style))
 	_draw_character(player_pos, "Sofi", Color("258999"), Color("e2a477"), "long_hair")
+
+func _draw_objective_marker(pos: Vector2) -> void:
+	var marker := Color("f5d479")
+	draw_colored_polygon(PackedVector2Array([
+		pos + Vector2(-5, 0), pos + Vector2(5, 0), pos + Vector2(0, 6)
+	]), marker)
+
+func _draw_object(key: String, pos: Vector2, active: bool) -> void:
+	var color := Color("f5d479") if active else Color("8ec9c2")
+	var dark := Color("182a38")
+	if key == objective_target():
+		draw_arc(pos, 27, 0, TAU, 24, Color("f5d479"), 2.0)
+		_draw_objective_marker(pos + Vector2(0, 32))
+	match key:
+		"alarm":
+			draw_rect(Rect2(pos + Vector2(-14, -10), Vector2(28, 21)), color)
+			draw_rect(Rect2(pos + Vector2(-10, -6), Vector2(20, 13)), dark)
+			draw_circle(pos + Vector2(-11, -13), 4, color)
+			draw_circle(pos + Vector2(11, -13), 4, color)
+			draw_string(ThemeDB.fallback_font, pos + Vector2(-8, 4), "7:00", HORIZONTAL_ALIGNMENT_LEFT, -1, 8, Color.WHITE)
+		"backpack":
+			draw_arc(pos + Vector2(0, -8), 8, PI, TAU, 12, color, 3.0)
+			draw_rect(Rect2(pos + Vector2(-13, -10), Vector2(26, 25)), color)
+			draw_rect(Rect2(pos + Vector2(-9, 4), Vector2(18, 8)), dark)
+		"desk":
+			draw_rect(Rect2(pos + Vector2(-18, -5), Vector2(36, 7)), color)
+			draw_rect(Rect2(pos + Vector2(-15, 2), Vector2(4, 15)), color)
+			draw_rect(Rect2(pos + Vector2(11, 2), Vector2(4, 15)), color)
+			draw_rect(Rect2(pos + Vector2(-9, -14), Vector2(17, 9)), dark)
+		"photo":
+			draw_rect(Rect2(pos + Vector2(-14, -13), Vector2(28, 26)), color)
+			draw_rect(Rect2(pos + Vector2(-10, -9), Vector2(20, 18)), dark)
+			draw_circle(pos + Vector2(5, -4), 3, color)
+			draw_line(pos + Vector2(-9, 8), pos + Vector2(-2, 0), color, 2.0)
+			draw_line(pos + Vector2(-2, 0), pos + Vector2(9, 8), color, 2.0)
+		"door", "exit":
+			draw_rect(Rect2(pos + Vector2(-13, -18), Vector2(26, 35)), color)
+			draw_rect(Rect2(pos + Vector2(-9, -14), Vector2(18, 29)), dark)
+			draw_circle(pos + Vector2(5, 2), 2, color)
+		"pc":
+			draw_rect(Rect2(pos + Vector2(-18, -16), Vector2(36, 25)), color)
+			draw_rect(Rect2(pos + Vector2(-14, -12), Vector2(28, 17)), dark)
+			draw_rect(Rect2(pos + Vector2(-2, 9), Vector2(4, 7)), color)
+			draw_line(pos + Vector2(-12, 17), pos + Vector2(12, 17), color, 3.0)
+	if key in ["alarm", "backpack"] and GameState.flags.get(key, false):
+		draw_circle(pos + Vector2(19, -14), 7, Color("54b67c"))
+		draw_line(pos + Vector2(16, -14), pos + Vector2(19, -11), Color.WHITE, 2.0)
+		draw_line(pos + Vector2(19, -11), pos + Vector2(23, -17), Color.WHITE, 2.0)
+	draw_string(ThemeDB.fallback_font, pos + Vector2(-41, -30), target_label(key),
+		HORIZONTAL_ALIGNMENT_CENTER, 82, 12, color)
 
 func _draw_character(pos: Vector2, actor_name: String, jacket: Color, skin: Color, style: String) -> void:
 	var hair := Color("302b38")

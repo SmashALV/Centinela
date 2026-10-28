@@ -51,6 +51,22 @@ func _run() -> void:
 	courtyard_world.configure("courtyard", Vector2(314, 203))
 	courtyard_world._physics_process(0.0)
 	_check(courtyard_world.nearby == "friends", "grupo interactuable junto a Mateo")
+	_check(courtyard_world.target_label("friends") == "Grupo" and courtyard_world.target_label("exit") == "Salida", "interacciones de exploración etiquetadas en español")
+	var saved_flags := GameState.flags.duplicate(true)
+	GameState.flags = {}
+	courtyard_world.configure("bedroom", Vector2(384, 280))
+	_check(courtyard_world.objective_target() == "alarm", "alarma marcada como primer objetivo")
+	GameState.flags.alarm = true
+	_check(courtyard_world.objective_target() == "backpack", "mochila marcada tras usar alarma")
+	GameState.flags.backpack = true
+	_check(courtyard_world.objective_target() == "door", "puerta marcada tras completar habitación")
+	courtyard_world.configure("courtyard", Vector2(314, 203))
+	_check(courtyard_world.objective_target() == "friends", "grupo marcado al llegar al patio")
+	GameState.flags.friends = true
+	_check(courtyard_world.objective_target() == "exit", "salida marcada tras hablar con grupo")
+	courtyard_world.configure("computer", Vector2(384, 320))
+	_check(courtyard_world.objective_target() == "pc", "computadora marcada como objetivo nocturno")
+	GameState.flags = saved_flags
 	courtyard_world.free()
 	var bad_destination := content.duplicate(true)
 	bad_destination.nodes[0].next = 99

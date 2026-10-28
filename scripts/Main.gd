@@ -93,7 +93,7 @@ func _process(delta: float) -> void:
 		if toast_time <= 0:
 			toast.text = ""
 	if modal_kind == "":
-		var target_label: String = "Grupo" if world.nearby == "friends" else world.nearby
+		var target_label: String = world.target_label(world.nearby)
 		prompt.text = "F · interactuar: " + target_label if not world.nearby.is_empty() else "WASD · mover   F · interactuar   E · celular   Tab · objetivo   P · pausa"
 	else:
 		if modal_kind == "menu":
@@ -368,7 +368,8 @@ func _update_hud() -> void:
 	if GameState.phase == "preview":
 		hud.text = "VISTA PREVIA · %s · %s" % [GameState.code, GameState.preview_scene]
 		return
-	hud.text = "DÍA 0  ·  %s  ·  %s  |  %s" % [GameState.code, GameState.phase.to_upper(), _objective_text()]
+	var place: String = {"bedroom": "HABITACIÓN", "courtyard": "PATIO", "computer": "COMPUTADORA", "result": "RESULTADO"}.get(GameState.phase, GameState.phase.to_upper())
+	hud.text = "DÍA 0  ·  %s  ·  %s  |  %s" % [GameState.code, place, _objective_text()]
 
 func _objective_text() -> String:
 	match GameState.phase:
@@ -388,14 +389,14 @@ func _on_interacted(target: String) -> void:
 	match GameState.phase:
 		"bedroom":
 			if ["alarm", "backpack"].has(target):
-				_commit_flag(target, "Interacción registrada: " + target)
+				_commit_flag(target, "Interacción registrada: " + world.target_label(target))
 			elif target == "door":
 				if not GameState.flags.get("alarm", false) or not GameState.flags.get("backpack", false):
 					_toast("Completa la alarma y la mochila primero")
 				else:
 					_transition("courtyard", Vector2(140, 300))
 			else:
-				_toast("Objeto opcional: " + target)
+				_toast("Objeto opcional: " + world.target_label(target))
 		"courtyard":
 			if target == "friends":
 				_show_dialogue("courtyard")
@@ -526,7 +527,7 @@ func _advance_hint() -> void:
 	var previous: int = GameState.hint_level
 	GameState.hint_level = mini(previous + 1, 2)
 	if await SaveManager.save_slot_async():
-		_toast("Busca el objeto señalado" if GameState.hint_level == 1 else "Acércate al círculo y pulsa F")
+		_toast("Busca el objeto señalado" if GameState.hint_level == 1 else "Acércate al objeto marcado y pulsa F")
 	else:
 		GameState.hint_level = previous
 		_toast("No se pudo guardar la pista; reintenta")
