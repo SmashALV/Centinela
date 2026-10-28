@@ -18,6 +18,7 @@ const HERO_SHEETS := {
 const TOWER_SPRITE := preload("res://assets/moba/structures/tower.png")
 const BASE_SPRITE := preload("res://assets/moba/structures/base.png")
 const RUIN_SPRITE := preload("res://assets/moba/structures/ruin.png")
+const ARENA_GROUND := preload("res://assets/moba/terrain/arena_ground.png")
 const BARRIER_SPRITE := preload("res://assets/moba/terrain/barrier_2x4.png")
 const PROJECTILE_SPRITE := preload("res://assets/moba/effects/projectile.png")
 const ATTACK_Q_SPRITE := preload("res://assets/moba/effects/attack_q.png")
@@ -55,6 +56,7 @@ var basic_cd := 0.0
 var q_cd := 0.0
 var tower_cd := 1.5
 var player_index := 2
+var ground: Sprite2D
 var camera: Camera2D
 var layer: CanvasLayer
 var hud: Label
@@ -77,6 +79,14 @@ func _ready() -> void:
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	SaveManager.lock_lost.connect(_on_lock_lost)
 	_create_entities()
+	ground = Sprite2D.new()
+	ground.name = "ArenaGround"
+	ground.texture = ARENA_GROUND
+	ground.centered = false
+	ground.scale = ARENA / Vector2(ARENA_GROUND.get_size())
+	ground.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	ground.z_index = -1
+	add_child(ground)
 	camera = Camera2D.new()
 	camera.position = heroes[player_index].pos
 	camera.enabled = true
@@ -106,6 +116,12 @@ func _ready() -> void:
 	timer_hud.text = "%ds" % int(LIMIT)
 	health_hud = _hud_chip(hud_row, HUD_ICONS["health"])
 	ability_hud = _hud_chip(hud_row, HUD_ICONS["ability"])
+	var objective_backdrop := ColorRect.new()
+	objective_backdrop.position = Vector2(2, 412)
+	objective_backdrop.size = Vector2(764, 32)
+	objective_backdrop.color = Color("10192b", 0.88)
+	objective_backdrop.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	layer.add_child(objective_backdrop)
 	var objective_icon := TextureRect.new()
 	objective_icon.texture = HUD_ICONS["objective"]
 	objective_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
@@ -798,12 +814,6 @@ func _return_to_story() -> void:
 	get_tree().change_scene_to_file("res://scenes/Main.tscn")
 
 func _draw() -> void:
-	draw_rect(Rect2(Vector2.ZERO, ARENA), Color("24453f"))
-	draw_rect(Rect2(0, 226, ARENA.x, 188), Color("54614b"))
-	for x in range(0, 1152, 32):
-		draw_line(Vector2(x, 0), Vector2(x, 640), Color(1, 1, 1, 0.05))
-	for y in range(0, 640, 32):
-		draw_line(Vector2(0, y), Vector2(1152, y), Color(1, 1, 1, 0.05))
 	for obstacle in STATIC_OBSTACLES:
 		var rect := Rect2(Vector2(obstacle.position * TILE_SIZE), Vector2(obstacle.size * TILE_SIZE))
 		draw_texture_rect_region(BARRIER_SPRITE, rect, Rect2(245, 100, 410, 1450))

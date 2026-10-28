@@ -230,6 +230,7 @@ func _run() -> void:
 		_finish_tests()
 		return
 	_check(arena.heroes.size() == 10, "MOBA 5v5")
+	_check(arena.ground.texture == arena.ARENA_GROUND and arena.ground.z_index < 0 and arena.ground.scale.x > 0.0, "mapa MOBA importado detrás de personajes y estructuras")
 	_check(arena.LIMIT == 60.0 and arena.timer_hud.text == "60s", "MOBA presenta un minuto desde la cuenta atrás")
 	var timer_probe: Node2D = Arena.instantiate()
 	get_tree().root.add_child(timer_probe)

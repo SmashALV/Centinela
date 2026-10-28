@@ -50,7 +50,7 @@ class ReleaseTests(unittest.TestCase):
                   ("attacker", "defender", "support")]
         names += [f"assets/moba/structures/{name}.png" for name in
                   ("tower", "base", "ruin")]
-        names.append("assets/moba/terrain/barrier_2x4.png")
+        names += [f"assets/moba/terrain/{name}.png" for name in ("barrier_2x4", "arena_ground")]
         names += [f"assets/moba/effects/{name}.png" for name in
                   ("projectile", "attack_q", "shield_q", "support_q")]
         names += [f"assets/ui/{name}.png" for name in
