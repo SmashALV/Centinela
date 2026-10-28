@@ -21,6 +21,8 @@ var dialogue_story: RefCounted
 var preview_catalog: RefCounted
 var dialogue_key := ""
 var dialogue_choice := ""
+var pending_choice: Dictionary = {}
+var confirming_choice := false
 var dialogue_text_label: Label
 var dialogue_visible := 0.0
 var slot_loading := false
@@ -101,11 +103,13 @@ func _unhandled_input(event: InputEvent) -> void:
 			_show_pause()
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("ui_cancel"):
-		if ["phone", "objective", "pause", "class", "dialogue_history"].has(modal_kind):
+		if ["phone", "objective", "pause", "class", "dialogue_history", "choice_confirm"].has(modal_kind):
 			if modal_kind == "pause":
 				_resume_pause()
 			elif modal_kind == "dialogue_history":
 				_render_dialogue(true)
+			elif modal_kind == "choice_confirm":
+				_cancel_choice_confirm()
 			else:
 				_close_modal()
 			get_viewport().set_input_as_handled()
@@ -122,7 +126,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				KEY_2: preview_index = 1
 				KEY_3: preview_index = 2
 			if preview_index >= 0 and preview_index < preview_choices.size():
-				_commit_preview(GameState.preview_scene, GameState.preview_step + 1, str(preview_choices[preview_index].key))
+				_request_preview_choice(GameState.preview_scene, str(preview_choices[preview_index].key))
 				get_viewport().set_input_as_handled()
 	elif modal_kind == "dialogue" and event is InputEventKey and event.pressed and not event.echo:
 		if dialogue_visible < dialogue_story.current_node().get("text", "").length() and event.keycode in [KEY_1, KEY_2, KEY_3, KEY_ENTER, KEY_KP_ENTER]:
@@ -139,7 +143,7 @@ func _unhandled_input(event: InputEvent) -> void:
 					_advance_dialogue()
 		var choices: Array = dialogue_story.current_node().get("choices", [])
 		if choice_index >= 0 and choice_index < choices.size():
-			_choose_dialogue(str(choices[choice_index].choice_id))
+			_request_dialogue_choice(str(choices[choice_index].choice_id))
 			get_viewport().set_input_as_handled()
 	elif modal_kind == "":
 		if event.is_action_pressed("interact"):
@@ -238,6 +242,7 @@ func _button(value: String, callback: Callable) -> Button:
 func _show_menu() -> void:
 	AudioManager.set_music_paused(false)
 	dialogue_key = ""
+	pending_choice.clear()
 	modal_kind = "menu"
 	_clear_modal()
 	_modal_text("CENTINELA 2.0 · prototipo jugable", 24)
@@ -606,6 +611,7 @@ func _resume_pause() -> void:
 		"class": _render_class()
 		"dialogue": _render_dialogue(true)
 		"dialogue_history": _render_dialogue_history()
+		"choice_confirm": _render_choice_confirm()
 		"result": _show_result()
 		"preview": _render_preview()
 		"preview_unplaced": _render_unplaced_preview()
@@ -684,7 +690,7 @@ func _render_dialogue(preserve_reveal: bool = false) -> void:
 		_preview_text(body, "Elige una respuesta (1–3). Identificadores provisionales.", 14)
 		for i in choices.size():
 			var choice_id: String = str(choices[i].choice_id)
-			var option := _preview_button(body, "%d. %s" % [i + 1, choices[i].text], func(): _choose_dialogue(choice_id))
+			var option := _preview_button(body, "%d. %s" % [i + 1, choices[i].text], func(): _request_dialogue_choice(choice_id))
 			if i == 0:
 				option.grab_focus()
 	elif node.get("next", null) != null:
@@ -714,6 +720,71 @@ func _render_dialogue_history() -> void:
 		_preview_text(body, "%s: %s" % [line.get("speaker", ""), line.get("text", "")], 17)
 	_preview_button(body, "Volver al diálogo", func(): _render_dialogue(true)).grab_focus()
 
+func _request_dialogue_choice(choice_id: String) -> void:
+	if save_in_progress or confirming_choice or modal_kind != "dialogue":
+		return
+	for choice in dialogue_story.current_node().get("choices", []):
+		if str(choice.get("choice_id", "")) == choice_id:
+			pending_choice = {"kind": "dialogue", "id": choice_id,
+				"text": str(choice.get("text", "")), "position": dialogue_story.position}
+			_render_choice_confirm()
+			return
+
+func _request_preview_choice(scene_id: String, key: String) -> void:
+	if save_in_progress or confirming_choice or modal_kind != "preview" or GameState.preview_scene != scene_id:
+		return
+	var scene: Dictionary = preview_catalog.get_scene(scene_id)
+	var step: int = scene.get("lines", []).size()
+	if GameState.preview_step != step:
+		return
+	for choice in scene.get("choices", []):
+		if str(choice.get("key", "")) == key:
+			pending_choice = {"kind": "preview", "scene": scene_id, "key": key,
+				"text": str(choice.get("text", "")), "step": step}
+			_render_choice_confirm()
+			return
+
+func _render_choice_confirm() -> void:
+	if pending_choice.is_empty():
+		return
+	modal_kind = "choice_confirm"
+	_clear_modal()
+	_modal_text("CONFIRMAR RESPUESTA", 21)
+	var body := _preview_content()
+	_preview_text(body, "«" + str(pending_choice.get("text", "")) + "»", 19)
+	_preview_text(body, "La respuesta se guardará al confirmar.", 15)
+	_preview_button(body, "Confirmar", _confirm_choice).grab_focus()
+	_preview_button(body, "Volver", _cancel_choice_confirm)
+
+func _cancel_choice_confirm() -> void:
+	if confirming_choice:
+		return
+	var kind: String = str(pending_choice.get("kind", ""))
+	pending_choice.clear()
+	if kind == "dialogue":
+		_render_dialogue(true)
+	elif kind == "preview":
+		_render_preview()
+
+func _confirm_choice() -> void:
+	if confirming_choice or pending_choice.is_empty():
+		return
+	var selected: Dictionary = pending_choice.duplicate()
+	var kind: String = str(selected.get("kind", ""))
+	if (kind == "dialogue" and (dialogue_story.position != selected.get("position") or GameState.dialogue_key != dialogue_key)) or \
+		(kind == "preview" and (GameState.preview_scene != selected.get("scene") or GameState.preview_step != selected.get("step"))):
+		_cancel_choice_confirm()
+		return
+	confirming_choice = true
+	var saved := false
+	if kind == "dialogue":
+		saved = await _choose_dialogue(str(selected.id))
+	elif kind == "preview":
+		saved = await _commit_preview(str(selected.scene), int(selected.step) + 1, str(selected.key))
+	if saved:
+		pending_choice.clear()
+	confirming_choice = false
+
 func _advance_dialogue() -> void:
 	if save_in_progress:
 		return
@@ -735,13 +806,13 @@ func _advance_dialogue() -> void:
 		_toast("No se pudo guardar el avance; reintenta")
 	save_in_progress = false
 
-func _choose_dialogue(choice_id: String) -> void:
+func _choose_dialogue(choice_id: String) -> bool:
 	if save_in_progress:
-		return
+		return false
 	var previous_position: int = dialogue_story.position
 	var previous_history: Array = GameState.dialogue_history.duplicate()
 	if not dialogue_story.advance(choice_id):
-		return
+		return false
 	save_in_progress = true
 	GameState.dialogue_position = dialogue_story.position
 	GameState.dialogue_choice = choice_id
@@ -751,6 +822,8 @@ func _choose_dialogue(choice_id: String) -> void:
 		if is_inside_tree():
 			AudioManager.play_effect("confirm")
 			_render_dialogue()
+		save_in_progress = false
+		return true
 	else:
 		dialogue_story.position = previous_position
 		GameState.dialogue_position = previous_position
@@ -758,6 +831,7 @@ func _choose_dialogue(choice_id: String) -> void:
 		GameState.dialogue_history = previous_history
 		_toast("No se pudo guardar la opción; reintenta")
 	save_in_progress = false
+	return false
 
 func _complete_dialogue() -> void:
 	if save_in_progress:
@@ -828,9 +902,9 @@ func _show_result() -> void:
 		preview_button.grab_focus()
 	_button("Volver al menú", _return_to_menu)
 
-func _commit_preview(next_scene: String, next_step: int, choice_key: String = "") -> void:
+func _commit_preview(next_scene: String, next_step: int, choice_key: String = "") -> bool:
 	if save_in_progress or preview_catalog.scenes.is_empty():
-		return
+		return false
 	save_in_progress = true
 	var previous := GameState.snapshot()
 	GameState.phase = "preview"
@@ -843,10 +917,12 @@ func _commit_preview(next_scene: String, next_step: int, choice_key: String = ""
 		save_in_progress = false
 		if is_inside_tree():
 			_load_phase()
+		return true
 	else:
 		GameState.restore(previous)
 		save_in_progress = false
 		_toast("No se pudo guardar la vista previa; reintenta")
+	return false
 
 func _preview_content() -> VBoxContainer:
 	var scroll := ScrollContainer.new()
@@ -942,7 +1018,7 @@ func _render_preview() -> void:
 			for i in choices.size():
 				var choice: Dictionary = choices[i]
 				var letter: String = str(choice.key)
-				var option := _preview_button(body, "%d · %s. «%s»" % [i + 1, letter, str(choice.text)], func(): _commit_preview(scene_id, lines.size() + 1, letter))
+				var option := _preview_button(body, "%d · %s. «%s»" % [i + 1, letter, str(choice.text)], func(): _request_preview_choice(scene_id, letter))
 				if i == 0:
 					option.grab_focus()
 		elif step == lines.size() + 1:
