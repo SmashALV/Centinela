@@ -1,5 +1,9 @@
 # Recuperación y reversión de Centinela
 
+## Si se daña una ranura de escritorio
+
+Los archivos de escritorio están en `user://centinela_slot_N.json`, con una copia `.bak` por ranura. Cada nuevo guardado se escribe primero en `.tmp` y solo se promueve al terminar. Si el archivo principal es ilegible o falta, el juego intenta abrir la copia anterior y avisa que recuperó una partida local. Al guardar después, reconstruye el archivo principal y conserva la copia válida. No borres los archivos `.bak` mientras investigas una incidencia. Esta recuperación puede perder el progreso posterior al último guardado conservado en la copia.
+
 ## Si falla la sincronización de una partida
 
 1. Mantener la pestaña y la misma ranura abiertas. En **Pausa**, consultar el estado de sincronización y usar **Reintentar sincronización** cuando vuelva la red. El guardado local de Web permanece en IndexedDB del mismo origen; no limpiar datos del navegador ni cambiar de dominio.

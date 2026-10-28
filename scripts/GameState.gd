@@ -76,9 +76,30 @@ func restore(data: Dictionary) -> bool:
 		return false
 	if typeof(data.get("slot")) != TYPE_FLOAT and typeof(data.get("slot")) != TYPE_INT:
 		return false
-	if int(data.slot) < 1 or int(data.slot) > 3 or typeof(data.get("flags")) != TYPE_DICTIONARY:
+	if int(data.slot) < 1 or int(data.slot) > 3 or float(data.slot) != float(int(data.slot)) or typeof(data.get("flags")) != TYPE_DICTIONARY:
 		return false
 	if typeof(data.get("phone_messages")) != TYPE_ARRAY or typeof(data.get("code")) != TYPE_STRING:
+		return false
+	if data.code.length() != 10 or not data.code.begins_with("CTN-"):
+		return false
+	for index in range(4, 10):
+		if data.code.unicode_at(index) < 48 or data.code.unicode_at(index) > 57:
+			return false
+	for flag in ["wakeup_seen", "alarm", "backpack", "friends", "d0_chat_done"]:
+		if data.flags.has(flag) and typeof(data.flags[flag]) != TYPE_BOOL:
+			return false
+	if data.flags.has("d0_chat_choice") and data.flags.d0_chat_choice not in ["D0_05_A_OPT_A", "D0_05_A_OPT_B", "D0_05_A_OPT_C"]:
+		return false
+	if data.phone_messages.size() > 100:
+		return false
+	for message in data.phone_messages:
+		if typeof(message) != TYPE_DICTIONARY or typeof(message.get("speaker")) != TYPE_STRING or typeof(message.get("text")) != TYPE_STRING:
+			return false
+		if message.speaker.length() > 100 or message.text.length() > 2000:
+			return false
+	if typeof(data.get("moba_class", "")) != TYPE_STRING or data.get("moba_class", "") not in ["", "Atacante", "Defensor", "Soporte"]:
+		return false
+	if typeof(data.get("moba_result", "")) != TYPE_STRING or data.get("moba_result", "") not in ["", "victoria", "derrota", "empate"]:
 		return false
 	if not ["bedroom", "courtyard", "computer", "moba", "result", "preview"].has(data.get("phase", "")):
 		return false
@@ -108,7 +129,7 @@ func restore(data: Dictionary) -> bool:
 	for visited in saved_history:
 		if typeof(visited) not in [TYPE_INT, TYPE_FLOAT] or int(visited) < 0 or int(visited) > 100 or float(visited) != float(int(visited)):
 			return false
-	if int(active_position) < 0 or int(active_position) > 100 or \
+	if int(active_position) < 0 or int(active_position) > 100 or float(active_position) != float(int(active_position)) or \
 		(not active_dialogue.is_empty() and data.get("phase") not in ["bedroom", "courtyard", "computer"]) or \
 		(active_dialogue.is_empty() and (int(active_position) != 0 or not active_choice.is_empty() or not saved_history.is_empty())):
 		return false
@@ -124,7 +145,7 @@ func restore(data: Dictionary) -> bool:
 	if not active_choice.is_empty() and active_choice not in ["D0_05_A_OPT_A", "D0_05_A_OPT_B", "D0_05_A_OPT_C"]:
 		return false
 	if typeof(saved_modal) != TYPE_STRING or saved_modal not in ["", "phone", "objective", "class"] or \
-		typeof(saved_hint) not in [TYPE_FLOAT, TYPE_INT] or int(saved_hint) < 0 or int(saved_hint) > 2:
+		typeof(saved_hint) not in [TYPE_FLOAT, TYPE_INT] or int(saved_hint) < 0 or int(saved_hint) > 2 or float(saved_hint) != float(int(saved_hint)):
 		return false
 	for level in [saved_music, saved_effects]:
 		if typeof(level) not in [TYPE_INT, TYPE_FLOAT] or int(level) not in [0, 25, 50, 75, 100] or float(level) != float(int(level)):
@@ -137,7 +158,7 @@ func restore(data: Dictionary) -> bool:
 		(active_dialogue == "courtyard" and data.get("phase") != "courtyard") or \
 		(active_dialogue == "group_chat" and data.get("phase") != "computer"):
 		return false
-	if int(step) < 0 or int(step) > 100 or (not scene.is_empty() and not PREVIEW_SCENES.has(scene)):
+	if int(step) < 0 or int(step) > 100 or float(step) != float(int(step)) or (not scene.is_empty() and not PREVIEW_SCENES.has(scene)):
 		return false
 	if data.get("phase") == "preview" and scene.is_empty():
 		return false
@@ -148,6 +169,8 @@ func restore(data: Dictionary) -> bool:
 		return false
 	var p: Array = data.player_position
 	if p.size() != 2 or not (typeof(p[0]) in [TYPE_FLOAT, TYPE_INT]) or not (typeof(p[1]) in [TYPE_FLOAT, TYPE_INT]):
+		return false
+	if float(p[0]) < 0.0 or float(p[0]) > 768.0 or float(p[1]) < 0.0 or float(p[1]) > 448.0:
 		return false
 	slot = int(data.get("slot", 1))
 	code = str(data.get("code", ""))

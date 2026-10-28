@@ -89,9 +89,46 @@ func _run() -> void:
 	GameState.new_game(1)
 	_check(SaveManager.load_slot(2), "carga de ranura")
 	_check(GameState.snapshot() == saved, "snapshot y variables restaurados")
+	GameState.flags.backpack = true
+	_check(SaveManager.save_slot() and FileAccess.file_exists(SaveManager.backup_path(2)), "segundo guardado conserva copia anterior")
+	var broken_file := FileAccess.open(SaveManager.slot_path(2), FileAccess.WRITE)
+	broken_file.store_string("{")
+	broken_file.close()
+	_check(SaveManager.slot_summary(2).contains("copia de recuperación"), "menú identifica copia tras archivo dañado")
+	GameState.new_game(1)
+	_check(SaveManager.load_slot(2) and SaveManager.recovered_slot == 2 and GameState.snapshot() == saved, "copia recupera partida sin aplicar archivo dañado")
+	GameState.flags.friends = true
+	var repaired := GameState.snapshot()
+	_check(SaveManager.save_slot() and SaveManager.recovered_slot == -1, "guardado repara ranura recuperada")
+	GameState.new_game(1)
+	_check(SaveManager.load_slot(2) and GameState.snapshot() == repaired, "ranura reparada reabre desde archivo principal")
+	_check(FileAccess.file_exists(SaveManager.backup_path(2)) and not FileAccess.file_exists(SaveManager.slot_path(2) + ".tmp"), "copia previa se conserva y temporal se retira")
+	_check(DirAccess.remove_absolute(ProjectSettings.globalize_path(SaveManager.slot_path(2))) == OK, "interrupción entre renombres simulada")
+	GameState.new_game(1)
+	_check(SaveManager.slot_exists(2) and SaveManager.load_slot(2) and GameState.snapshot() == saved, "copia recupera ranura sin archivo principal")
+	_check(SaveManager.save_slot(), "ranura sin principal se repara al guardar")
+	GameState.restore(saved)
 	var bad_save := saved.duplicate(true)
 	bad_save.player_position = "corrupto"
 	_check(not GameState.restore(bad_save) and GameState.snapshot() == saved, "guardado dañado rechazado sin alterar partida")
+	var bad_phone := saved.duplicate(true)
+	bad_phone.phone_messages = [42]
+	_check(not GameState.restore(bad_phone) and GameState.snapshot() == saved, "mensaje de celular inválido rechazado sin alterar partida")
+	var bad_flag := saved.duplicate(true)
+	bad_flag.flags.alarm = "sí"
+	_check(not GameState.restore(bad_flag) and GameState.snapshot() == saved, "indicador obligatorio inválido rechazado")
+	var bad_class := saved.duplicate(true)
+	bad_class.moba_class = 17
+	_check(not GameState.restore(bad_class) and GameState.snapshot() == saved, "clase de combate inválida rechazada")
+	var bad_coordinates := saved.duplicate(true)
+	bad_coordinates.player_position = [100000, 20]
+	_check(not GameState.restore(bad_coordinates) and GameState.snapshot() == saved, "posición fuera del mundo rechazada")
+	var bad_code := saved.duplicate(true)
+	bad_code.code = "CTN-+12345"
+	_check(not GameState.restore(bad_code) and GameState.snapshot() == saved, "código de participante mal formado rechazado")
+	var fractional_slot := saved.duplicate(true)
+	fractional_slot.slot = 2.5
+	_check(not GameState.restore(fractional_slot) and GameState.snapshot() == saved, "número de ranura fraccionario rechazado")
 	var other_preview := saved.duplicate(true)
 	other_preview.preview_content_version = "otra-version"
 	_check(not GameState.restore(other_preview) and GameState.snapshot() == saved, "versión de vista previa incompatible rechazada")
@@ -465,9 +502,11 @@ func _finish_tests() -> void:
 		focused.release_focus()
 	AudioManager.stop_all()
 	for test_slot in [1, 2]:
-		if SaveManager.slot_exists(test_slot):
-			var test_save := ProjectSettings.globalize_path(SaveManager.slot_path(test_slot))
-			_check(DirAccess.remove_absolute(test_save) == OK, "guardado de prueba %d eliminado" % test_slot)
+		var cleaned := true
+		for test_path in [SaveManager.slot_path(test_slot), SaveManager.backup_path(test_slot), SaveManager.slot_path(test_slot) + ".tmp"]:
+			if FileAccess.file_exists(test_path):
+				cleaned = DirAccess.remove_absolute(ProjectSettings.globalize_path(test_path)) == OK and cleaned
+		_check(cleaned, "guardado de prueba %d eliminado" % test_slot)
 	SaveManager.storage_prefix = SaveManager.SAVE_PREFIX
 	print("Pruebas terminadas. Fallos: ", failures)
 	await get_tree().process_frame

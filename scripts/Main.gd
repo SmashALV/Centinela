@@ -290,6 +290,7 @@ func _start_slot(chosen: int) -> void:
 	if slot_loading:
 		return
 	slot_loading = true
+	var recovered_local := false
 	if OS.has_feature("web"):
 		if not await SaveManager.acquire_slot_async(chosen):
 			slot_loading = false
@@ -321,6 +322,7 @@ func _start_slot(chosen: int) -> void:
 				slot_loading = false
 				_toast("Ranura incompatible o dañada; no se sobrescribió")
 				return
+			recovered_local = SaveManager.recovered_slot == chosen
 		else:
 			GameState.new_game(chosen)
 			if not SaveManager.save_slot():
@@ -350,6 +352,8 @@ func _start_slot(chosen: int) -> void:
 		_show_dialogue("wakeup")
 	elif GameState.phase not in ["result", "preview"]:
 		_close_modal()
+	if recovered_local:
+		_toast("Partida recuperada de una copia local")
 
 func _load_phase() -> void:
 	var world_phase := GameState.phase
