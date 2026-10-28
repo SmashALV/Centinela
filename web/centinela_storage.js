@@ -99,9 +99,81 @@
   function validateSnapshot(snapshot, slot) {
     if (!snapshot || typeof snapshot !== "object" || Array.isArray(snapshot) ||
         snapshot.slot !== slot || snapshot.schema_version !== 1 ||
-        typeof snapshot.code !== "string" || typeof snapshot.phase !== "string") {
+        typeof snapshot.narrative_version !== "string" || !snapshot.narrative_version ||
+        !/^CTN-\d{6}$/.test(snapshot.code) ||
+        !["bedroom", "courtyard", "computer", "moba", "result", "preview"].includes(snapshot.phase)) {
       throw failure("INVALID_REQUEST", "Snapshot inválido");
     }
+    const position = snapshot.player_position;
+    if (!Array.isArray(position) || position.length !== 2 ||
+        !position.every((value) => typeof value === "number" && Number.isFinite(value)) ||
+        position[0] < 0 || position[0] > 768 || position[1] < 0 || position[1] > 448) {
+      throw failure("INVALID_REQUEST", "Posición inválida");
+    }
+    const flags = snapshot.flags;
+    if (!flags || typeof flags !== "object" || Array.isArray(flags))
+      throw failure("INVALID_REQUEST", "Indicadores inválidos");
+    for (const name of ["wakeup_seen", "alarm", "backpack", "friends", "d0_chat_done"]) {
+      if (name in flags && typeof flags[name] !== "boolean")
+        throw failure("INVALID_REQUEST", "Indicador inválido");
+    }
+    if ("d0_chat_choice" in flags &&
+        !["D0_05_A_OPT_A", "D0_05_A_OPT_B", "D0_05_A_OPT_C"].includes(flags.d0_chat_choice))
+      throw failure("INVALID_REQUEST", "Elección inválida");
+    if (!Array.isArray(snapshot.phone_messages) || snapshot.phone_messages.length > 100 ||
+        !snapshot.phone_messages.every((message) => message && typeof message === "object" &&
+          !Array.isArray(message) && typeof message.speaker === "string" &&
+          message.speaker.length <= 100 && typeof message.text === "string" &&
+          message.text.length <= 2000))
+      throw failure("INVALID_REQUEST", "Mensajes inválidos");
+    if (("moba_class" in snapshot && !["", "Atacante", "Defensor", "Soporte"].includes(snapshot.moba_class)) ||
+        ("moba_result" in snapshot && !["", "victoria", "derrota", "empate"].includes(snapshot.moba_result)))
+      throw failure("INVALID_REQUEST", "Estado de combate inválido");
+    const scene = snapshot.preview_scene ?? "";
+    const step = snapshot.preview_step ?? 0;
+    const choices = snapshot.preview_choices ?? {};
+    const previewScenes = ["D1_02_A", "D2_03_A", "D3_01_A", "D4_01_A", "D4_02_A",
+      "D4_03_A", "ENDINGS_INDEX", "F01_A", "F01_B", "F02", "F03"];
+    if (typeof scene !== "string" || (scene && !previewScenes.includes(scene)) ||
+        (snapshot.phase === "preview" && !scene) ||
+        !Number.isInteger(step) || step < 0 || step > 100 ||
+        !choices || typeof choices !== "object" || Array.isArray(choices) ||
+        Object.entries(choices).some(([key, value]) => !previewScenes.includes(key) ||
+          !["A", "B", "C"].includes(value)))
+      throw failure("INVALID_REQUEST", "Vista previa inválida");
+    const dialogue = snapshot.dialogue_key ?? "";
+    const dialoguePosition = snapshot.dialogue_position ?? 0;
+    const dialogueChoice = snapshot.dialogue_choice ?? "";
+    const history = snapshot.dialogue_history ?? [];
+    const bounds = { wakeup: [0, 2, "bedroom"], courtyard: [3, 13, "courtyard"],
+      group_chat: [14, 22, "computer"] };
+    if (typeof dialogue !== "string" || (dialogue && !bounds[dialogue]) ||
+        !Number.isInteger(dialoguePosition) || dialoguePosition < 0 || dialoguePosition > 100 ||
+        typeof dialogueChoice !== "string" ||
+        (dialogueChoice && !["D0_05_A_OPT_A", "D0_05_A_OPT_B", "D0_05_A_OPT_C"].includes(dialogueChoice)) ||
+        !Array.isArray(history) || history.length > 100 ||
+        (!dialogue && (dialoguePosition !== 0 || dialogueChoice || history.length)) ||
+        (dialogue && (snapshot.phase !== bounds[dialogue][2] ||
+          dialoguePosition < bounds[dialogue][0] || dialoguePosition > bounds[dialogue][1] ||
+          history.some((value, index) => !Number.isInteger(value) ||
+            value < bounds[dialogue][0] || value >= dialoguePosition ||
+            (index > 0 && value <= history[index - 1])))))
+      throw failure("INVALID_REQUEST", "Diálogo inválido");
+    const uiModal = snapshot.ui_modal ?? "";
+    const hint = snapshot.hint_level ?? 0;
+    const size = snapshot.text_size ?? "normal";
+    const speed = snapshot.dialogue_speed ?? "normal";
+    if (!["", "phone", "objective", "class"].includes(uiModal) ||
+        (dialogue && uiModal) ||
+        (uiModal === "class" && snapshot.phase !== "computer") ||
+        (["phone", "objective"].includes(uiModal) &&
+          !["bedroom", "courtyard", "computer"].includes(snapshot.phase)) ||
+        !Number.isInteger(hint) || hint < 0 || hint > 2 ||
+        !["small", "normal", "large"].includes(size) ||
+        !["slow", "normal", "fast"].includes(speed) ||
+        [snapshot.music_volume ?? 50, snapshot.effects_volume ?? 75].some((volume) =>
+          ![0, 25, 50, 75, 100].includes(volume)))
+      throw failure("INVALID_REQUEST", "Preferencias o panel inválidos");
   }
 
   async function listSlots() {

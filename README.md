@@ -36,6 +36,8 @@ Abrir `http://localhost:8000`. El guardado Web usa IndexedDB en el origen del si
 
 En escritorio, cada guardado se escribe primero en un archivo temporal y conserva una copia local de la versión anterior. Si el archivo principal se daña o falta, la ranura se abre desde esa copia y se repara en el siguiente guardado. El [procedimiento de recuperación](docs/RECOVERY.md) describe este caso.
 
+En Web, IndexedDB rechaza snapshots con código, posición, mensajes, diálogo, opciones, panel o preferencias inválidas antes de iniciar la transacción. La ranura y la cola de eventos conservan el último estado confirmado si se rechaza la escritura.
+
 Para probar el servicio y la integración real en Chrome, instalar las dependencias de desarrollo y ejecutar:
 
 ```powershell
@@ -68,7 +70,7 @@ npm run test:dashboard-browser
 
 ## QA técnico
 
-La [matriz P7 con evidencia por caso](docs/P7_QA_2026-10-27.md) registra qué funcionó en `0.7.0-preview` y qué sigue bloqueado por el guion/rúbrica definitivos, Supabase de desarrollo y staging. El build local actual es `0.15.0-preview`. El menú de pausa permite cambiar entre texto pequeño, mediano y grande, y ajustar la velocidad de los diálogos D0; una ventana menor de 768×448 pausa el juego y exige pulsar **Continuar** después de ampliarla. Los diálogos D0 guardan el nodo activo y el historial de la conversación actual antes de avanzar y se reanudan tras recargar. Mientras aparece una línea, un toque la revela completa; una vez visible, el siguiente avanza. Las respuestas D0 y de fragmentos D1–D4 requieren confirmación neutral antes de guardarse; **Esc/Volver** cancela sin modificar la ranura. También se recuperan el celular, el objetivo, la selección de clase y el nivel de pista si estaban abiertos.
+La [matriz P7 con evidencia por caso](docs/P7_QA_2026-10-27.md) registra qué funcionó en `0.7.0-preview` y qué sigue bloqueado por el guion/rúbrica definitivos, Supabase de desarrollo y staging. El build local actual es `0.16.0-preview`. El menú de pausa permite cambiar entre texto pequeño, mediano y grande, y ajustar la velocidad de los diálogos D0; una ventana menor de 768×448 pausa el juego y exige pulsar **Continuar** después de ampliarla. Los diálogos D0 guardan el nodo activo y el historial de la conversación actual antes de avanzar y se reanudan tras recargar. Mientras aparece una línea, un toque la revela completa; una vez visible, el siguiente avanza. Las respuestas D0 y de fragmentos D1–D4 requieren confirmación neutral antes de guardarse; **Esc/Volver** cancela sin modificar la ranura. También se recuperan el celular, el objetivo, la selección de clase y el nivel de pista si estaban abiertos.
 
 ## Entrega P8
 

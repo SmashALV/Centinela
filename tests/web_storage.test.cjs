@@ -28,7 +28,7 @@ function send(client, operation, payload = {}, requestId = `TEST_ONLY_${++reques
 
 function snapshot(slot, phase = "bedroom") {
   return { schema_version: 1, narrative_version: "TEST_ONLY", slot,
-    code: `CTN-TEST-${slot}`, phase, flags: {}, player_position: [1, 2], phone_messages: [] };
+    code: `CTN-${String(slot).padStart(6, "0")}`, phase, flags: {}, player_position: [1, 2], phone_messages: [] };
 }
 
 async function outboxCount() {
@@ -59,6 +59,23 @@ test("ranuras, bloqueo, transacción de decisión e idempotencia", async () => {
   const committed = await send(first, "save_snapshot", firstWrite, "TEST_ONLY_save_1");
   assert.equal(committed.success, true);
   assert.equal((await send(first, "load_slot", { slot: 1 })).result.phase, "bedroom");
+  for (const malformed of [
+    { ...snapshot(1), code: "CTN-+12345" },
+    { ...snapshot(1), player_position: [Infinity, 2] },
+    { ...snapshot(1), flags: { alarm: "sí" } },
+    { ...snapshot(1), phone_messages: [42] },
+    { ...snapshot(1), moba_class: "desconocida" },
+    { ...snapshot(1), preview_step: 1.5 },
+    { ...snapshot(1), dialogue_key: "wakeup", dialogue_position: 8 },
+    { ...snapshot(1), ui_modal: "class" },
+    { ...snapshot(1), text_size: "enorme" },
+    { ...snapshot(1), music_volume: 30 }
+  ]) {
+    assert.equal((await send(first, "save_snapshot", { slot: 1, generation: 1,
+      snapshot: malformed })).error.code, "INVALID_REQUEST");
+    assert.equal((await send(first, "load_slot", { slot: 1 })).result.phase, "bedroom");
+  }
+  assert.equal(await outboxCount(), 0);
   assert.deepEqual((await send(first, "save_snapshot", firstWrite, "TEST_ONLY_save_1")).result, committed.result);
   assert.equal((await send(first, "save_snapshot", { ...firstWrite, snapshot: snapshot(1, "courtyard") }, "TEST_ONLY_save_1")).error.code, "INVALID_REQUEST");
   const reloaded = tab(firstSession, "reload");
@@ -81,6 +98,10 @@ test("ranuras, bloqueo, transacción de decisión e idempotencia", async () => {
   const decision = { slot: 1, generation: 2, snapshot: snapshot(1, "computer"),
     event: { event_id: "TEST_ONLY_event_1", decision_id: "TEST_ONLY_D0",
       choice_id: "TEST_ONLY_choice", kind: "decision", sequence: 1 } };
+  assert.equal((await send(second, "save_decision_atomic", { ...decision,
+    snapshot: { ...decision.snapshot, phone_messages: [42] } })).error.code, "INVALID_REQUEST");
+  assert.equal(await outboxCount(), 0);
+  assert.equal((await send(second, "load_slot", { slot: 1 })).result.phase, "courtyard");
   const decisionResult = await send(second, "save_decision_atomic", decision, "TEST_ONLY_decision_1");
   assert.equal(decisionResult.success, true);
   assert.equal(decisionResult.result.sequence, 1);
