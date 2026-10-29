@@ -142,6 +142,8 @@ def source_hashes() -> dict[str, str]:
     paths += sorted((ROOT / "supabase/migrations").glob("*.sql"))
     paths += sorted((ROOT / "supabase/functions").rglob("*.ts"))
     paths += sorted((ROOT / "data/narrative").glob("*.json"))
+    paths.append(ROOT / "docs/rubric_candidate_v1.json")
+    paths.append(ROOT / "docs/GUION_EDITORIAL_CANDIDATO_v1.md")
     paths += sorted((ROOT / "assets/audio").glob("*.wav*"))
     paths += sorted((ROOT / "assets").rglob("*.png*"))
     paths.append(ROOT / "icon.svg")

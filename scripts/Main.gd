@@ -87,6 +87,8 @@ func _ready() -> void:
 	var draft_errors: Array[String] = draft_flow.load_draft()
 	if not draft_errors.is_empty():
 		push_error("Borrador jugable inválido: " + "; ".join(draft_errors))
+	else:
+		preview_catalog.scenes["D2_04_A"] = draft_flow.authored_scene()
 	world = WorldScript.new()
 	add_child(world)
 	world.interacted.connect(_on_interacted)
@@ -191,7 +193,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif modal_kind == "preview" and event is InputEventKey and event.pressed and not event.echo:
 		var preview_scene: Dictionary = preview_catalog.get_scene(GameState.preview_scene)
 		var preview_choices: Array = preview_scene.get("choices", [])
-		if GameState.preview_step == preview_scene.get("lines", []).size() and not preview_choices.is_empty():
+		if GameState.preview_step == _scene_parts(GameState.preview_scene, GameState.flags.get("draft_mode", false)).lines.size() and not preview_choices.is_empty():
 			var preview_index := -1
 			match event.keycode:
 				KEY_1: preview_index = 0
@@ -564,7 +566,7 @@ func _load_phase() -> void:
 func _draft_world_key() -> String:
 	match GameState.preview_scene:
 		"D1_02_A": return "draft_d1"
-		"D2_03_A": return "draft_d2"
+		"D2_03_A", "D2_04_A": return "draft_d2"
 		"D3_01_A": return "draft_d3"
 		_: return "draft_d4"
 
@@ -1039,7 +1041,7 @@ func _request_preview_choice(scene_id: String, key: String) -> bool:
 	if save_in_progress or modal_kind != "preview" or GameState.preview_scene != scene_id:
 		return false
 	var scene: Dictionary = preview_catalog.get_scene(scene_id)
-	var step: int = scene.get("lines", []).size()
+	var step: int = _scene_parts(scene_id, GameState.flags.get("draft_mode", false)).lines.size()
 	if GameState.preview_step != step:
 		return false
 	for choice in scene.get("choices", []):
@@ -1306,15 +1308,32 @@ func _scene_sprite_key(speaker: String, scene_id: String, choice: String = "") -
 			return "Mateo"
 		if scene_id in ["D4_01_A", "F03"]:
 			return "Mateo_alarmed"
-		if scene_id in ["D2_03_A", "D3_01_A", "D4_02_A", "D4_03_A", "F02"]:
+		if scene_id in ["D2_03_A", "D2_04_A", "D3_01_A", "D4_02_A", "D4_03_A", "F02"]:
 			return "Mateo_worried"
 	return speaker
 
+func _scene_parts(scene_id: String, draft_mode: bool) -> Dictionary:
+	var scene: Dictionary = preview_catalog.get_scene(scene_id)
+	var lines: Array = scene.get("lines", []).duplicate(true)
+	var after_choice: Array = scene.get("after_choice", []).duplicate(true)
+	var later_chat: Array = scene.get("later_chat", []).duplicate(true)
+	if draft_mode:
+		if scene_id == "D3_01_A":
+			var opening: Dictionary = draft_flow.d3_opening(GameState.preview_choices)
+			if not opening.is_empty():
+				lines.insert(2, opening)
+		elif scene_id == "F03":
+			later_chat.append_array(draft_flow.ending_tail(scene_id))
+		elif DraftFlowScript.ENDING_IDS.has(scene_id):
+			lines.append_array(draft_flow.ending_tail(scene_id))
+		after_choice.append_array(draft_flow.extra_after_choice(scene_id))
+	return {"lines": lines, "after_choice": after_choice, "later_chat": later_chat, "choices": scene.get("choices", [])}
+
 func _preview_next_action(scene_id: String) -> Callable:
 	if GameState.flags.get("draft_mode", false):
-		var next_id: String = preview_catalog.next_main(scene_id)
+		var next_id: String = draft_flow.next_main(scene_id)
 		if scene_id == "D4_03_A":
-			next_id = draft_flow.ending_for(str(GameState.preview_choices.get(scene_id, "")))
+			next_id = draft_flow.ending_for(str(GameState.preview_choices.get(scene_id, "")), GameState.preview_choices)
 		elif scene_id == "F01_A":
 			next_id = "F01_B"
 		if not next_id.is_empty():
@@ -1335,10 +1354,11 @@ func _render_preview_story(scene_id: String, draft_mode: bool) -> void:
 		_modal_text("Esta escena no está disponible.")
 		return
 	var step: int = GameState.preview_step
-	var lines: Array = scene.get("lines", [])
-	var choices: Array = scene.get("choices", [])
-	var after_choice: Array = scene.get("after_choice", [])
-	var later_chat: Array = scene.get("later_chat", [])
+	var parts: Dictionary = _scene_parts(scene_id, draft_mode)
+	var lines: Array = parts.lines
+	var choices: Array = parts.choices
+	var after_choice: Array = parts.after_choice
+	var later_chat: Array = parts.later_chat
 	var selected: String = str(GameState.preview_choices.get(scene_id, ""))
 	var current: Dictionary = {}
 	var options: Array = []
@@ -1383,6 +1403,8 @@ func _render_preview_story(scene_id: String, draft_mode: bool) -> void:
 	var day_label: String = "Final" if scene.get("day") == null else "Día " + str(int(scene.day))
 	var title: String = day_label + " · " + _scene_title(scene)
 	var note: String = draft_flow.connector(scene_id) if draft_mode and step == 0 and scene_id != "D1_02_A" else ""
+	if draft_mode and step == 0 and scene_id == "F01_A":
+		note = draft_flow.f01_context(str(GameState.preview_choices.get("D4_03_A", "")))
 	_begin_conversation_presentation()
 	if scene_id == "D1_02_A":
 		var messages: Array = []
@@ -1447,7 +1469,7 @@ func _render_draft_summary(body: VBoxContainer) -> void:
 	_preview_text(body, ending_name, 19)
 	_preview_text(body, "Sofi y Mateo llegaron hasta aquí juntos. Puedes volver a recorrer sus decisiones.", 15)
 	_preview_text(body, "Resultado de la partida: " + GameState.moba_result + " · clase: " + GameState.moba_class, 15)
-	for scene_id in PreviewCatalogScript.MAIN_ORDER:
+	for scene_id in DraftFlowScript.MAIN_IDS:
 		var selected: String = str(GameState.preview_choices.get(scene_id, ""))
 		if not selected.is_empty():
 			var selected_scene: Dictionary = preview_catalog.get_scene(scene_id)
@@ -1456,7 +1478,12 @@ func _render_draft_summary(body: VBoxContainer) -> void:
 	_preview_button(body, "Volver al menú", _return_to_menu)
 
 func _draft_terminal_step(scene_id: String) -> int:
-	return preview_catalog.terminal_step(scene_id) + (1 if DraftFlowScript.MAIN_IDS.has(scene_id) else 0)
+	var parts: Dictionary = _scene_parts(scene_id, true)
+	if not parts.choices.is_empty():
+		return parts.lines.size() + 3 + parts.after_choice.size()
+	if not parts.later_chat.is_empty():
+		return parts.lines.size() + 1 + parts.later_chat.size()
+	return parts.lines.size()
 
 func _finish_draft() -> bool:
 	if not GameState.flags.get("draft_mode", false) or GameState.preview_scene not in ["F01_B", "F02", "F03"] or GameState.preview_step < _draft_terminal_step(GameState.preview_scene) - 1:

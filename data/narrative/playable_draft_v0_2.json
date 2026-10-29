@@ -1,0 +1,288 @@
+{
+  "schema_version": 1,
+  "draft_version": "PLAYABLE_DRAFT_v0.2",
+  "source_status": "editorial_candidate_pending_approval",
+  "provisional": true,
+  "ready_for_publication": false,
+  "camila_reactions": {
+    "victoria": {
+      "Atacante": "¡Buena partida, Sofi! Tu ataque abrió espacio para el equipo.",
+      "Defensor": "¡Ganamos! Aguantaste cuando más lo necesitábamos.",
+      "Soporte": "¡Salió bien! Estuviste pendiente de todos hasta el final."
+    },
+    "derrota": {
+      "Atacante": "No salió esta vez. Atacaste con ganas; ahora toca escuchar al equipo.",
+      "Defensor": "Perdimos, pero cubriste al grupo en los momentos difíciles.",
+      "Soporte": "Qué pena la derrota. Ayudaste a que nadie quedara solo."
+    },
+    "empate": {
+      "Atacante": "Quedamos iguales. Tu ataque nos mantuvo en la partida.",
+      "Defensor": "Empate. Tu defensa nos dio tiempo para reorganizarnos.",
+      "Soporte": "Empate. Tu apoyo mantuvo al equipo unido."
+    }
+  },
+  "connectors": {
+    "D1_02_A": "Al día siguiente, Sofi vuelve al grupo. Mateo presenta a alguien con quien jugó en línea.",
+    "D2_03_A": "Más adelante, Mateo enseña a Sofi un mensaje que recibió en su celular.",
+    "D2_04_A": "Al salir de clase, Mateo vuelve a hablar con Sofi del regalo que Kairo le ofreció.",
+    "D3_01_A": "Otro día, Mateo busca un momento tranquilo para contarle a Sofi qué le preocupa.",
+    "D4_01_A": "En el patio, Mateo muestra una nueva conversación. La propuesta de verse en persona lo inquieta.",
+    "D4_02_A": "La conversación sigue en el patio. Sofi escucha a Mateo antes de decidir qué hacer juntos.",
+    "D4_03_A": "Mateo aún conserva los mensajes. Sofi y él vuelven a hablar de los próximos pasos.",
+    "F01_A": "Sofi y Mateo deciden pedir ayuda a una persona adulta de confianza y llevar los mensajes.",
+    "F01_B": "La conversación con una persona adulta continúa. Mateo y Sofi revisan cómo cuidarse.",
+    "F02": "Mateo decide marcar un límite claro. Sofi permanece a su lado mientras revisan el chat.",
+    "F03": "La situación queda sin resolver por ahora. Los mensajes siguen presentes y la inquietud continúa."
+  },
+  "choice_reactions": {
+    "D1_02_A": {
+      "A": "Sí, les conté de la partida de ayer. Kairo, ellos son mis amigos.",
+      "B": "Nos fue bien, pe. Nos tocó en el mismo equipo y nos coordinamos rápido.",
+      "C": "Qué bueno que estés aquí. Así podemos jugar todos juntos."
+    },
+    "D2_03_A": {
+      "A": "Sí, esa misma skin. Me emocioné cuando vi el mensaje.",
+      "B": "La verdad, no me dijo por qué. Solo ofreció regalármela de pronto.",
+      "C": "Tienes razón, recién lo conozco. Voy a pensarlo antes de responderle."
+    },
+    "D2_04_A": {
+      "A": "Tienes razón. No quiero que un regalo me obligue a callarme. Gracias por escucharme.",
+      "B": "Ya... aunque no me gusta sentir que le debo algo.",
+      "C": "Sí, le preguntaré. Me hace bien poder hablar contigo."
+    },
+    "D3_01_A": {
+      "A": "Gracias, Sofi. Me incomoda que me pida guardar esto en secreto.",
+      "B": "Puede ser... aunque todavía me preocupa cómo reaccionó.",
+      "C": "Sí, pensemos juntos. No quiero llevar esta preocupación yo solo."
+    },
+    "D4_01_A": {
+      "A": "Gracias. Me alivia saber que no tengo que ir. Guardemos el chat y pidamos ayuda.",
+      "B": "Sí, voy a decirle que no quiero verlo. No debería insistir así.",
+      "C": "Tal vez... pero me inquieta que quiera que nadie se entere del encuentro."
+    },
+    "D4_02_A": {
+      "A": "Gracias por acompañarme, Sofi. Me sentiría mejor si lo hablamos juntos.",
+      "B": "Ayúdame a escribirlo claro: no voy a encontrarme con él.",
+      "C": "Podemos esperar un poco, aunque sigo sintiéndome incómodo."
+    },
+    "D4_03_A": {
+      "A": "Sí. Guardemos los mensajes y busquemos a un adulto de confianza juntos.",
+      "B": "Le diré que no voy a ir. Después guardaré el chat por si necesitamos ayuda.",
+      "C": "Voy a esperar sin responderle, pero no logro dejar de pensar en esto."
+    }
+  },
+  "authored_scene": {
+    "scene_id": "D2_04_A",
+    "title": "Un secreto por una skin",
+    "day": 2,
+    "source_status": "new_text_pending_editorial_approval",
+    "lines": [
+      {
+        "speaker": "Mateo",
+        "text": "Oe, Sofi, Kairo volvió a escribirme. Dice que puede pasarme la skin, pero que por ahora no se lo cuente a nadie."
+      },
+      {
+        "speaker": "Sofi",
+        "text": "¿Te explicó por qué tendría que ser secreto?"
+      },
+      {
+        "speaker": "Mateo",
+        "text": "Dice que es algo entre amigos y que los demás podrían malinterpretarlo. Me hizo sentir que le debo una respuesta."
+      },
+      {
+        "speaker": "Mateo",
+        "text": "¿Tú qué harías?"
+      }
+    ],
+    "choices": [
+      {
+        "key": "A",
+        "text": "Un regalo no te obliga a guardar un secreto que te incomoda. Si insiste, podemos buscar ayuda juntos."
+      },
+      {
+        "key": "B",
+        "text": "Si quieres la skin, quizá guarda el secreto un tiempo y después ves qué hacer."
+      },
+      {
+        "key": "C",
+        "text": "Puedes preguntarle por qué lo oculta y contármelo. No tienes que decidirlo solo."
+      }
+    ],
+    "after_choice": [
+      {
+        "speaker": "Sofi",
+        "text": "Si vuelve a presionarte, me lo cuentas. Podemos hablarlo con alguien de confianza."
+      }
+    ]
+  },
+  "d3_opening_by_d2_choice": {
+    "A": {
+      "speaker": "Mateo",
+      "text": "También me quedé pensando en lo que dijiste el otro día. No tengo por qué aceptar la skin, y si sigue así, mejor pido ayuda"
+    },
+    "B": {
+      "speaker": "Mateo",
+      "text": "Oe, Sofi... gracias por escucharme también el otro día. Me hace bien poder hablar contigo"
+    },
+    "C": {
+      "speaker": "Mateo",
+      "text": "¿Te acuerdas que me dijiste que le preguntara por el secreto? Eso hice, pe... y mira cómo se puso"
+    }
+  },
+  "d1_after_choice": [
+    {
+      "speaker": "Mateo",
+      "text": "Oe, ¿y te quedas a jugar?"
+    },
+    {
+      "speaker": "Kairo",
+      "text": "¡De una! Nos vemos, gente"
+    }
+  ],
+  "ending_tail": {
+    "F01_A": [
+      {
+        "speaker": "Tutor",
+        "text": "No tienes que reunirte con alguien que te está presionando. Conservemos los mensajes y conversemos con tu familia sobre cómo cuidarte."
+      },
+      {
+        "speaker": "Mateo",
+        "text": "Me daba roche decirlo, pero ya no quiero guardar esto en secreto."
+      },
+      {
+        "speaker": "Sofi",
+        "text": "Estoy contigo, Mateo. Podemos hablar con tu mamá después de clases."
+      }
+    ],
+    "F01_B": [
+      {
+        "speaker": "Mateo",
+        "text": "Hoy hablé con el tutor. Guardamos los mensajes y vine a contártelo."
+      },
+      {
+        "speaker": "Madre",
+        "text": "No estás solo, hijo. Vamos a buscar la ayuda que necesites y a cuidar tus cuentas."
+      },
+      {
+        "speaker": "Narrador",
+        "text": "Mateo abraza a su madre. Pedir ayuda fue un paso de protección, y nadie lo culpa por la presión que recibió."
+      }
+    ],
+    "F02": [
+      {
+        "speaker": "Mateo",
+        "text": "Voy a conservar el chat y bloquearlo. Si vuelve a insistir, buscaré apoyo para contarlo."
+      },
+      {
+        "speaker": "Sofi",
+        "text": "Podemos hablar con alguien de confianza cuando quieras. No tienes que manejar esto solo."
+      },
+      {
+        "speaker": "Narrador",
+        "text": "Mateo marcó un límite y no irá al encuentro. Aún le preocupa lo ocurrido; pedir ayuda sigue siendo una opción importante."
+      }
+    ],
+    "F03": [
+      {
+        "speaker": "Narrador",
+        "text": "Sofi le propone a Mateo conservar el chat y hablar con una persona adulta de confianza. Mateo aún no se decide. No acepta el encuentro."
+      }
+    ]
+  },
+  "flag_triggers": {
+    "CONFIANZA_MATEO_SOFI": [
+      "D2_04_A:A",
+      "D2_04_A:C",
+      "D3_01_A:C",
+      "D4_01_A:A",
+      "D4_02_A:A"
+    ],
+    "RECONOCE_MANIPULACION": [
+      "D3_01_A:A",
+      "D4_01_A:A",
+      "D4_01_A:B",
+      "D4_02_A:B"
+    ]
+  },
+  "ending_rules": [
+    {
+      "choice": "A",
+      "requires_both_flags": false,
+      "scene": "F01_A"
+    },
+    {
+      "choice": "B",
+      "requires_both_flags": true,
+      "scene": "F01_A"
+    },
+    {
+      "choice": "B",
+      "requires_both_flags": false,
+      "scene": "F02"
+    },
+    {
+      "choice": "C",
+      "requires_both_flags": true,
+      "scene": "F01_A"
+    },
+    {
+      "choice": "C",
+      "requires_both_flags": false,
+      "scene": "F03"
+    }
+  ],
+  "f01_context": {
+    "direct": "Sofi y Mateo guardan los mensajes y buscan al tutor. Después Mateo hablará con su madre.",
+    "mateo_initiative": "Al repasar los mensajes, Mateo decide pedir ayuda. Sofi lo acompaña con el tutor; después hablará con su madre."
+  },
+  "educational_ids": {
+    "D2_03_A": {
+      "decision_id": "CTN2.V1.D2_03_SKIN",
+      "choices": {
+        "A": "CTN2.V1.D2_03_SKIN.A",
+        "B": "CTN2.V1.D2_03_SKIN.B",
+        "C": "CTN2.V1.D2_03_SKIN.C"
+      }
+    },
+    "D2_04_A": {
+      "decision_id": "CTN2.V1.D2_04_SECRET",
+      "choices": {
+        "A": "CTN2.V1.D2_04_SECRET.A",
+        "B": "CTN2.V1.D2_04_SECRET.B",
+        "C": "CTN2.V1.D2_04_SECRET.C"
+      }
+    },
+    "D3_01_A": {
+      "decision_id": "CTN2.V1.D3_01_PRESSURE",
+      "choices": {
+        "A": "CTN2.V1.D3_01_PRESSURE.A",
+        "B": "CTN2.V1.D3_01_PRESSURE.B",
+        "C": "CTN2.V1.D3_01_PRESSURE.C"
+      }
+    },
+    "D4_01_A": {
+      "decision_id": "CTN2.V1.D4_01_MEETING",
+      "choices": {
+        "A": "CTN2.V1.D4_01_MEETING.A",
+        "B": "CTN2.V1.D4_01_MEETING.B",
+        "C": "CTN2.V1.D4_01_MEETING.C"
+      }
+    },
+    "D4_02_A": {
+      "decision_id": "CTN2.V1.D4_02_SUPPORT",
+      "choices": {
+        "A": "CTN2.V1.D4_02_SUPPORT.A",
+        "B": "CTN2.V1.D4_02_SUPPORT.B",
+        "C": "CTN2.V1.D4_02_SUPPORT.C"
+      }
+    },
+    "D4_03_A": {
+      "decision_id": "CTN2.V1.D4_03_NEXT_STEP",
+      "choices": {
+        "A": "CTN2.V1.D4_03_NEXT_STEP.A",
+        "B": "CTN2.V1.D4_03_NEXT_STEP.B",
+        "C": "CTN2.V1.D4_03_NEXT_STEP.C"
+      }
+    }
+  }
+}

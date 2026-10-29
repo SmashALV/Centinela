@@ -646,7 +646,7 @@ func _run() -> void:
 	var bad_reviewed := reviewed.duplicate(true)
 	bad_reviewed.flags.preview_reviewed = "sí"
 	_check(not GameState.restore(bad_reviewed) and GameState.snapshot() == reviewed, "marca de lectura inválida rechazada")
-	_check(main.draft_flow.content.get("draft_version") == "PLAYABLE_DRAFT_v0.1", "borrador separado carga versión provisional")
+	_check(main.draft_flow.content.get("draft_version") == "PLAYABLE_DRAFT_v0.2", "borrador separado carga versión provisional")
 	for outcome in ["victoria", "derrota", "empate"]:
 		for role_name in ["Atacante", "Defensor", "Soporte"]:
 			_check(not main.draft_flow.camila_reaction(outcome, role_name).is_empty(), "Camila responde a %s/%s" % [outcome, role_name])
@@ -678,7 +678,7 @@ func _run() -> void:
 		var invalid_exploration := exploring_saved.duplicate(true)
 		invalid_exploration.preview_step = 3
 		_check(not GameState.restore(invalid_exploration), "exploración con paso narrativo inválido rechazada")
-		for scene_id in main.preview_catalog.MAIN_ORDER:
+		for scene_id in main.draft_flow.MAIN_IDS:
 			if main.draft_flow.EXPLORATION_IDS.has(scene_id):
 				if scene_id != "D1_02_A":
 					await main._commit_preview(scene_id, 0, "", false, true)
@@ -701,11 +701,11 @@ func _run() -> void:
 			_check(not main.draft_flow.connector(scene_id).is_empty(), "conector presente: " + scene_id)
 			for option in ["A", "B", "C"]:
 				_check(not main.draft_flow.choice_reaction(scene_id, option).is_empty(), "reacción presente: %s/%s" % [scene_id, option])
-			await main._commit_preview(scene_id, scene_data.lines.size() + 1, letter)
+			await main._commit_preview(scene_id, main._scene_parts(scene_id, true).lines.size() + 1, letter)
 			await main._commit_preview(scene_id, main._draft_terminal_step(scene_id))
 			_check(GameState.preview_choices.get(scene_id) == letter and main.modal_kind == "preview", "escena jugable y opción guardada: " + scene_id)
-		_check(main.draft_flow.ending_for(str(GameState.preview_choices.get("D4_03_A", ""))) == {"A": "F01_A", "B": "F02", "C": "F03"}[letter], "desenlace calculado desde decisión D4")
-		var ending_scene: String = main.draft_flow.ending_for(letter)
+		_check(main.draft_flow.ending_for(str(GameState.preview_choices.get("D4_03_A", "")), GameState.preview_choices) == {"A": "F01_A", "B": "F02", "C": "F03"}[letter], "desenlace calculado desde decisiones previas y D4")
+		var ending_scene: String = main.draft_flow.ending_for(letter, GameState.preview_choices)
 		await main._commit_preview(ending_scene, main._draft_terminal_step(ending_scene))
 		if ending_scene == "F01_A":
 			_check(not await main._finish_draft(), "F01 exige segunda escena")
@@ -720,6 +720,9 @@ func _run() -> void:
 	var bad_draft := GameState.snapshot()
 	bad_draft.draft_content_version = "PLAYABLE_DRAFT_v0.0"
 	_check(not GameState.restore(bad_draft), "versión de borrador incompatible rechazada")
+	var legacy_draft := GameState.snapshot()
+	legacy_draft.draft_content_version = "PLAYABLE_DRAFT_v0.1"
+	_check(GameState.restore(legacy_draft) and GameState.snapshot().draft_content_version == "PLAYABLE_DRAFT_v0.2", "partida v0.1 se migra a la historia candidata v0.2")
 	var previous_code := GameState.code
 	main._show_menu()
 	main._confirm_slot_action(1, true)

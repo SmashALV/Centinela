@@ -1,6 +1,6 @@
 # P5 · Vista previa de D1–D4 y finales
 
-**Actualización:** existe un [borrador jugable separado](PLAYABLE_DRAFT.md) que conecta estos extractos para probar una partida completa. Los huecos enumerados aquí siguen pendientes de aprobación y sustitución.
+**Actualización:** existe una [historia jugable candidata v0.2](PLAYABLE_DRAFT.md) y un [guion integral para revisión](GUION_EDITORIAL_CANDIDATO_v1.md). La nueva D2-04 y los parlamentos de enlace se identifican como texto redactado. Los huecos de la fuente original enumerados aquí no se convierten por ello en texto histórico aprobado.
 
 Esta fase incorpora únicamente los parlamentos literales recuperados del documento `Guion_Literal_Recuperado_Ampliado_D0_D4_v0_2.md`. La fuente está en `docs/recovered/` y los archivos de ejecución están en `data/narrative/`. Todos llevan `provisional: true` y `ready_for_publication: false`.
 

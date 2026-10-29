@@ -570,7 +570,7 @@ async function main() {
           const request = store.get(1);
           request.onsuccess = () => {
             const record = request.result;
-            record.snapshot.preview_step = 9;
+            record.snapshot.preview_step = 11;
             store.put(record);
           };
           transaction.oncomplete = resolve;

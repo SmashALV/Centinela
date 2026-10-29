@@ -1,7 +1,13 @@
 extends Node
 
 const MainScene = preload("res://scenes/Main.tscn")
-const ROUTES := {"A": "F01", "B": "F02", "C": "F03"}
+const ROUTES := {
+	"A": {"early": "A", "final": "A", "ending": "F01"},
+	"B": {"early": "B", "final": "B", "ending": "F02"},
+	"C": {"early": "C", "final": "C", "ending": "F03"},
+	"B_PROTECT": {"early": "A", "final": "B", "ending": "F01"},
+	"C_PROTECT": {"early": "A", "final": "C", "ending": "F01"}
+}
 
 func _ready() -> void:
 	_run.call_deferred()
@@ -27,6 +33,7 @@ func _run() -> void:
 	var story: Node = MainScene.instantiate()
 	get_tree().root.add_child(story)
 	for route in ROUTES:
+		var plan: Dictionary = ROUTES[route]
 		SaveManager.storage_prefix = "user://centinela_ROUTE_%s_%d_" % [route, Time.get_ticks_usec()]
 		GameState.new_game(1)
 		GameState.phase = "result"
@@ -61,14 +68,15 @@ func _run() -> void:
 				continue
 			var scene: Dictionary = story.preview_catalog.get_scene(scene_id)
 			var choices: Array = scene.get("choices", [])
-			var choice_step: int = scene.get("lines", []).size()
+			var choice_step: int = story._scene_parts(scene_id, true).lines.size()
 			var prefix := "Continuar"
 			if not choices.is_empty() and GameState.preview_step == choice_step:
-				prefix = "%d ·" % (["A", "B", "C"].find(route) + 1 if scene_id == "D4_03_A" else 1)
+				var letter: String = plan.final if scene_id == "D4_03_A" else plan.early
+				prefix = "%d ·" % (["A", "B", "C"].find(letter) + 1)
 			if not await _press_button(story, prefix):
 				_fail("botón inaccesible o avance sin guardar en " + scene_id + " paso " + str(GameState.preview_step))
 				return
-		if not completed or str(GameState.flags.get("draft_ending", "")) != ROUTES[route]:
+		if not completed or str(GameState.flags.get("draft_ending", "")) != plan.ending:
 			_fail("desenlace incorrecto en ruta " + route)
 			return
 		for main_id in story.draft_flow.MAIN_IDS:
@@ -80,7 +88,7 @@ func _run() -> void:
 		if not SaveManager.load_slot(1) or GameState.snapshot() != saved:
 			_fail("desenlace no se recupera desde guardado en ruta " + route)
 			return
-		print("PASS resultado D0→D4→%s, botones narrativos, guardado y reanudación" % ROUTES[route])
+		print("PASS ruta %s → %s, botones narrativos, guardado y reanudación" % [route, plan.ending])
 		SaveManager.delete_slot(1)
 	SaveManager.storage_prefix = SaveManager.SAVE_PREFIX
 	get_tree().quit(0)

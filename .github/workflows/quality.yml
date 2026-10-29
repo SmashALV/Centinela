@@ -28,6 +28,8 @@ jobs:
       - name: Verify literal preview and release guards
         run: |
           python3 tests/verify_recovered_script.py
+          python3 tests/verify_candidate_content.py
+          python3 scripts/build_candidate_script.py --check
           python3 scripts/generate_audio.py --check
           python3 scripts/release.py check --channel preview
       - name: Test storage, backend, dashboard and synchronization

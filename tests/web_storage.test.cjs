@@ -63,6 +63,13 @@ test("ranuras, bloqueo, transacción de decisión e idempotencia", async () => {
   assert.equal((await send(first, "save_snapshot", { slot: 1, generation: 1, snapshot: desktop })).success, true);
   assert.equal((await send(first, "load_slot", { slot: 1 })).result.ui_modal, "desktop");
   assert.equal((await send(first, "save_snapshot", firstWrite)).success, true);
+  for (const draftVersion of ["PLAYABLE_DRAFT_v0.1", "PLAYABLE_DRAFT_v0.2"]) {
+    const draft = { ...snapshot(1, "preview"), flags: { draft_mode: true },
+      draft_content_version: draftVersion,
+      preview_scene: draftVersion === "PLAYABLE_DRAFT_v0.1" ? "D3_01_A" : "D2_04_A", preview_step: 0 };
+    assert.equal((await send(first, "save_snapshot", { slot: 1, generation: 1, snapshot: draft })).success, true);
+  }
+  assert.equal((await send(first, "save_snapshot", firstWrite)).success, true);
   for (const malformed of [
     { ...snapshot(1), code: "CTN-+12345" },
     { ...snapshot(1), player_position: [Infinity, 2] },

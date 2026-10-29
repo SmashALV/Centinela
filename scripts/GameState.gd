@@ -4,8 +4,8 @@ const SCHEMA_VERSION := 1
 const NARRATIVE_VERSION := "provisional-d0-1"
 const PREVIEW_CONTENT_VERSION := "RECOVERED_PREVIEW_D0_v0.2"
 const PREVIEW_PACK_VERSION := "RECOVERED_PREVIEW_D0_D4_v0.2"
-const DRAFT_CONTENT_VERSION := "PLAYABLE_DRAFT_v0.1"
-const PREVIEW_SCENES := ["D1_02_A", "D2_03_A", "D3_01_A", "D4_01_A", "D4_02_A", "D4_03_A", "ENDINGS_INDEX", "F01_A", "F01_B", "F02", "F03"]
+const DRAFT_CONTENT_VERSION := "PLAYABLE_DRAFT_v0.2"
+const PREVIEW_SCENES := ["D1_02_A", "D2_03_A", "D2_04_A", "D3_01_A", "D4_01_A", "D4_02_A", "D4_03_A", "ENDINGS_INDEX", "F01_A", "F01_B", "F02", "F03"]
 
 var slot: int = 1
 var code: String = ""
@@ -78,7 +78,7 @@ func restore(data: Dictionary) -> bool:
 		return false
 	if data.has("preview_pack_version") and data.preview_pack_version != PREVIEW_PACK_VERSION:
 		return false
-	if typeof(data.get("flags")) == TYPE_DICTIONARY and data.flags.get("draft_mode", false) and data.get("draft_content_version") != DRAFT_CONTENT_VERSION:
+	if typeof(data.get("flags")) == TYPE_DICTIONARY and data.flags.get("draft_mode", false) and data.get("draft_content_version") not in [DRAFT_CONTENT_VERSION, "PLAYABLE_DRAFT_v0.1"]:
 		return false
 	if typeof(data.get("slot")) != TYPE_FLOAT and typeof(data.get("slot")) != TYPE_INT:
 		return false
@@ -175,6 +175,8 @@ func restore(data: Dictionary) -> bool:
 		(active_dialogue == "group_chat" and data.get("phase") != "computer"):
 		return false
 	if int(step) < 0 or int(step) > 100 or float(step) != float(int(step)) or (not scene.is_empty() and not PREVIEW_SCENES.has(scene)):
+		return false
+	if scene == "D2_04_A" and not data.flags.get("draft_mode", false):
 		return false
 	if data.get("phase") == "preview" and scene.is_empty():
 		return false

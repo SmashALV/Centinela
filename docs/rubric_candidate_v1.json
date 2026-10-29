@@ -1,0 +1,211 @@
+{
+  "schema_version": 1,
+  "rubric_version": "RUBRIC_CANDIDATE_v1",
+  "narrative_version": "PLAYABLE_DRAFT_v0.2",
+  "approval_status": "pending_expert_and_institutional_review",
+  "ready_for_publication": false,
+  "student_visible_scores": false,
+  "scoring_authority": "server_only_after_approval",
+  "dimensions": {
+    "D1": "Reconocimiento de señales de grooming",
+    "D2": "Reconocimiento de manipulación emocional",
+    "D3": "Privacidad y límites digitales",
+    "D4": "Búsqueda de apoyo adulto confiable"
+  },
+  "non_evaluable_scenes": [
+    "D0_05_A",
+    "D1_02_A"
+  ],
+  "decisions": [
+    {
+      "scene_id": "D2_03_A",
+      "day": 2,
+      "decision_id": "CTN2.V1.D2_03_SKIN",
+      "dimension": "D3",
+      "choices": [
+        {
+          "key": "A",
+          "choice_id": "CTN2.V1.D2_03_SKIN.A",
+          "points": 0,
+          "reason": "Celebra el regalo sin reconocer todavía el límite o la privacidad.",
+          "text": "¡Asu, qué chévere! Esa era la skin que querías, ¿no?"
+        },
+        {
+          "key": "B",
+          "choice_id": "CTN2.V1.D2_03_SKIN.B",
+          "points": 1,
+          "reason": "Pregunta por la intención del regalo, aunque no propone un límite.",
+          "text": "Oe, ¿y por qué quiere regalártela? ¿Te contó?"
+        },
+        {
+          "key": "C",
+          "choice_id": "CTN2.V1.D2_03_SKIN.C",
+          "points": 2,
+          "reason": "Señala que Mateo conoce poco a Kairo y sugiere cautela.",
+          "text": "Está chévere, pero igual recién lo estás conociendo, Mateo"
+        }
+      ]
+    },
+    {
+      "scene_id": "D2_04_A",
+      "day": 2,
+      "decision_id": "CTN2.V1.D2_04_SECRET",
+      "dimension": "D3",
+      "choices": [
+        {
+          "key": "A",
+          "choice_id": "CTN2.V1.D2_04_SECRET.A",
+          "points": 2,
+          "reason": "Afirma que el regalo no obliga a guardar un secreto incómodo y ofrece apoyo.",
+          "text": "Un regalo no te obliga a guardar un secreto que te incomoda. Si insiste, podemos buscar ayuda juntos."
+        },
+        {
+          "key": "B",
+          "choice_id": "CTN2.V1.D2_04_SECRET.B",
+          "points": 0,
+          "reason": "Sugiere aceptar temporalmente una condición de secreto.",
+          "text": "Si quieres la skin, quizá guarda el secreto un tiempo y después ves qué hacer."
+        },
+        {
+          "key": "C",
+          "choice_id": "CTN2.V1.D2_04_SECRET.C",
+          "points": 1,
+          "reason": "Cuestiona el secreto y mantiene abierta la conversación, sin fijar aún un límite claro.",
+          "text": "Puedes preguntarle por qué lo oculta y contármelo. No tienes que decidirlo solo."
+        }
+      ]
+    },
+    {
+      "scene_id": "D3_01_A",
+      "day": 3,
+      "decision_id": "CTN2.V1.D3_01_PRESSURE",
+      "dimension": "D2",
+      "choices": [
+        {
+          "key": "A",
+          "choice_id": "CTN2.V1.D3_01_PRESSURE.A",
+          "points": 2,
+          "reason": "Identifica que una amistad no exige guardar secretos que incomodan.",
+          "text": "Oe, Mateo, no tienes que demostrarle tu amistad guardando algo que te incomoda"
+        },
+        {
+          "key": "B",
+          "choice_id": "CTN2.V1.D3_01_PRESSURE.B",
+          "points": 0,
+          "reason": "Minimiza la presión expresada por Mateo.",
+          "text": "Capaz solo se molestó un rato. Yo no le daría tanta importancia"
+        },
+        {
+          "key": "C",
+          "choice_id": "CTN2.V1.D3_01_PRESSURE.C",
+          "points": 1,
+          "reason": "Escucha y ofrece acompañamiento, aunque no nombra la manipulación.",
+          "text": "Pucha, entiendo que te preocupe. ¿Quieres que pensemos juntos cómo responderle o con quién hablar?"
+        }
+      ]
+    },
+    {
+      "scene_id": "D4_01_A",
+      "day": 4,
+      "decision_id": "CTN2.V1.D4_01_MEETING",
+      "dimension": "D1",
+      "choices": [
+        {
+          "key": "A",
+          "choice_id": "CTN2.V1.D4_01_MEETING.A",
+          "points": 2,
+          "reason": "Reconoce la presión del encuentro secreto y propone protección.",
+          "text": "Mateo, no tienes por qué ir ni ocultarlo. Mejor hablemos con un adulto de confianza y guardemos esos mensajes"
+        },
+        {
+          "key": "B",
+          "choice_id": "CTN2.V1.D4_01_MEETING.B",
+          "points": 2,
+          "reason": "Reconoce que la insistencia y la incomodidad son señales para rechazar el encuentro.",
+          "text": "Yo le diría que no quieres verlo. Si te incomoda, no tiene por qué seguir insistiendo"
+        },
+        {
+          "key": "C",
+          "choice_id": "CTN2.V1.D4_01_MEETING.C",
+          "points": 0,
+          "reason": "Deja abierta la conversación pese a la petición de secreto y encuentro.",
+          "text": "Capaz solo quiere conocerte, pero igual está raro. Podrías seguir conversando antes de decidir"
+        }
+      ]
+    },
+    {
+      "scene_id": "D4_02_A",
+      "day": 4,
+      "decision_id": "CTN2.V1.D4_02_SUPPORT",
+      "dimension": "D4",
+      "choices": [
+        {
+          "key": "A",
+          "choice_id": "CTN2.V1.D4_02_SUPPORT.A",
+          "points": 2,
+          "reason": "Ofrece acompañar a Mateo con una persona adulta de confianza.",
+          "text": "Oe, podemos hablarlo con alguien de confianza. Si quieres, te acompaño"
+        },
+        {
+          "key": "B",
+          "choice_id": "CTN2.V1.D4_02_SUPPORT.B",
+          "points": 1,
+          "reason": "Ayuda a establecer un límite, pero todavía no propone apoyo adulto.",
+          "text": "Si quieres, te ayudo a escribirle que no vas a encontrarte con él"
+        },
+        {
+          "key": "C",
+          "choice_id": "CTN2.V1.D4_02_SUPPORT.C",
+          "points": 0,
+          "reason": "Posterga pedir apoyo pese a la preocupación de Mateo.",
+          "text": "Podemos dejarlo ahí por ahora y ver si Kairo deja de insistir"
+        }
+      ]
+    },
+    {
+      "scene_id": "D4_03_A",
+      "day": 4,
+      "decision_id": "CTN2.V1.D4_03_NEXT_STEP",
+      "dimension": "D4",
+      "choices": [
+        {
+          "key": "A",
+          "choice_id": "CTN2.V1.D4_03_NEXT_STEP.A",
+          "points": 2,
+          "reason": "Conserva mensajes y propone apoyo adulto concreto.",
+          "text": "Guardemos los mensajes y hablemos con un adulto de confianza. Yo te acompaño, y no tienes que ir a verlo"
+        },
+        {
+          "key": "B",
+          "choice_id": "CTN2.V1.D4_03_NEXT_STEP.B",
+          "points": 1,
+          "reason": "Rechaza el encuentro y conserva mensajes; la ayuda adulta queda pendiente.",
+          "text": "Primero dejémosle claro que no vas a ir y cortemos el contacto. Guardemos el chat por si necesitamos ayuda"
+        },
+        {
+          "key": "C",
+          "choice_id": "CTN2.V1.D4_03_NEXT_STEP.C",
+          "points": 0,
+          "reason": "Mantiene la situación sin apoyo ni límite adicional.",
+          "text": "Mejor no hagamos nada por ahora. No le respondas y veamos si deja de insistir"
+        }
+      ]
+    }
+  ],
+  "required_items_by_dimension": {
+    "D1": 1,
+    "D2": 1,
+    "D3": 2,
+    "D4": 2
+  },
+  "score_exclusions": [
+    "ending",
+    "moba_result",
+    "moba_class",
+    "duration",
+    "hints",
+    "pause",
+    "exploration"
+  ],
+  "interpretation_note": "Los puntos describen respuestas de Sofi en la ficción; no evalúan ni culpabilizan a estudiantes o víctimas. Falta validación académica de contenido y pesos."
+}
