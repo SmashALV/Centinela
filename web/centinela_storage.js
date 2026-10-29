@@ -113,6 +113,8 @@
     const flags = snapshot.flags;
     if (!flags || typeof flags !== "object" || Array.isArray(flags))
       throw failure("INVALID_REQUEST", "Indicadores inválidos");
+    if ("d0_guide_active" in flags && (!["bedroom", "courtyard", "computer"].includes(flags.d0_guide_active) || flags.d0_guide_active !== snapshot.phase))
+      throw failure("INVALID_REQUEST", "Guía incompatible con escenario");
     const coral = snapshot.coral_state ?? {};
     if (!coral || typeof coral !== "object" || Array.isArray(coral) ||
         (snapshot.phase === "coral" && (!["CORAL_STORY_v0.1", "CORAL_STORY_v0.2"].includes(coral.version) ||
@@ -149,7 +151,7 @@
             state && typeof state === "object" && !Array.isArray(state)))
         throw failure("INVALID_REQUEST", "Estado narrativo inválido");
     }
-    for (const name of ["wakeup_seen", "alarm", "backpack", "friends", "d0_chat_done", "d0_photo_seen", "d0_desk_seen", "d0_tutoria_seen", "d0_profile_private", "preview_reviewed", "draft_mode", "draft_completed", "draft_exploring"]) {
+    for (const name of ["wakeup_seen", "alarm", "backpack", "friends", "d0_chat_done", "d0_photo_seen", "d0_desk_seen", "d0_tutoria_seen", "d0_profile_private", "d0_guide_bedroom_seen", "d0_guide_courtyard_seen", "d0_guide_computer_seen", "d0_departure_seen", "preview_reviewed", "draft_mode", "draft_completed", "draft_exploring"]) {
       if (name in flags && typeof flags[name] !== "boolean")
         throw failure("INVALID_REQUEST", "Indicador inválido");
     }

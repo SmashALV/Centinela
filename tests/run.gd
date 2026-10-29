@@ -556,6 +556,8 @@ func _run() -> void:
 	while main.dialogue_story.current_node().get("next", null) != null:
 		main._advance_dialogue()
 	main._complete_dialogue()
+	_check(main.modal_kind == "stage_guide" and not main.world.enabled, "guía del cuarto antes de mover a Sofi")
+	await main._finish_stage_guide()
 	_check(GameState.flags.get("wakeup_seen", false) and main.modal_kind == "", "despertar completado y guardado")
 	_check(GameState.dialogue_history.is_empty(), "historial se limpia al terminar conversación")
 	await main._show_phone()
@@ -572,6 +574,7 @@ func _run() -> void:
 	_check(main.modal_kind == "objective" and GameState.hint_level == 1, "recarga reabre objetivo y conserva pista")
 	await main._close_modal()
 	main._transition("courtyard", Vector2(140, 300))
+	await main._finish_stage_guide()
 	main._on_interacted("friends")
 	_check(main.modal_kind == "dialogue" and not GameState.flags.get("friends", false), "patio exige terminar conversación")
 	while main.dialogue_story.current_node().get("next", null) != null:
@@ -579,6 +582,7 @@ func _run() -> void:
 	main._complete_dialogue()
 	_check(GameState.flags.get("friends", false), "presentación del grupo guardada")
 	main._transition("computer", Vector2(384, 320))
+	await main._finish_stage_guide()
 	main._on_interacted("pc")
 	var play_locked := false
 	for desktop_button in main.modal_box.get_children():

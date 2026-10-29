@@ -11,7 +11,7 @@ const SPRITES := {
 	"Mateo": "res://assets/vn/mateo_neutral.png",
 	"Mateo_worried": "res://assets/vn/mateo_worried.png",
 	"Mateo_alarmed": "res://assets/vn/mateo_alarmed.png",
-	"Camila": "res://assets/vn/camila_neutral.png",
+	"Camila": "res://assets/vn/camila_v2.png",
 	"Bruno": "res://assets/vn/bruno_neutral.png",
 	"Sebas": "res://assets/vn/sebas_neutral.png"
 }
@@ -19,7 +19,7 @@ const AVATARS := {
 	"Kairo": "res://assets/vn/kairo_anonymous.png",
 	"Sofi": "res://assets/portraits/sofi_neutral.png",
 	"Mateo": "res://assets/portraits/mateo_neutral.png",
-	"Camila": "res://assets/portraits/camila_neutral.png",
+	"Camila": "res://assets/portraits/camila_v2.tres",
 	"Bruno": "res://assets/portraits/bruno_neutral.png",
 	"Sebas": "res://assets/portraits/sebas_neutral.png"
 }
@@ -87,6 +87,7 @@ func show_prologue(text_value: String, action: Callable, font_size: int) -> void
 		var person: String = ["Camila", "Bruno", "Sofi", "Mateo", "Sebas"][i]
 		_panel(Rect2(112 + i * 110, 24, 90, 90), Color("fff7fc"), Color("c493bb"), 22)
 		_picture(AVATARS[person], Rect2(117 + i * 110, 28, 80, 80))
+		_label(person, Rect2(112 + i * 110, 113, 90, 19), 12, Color("44304f")).horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_panel(Rect2(30, 132, 708, 291), Color("fff8fbe8"), Color("c493bb"), 20)
 	var scroll := ScrollContainer.new()
 	scroll.position = Vector2(54, 151)
@@ -101,6 +102,28 @@ func show_prologue(text_value: String, action: Callable, font_size: int) -> void
 	prose.add_theme_font_size_override("font_size", font_size)
 	prose.add_theme_color_override("font_color", Color("44304f"))
 	scroll.add_child(prose)
+	arm_auto(action, text_value)
+
+func show_stage_card(title: String, text_value: String, action: Callable, font_size: int) -> void:
+	clear_view()
+	visible = true
+	_panel(Rect2(0, 0, 768, 448), Color(0.28, 0.16, 0.34, 0.63))
+	_panel(Rect2(74, 93, 620, 259), Color("fff3fa"), Color("c493bb"), 18)
+	_label(title, Rect2(100, 111, 564, 37), font_size + 2, Color("684776"))
+	var scroll := ScrollContainer.new()
+	scroll.position = Vector2(100, 157)
+	scroll.size = Vector2(565, 142)
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	add_child(scroll)
+	var prose := Label.new()
+	prose.name = "StageGuideText"
+	prose.text = text_value
+	prose.custom_minimum_size.x = 541
+	prose.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	prose.add_theme_font_size_override("font_size", font_size)
+	prose.add_theme_color_override("font_color", Color("44304f"))
+	scroll.add_child(prose)
+	_label("WASD · mover    F · interactuar    E · celular    Tab · objetivo    P · pausa", Rect2(97, 311, 568, 33), 12, Color("684776"))
 	arm_auto(action, text_value)
 
 func _ready() -> void:
@@ -236,6 +259,7 @@ func show_scene(background_key: String, title: String, speaker: String, line: St
 	_panel(Rect2(0, 0, 768, 448), Color(0.40, 0.21, 0.40, 0.14))
 	var left_key: String = sprite_key if sprite_key.begins_with("Sofi") else partner_key
 	var right_key: String = partner_key if sprite_key.begins_with("Sofi") else sprite_key
+	if not left_key.is_empty() and left_key.get_slice("_", 0) == right_key.get_slice("_", 0): right_key = ""
 	if SPRITES.has(left_key): _picture(SPRITES[left_key], Rect2(32, 22, 310, 350), not speaker.begins_with(left_key.get_slice("_", 0)))
 	if SPRITES.has(right_key): _picture(SPRITES[right_key], Rect2(410, 14, 320, 360), not speaker.begins_with(right_key.get_slice("_", 0)))
 	if not caption.is_empty():
@@ -256,10 +280,19 @@ func show_scene(background_key: String, title: String, speaker: String, line: St
 	var panel_y: int = 209 if choosing else 252
 	_panel(Rect2(19, panel_y, 730, 226 if choosing else 183), Color("f5e7f3f2"), Color("c493bb"), 13)
 	var displayed_speaker: String = "Sofi" if choosing else speaker
-	if displayed_speaker not in ["Narrador", ""]:
-		var badge_x: int = 303 if is_message else 549 if displayed_speaker.get_slice(" (", 0) == right_key.get_slice("_", 0) else 39
-		_panel(Rect2(badge_x, panel_y - 18, 180, 31), Color("865c92"), Color("e9c4db"), 8).name = "SpeakerBadge"
-		_label(displayed_speaker, Rect2(badge_x + 12, panel_y - 14, 158, 26), font_size, Color("fff8fc")).name = "SpeakerName"
+	var visible_speaker := false
+	for side in [0, 1]:
+		var key: String = left_key if side == 0 else right_key
+		if not SPRITES.has(key): continue
+		var person: String = key.get_slice("_", 0)
+		var active: bool = not is_message and displayed_speaker == person
+		visible_speaker = visible_speaker or active
+		var badge_x: int = 39 if side == 0 else 549
+		_panel(Rect2(badge_x, panel_y - 18, 180, 31), Color("865c92") if active else Color("6e577cba"), Color("e9c4db"), 8).name = "SpeakerBadge" if active else "CharacterPlate_" + person
+		_label(person, Rect2(badge_x + 12, panel_y - 14, 158, 26), font_size if active else maxi(13, font_size - 2), Color("fff8fc")).name = "SpeakerName" if active else "CharacterName_" + person
+	if is_message or (not visible_speaker and displayed_speaker not in ["Narrador", ""]):
+		_panel(Rect2(294, panel_y - 18, 202, 31), Color("865c92"), Color("e9c4db"), 8).name = "SpeakerBadge"
+		_label(displayed_speaker, Rect2(305, panel_y - 14, 181, 26), font_size, Color("fff8fc")).name = "SpeakerName"
 	if choosing:
 		_label("¿Qué le respondes?", Rect2(41, panel_y + 22, 674, 28), font_size, Color("44304f"))
 		_choice_list(options, Rect2(40, panel_y + 52, 686, 163), maxi(14, font_size - 2))

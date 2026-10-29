@@ -2,6 +2,7 @@ extends Node2D
 class_name CentinelaWorld
 
 signal interacted(target_id: String)
+signal departure_finished
 
 const SPEED := 152.0
 const ROOM := Rect2(30, 56, 708, 338)
@@ -29,7 +30,7 @@ const CHARACTER_SHEETS := {
 	"Sofi": preload("res://assets/characters/sofi_directions.png"),
 	"Mateo": preload("res://assets/characters/mateo_directions.png"),
 	"Bruno": preload("res://assets/characters/bruno_directions.png"),
-	"Camila": preload("res://assets/characters/camila_directions.png"),
+	"Camila": preload("res://assets/characters/camila_directions_v2.png"),
 	"Sebas": preload("res://assets/characters/sebas_directions.png")
 }
 const OBJECT_SPRITES := {
@@ -59,7 +60,7 @@ const PROP_SPRITES := {
 const SCENE_PROPS := {
 	"bedroom": [
 		{"sprite": "bed", "rect": Rect2(79, 112, 104, 113)},
-		{"sprite": "wardrobe", "rect": Rect2(451, 101, 86, 74)},
+		{"sprite": "wardrobe", "rect": Rect2(437, 101, 114, 74)},
 		{"sprite": "bookshelf", "rect": Rect2(565, 109, 86, 57)},
 		{"sprite": "plant", "rect": Rect2(669, 121, 44, 50)},
 		{"sprite": "plant", "rect": Rect2(53, 323, 49, 58)},
@@ -80,7 +81,7 @@ const SCENE_PROPS := {
 	]
 }
 const DAY0_BLOCKS := {
-	"bedroom": [[30, 56, 708, 52], [86, 123, 91, 94], [238, 124, 80, 39], [455, 112, 78, 55], [569, 118, 78, 47], [680, 151, 24, 20]],
+	"bedroom": [[30, 56, 708, 52], [86, 123, 91, 94], [238, 124, 80, 39], [455, 112, 78, 55], [569, 118, 78, 47], [680, 151, 24, 20], [46, 269, 60, 24], [148, 365, 64, 21], [552, 367, 76, 22]],
 	"courtyard": [[30, 56, 708, 55], [75, 171, 29, 22], [638, 168, 29, 22], [603, 357, 29, 22], [162, 153, 81, 22], [513, 153, 81, 22], [277, 141, 18, 15], [466, 141, 18, 15]],
 	"computer": [[30, 56, 708, 62], [97, 129, 96, 51], [343, 155, 78, 43], [626, 161, 20, 25]]
 }
@@ -115,6 +116,7 @@ var collision_root: Node2D
 var player_body: CharacterBody2D
 var story_targets_active := false
 var story_primary_target := ""
+var departures: Dictionary = {}
 
 func _init() -> void:
 	map_sprite = Sprite2D.new()
@@ -147,6 +149,7 @@ func _ready() -> void:
 	map_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 
 func configure(key: String, position: Vector2) -> void:
+	departures.clear()
 	scene_key = key
 	player_pos = position
 	story_targets_active = false
@@ -229,6 +232,7 @@ func _physics_process(delta: float) -> void:
 	if not enabled:
 		player_body.velocity = Vector2.ZERO
 		return
+	_update_departures(delta)
 	var direction := Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	if direction != Vector2.ZERO:
 		if absf(direction.x) > absf(direction.y):
@@ -332,8 +336,12 @@ func _draw() -> void:
 			continue
 		_draw_object(key, pos, active)
 	if scene_key == "courtyard":
-		for friend in FRIENDS:
-			_draw_character(Vector2(objects.friends) + friend.offset, str(friend.name), "down", true)
+		if not GameState.flags.get("friends", false):
+			for friend in FRIENDS:
+				_draw_character(Vector2(374, 175) + friend.offset, str(friend.name), "down", true)
+		else:
+			for person in departures:
+				_draw_character(departures[person].position, person, str(departures[person].facing), true)
 	elif scene_key.begins_with("draft_d") and not story_targets_active:
 		_draw_character(objects.mateo, "Mateo")
 		if scene_key == "draft_d1":
@@ -341,6 +349,30 @@ func _draw() -> void:
 			_draw_character(Vector2(260, 250), "Bruno")
 			_draw_character(Vector2(400, 250), "Sebas")
 	_draw_character(player_pos, "Sofi", player_facing)
+
+func begin_departures() -> void:
+	if scene_key != "courtyard" or not departures.is_empty(): return
+	objects.erase("friends")
+	var exits: Array = [Vector2(47, 290), Vector2(720, 230), Vector2(180, 389), Vector2(550, 389)]
+	exits.shuffle()
+	for i in FRIENDS.size():
+		var friend: Dictionary = FRIENDS[i]
+		var endpoint: Vector2 = exits[i]
+		departures[str(friend.name)] = {"position": Vector2(374, 175) + friend.offset, "path": [Vector2(314 + i * 40, 260 + i * 8), Vector2(endpoint.x, 285), endpoint], "step": 0, "speed": randf_range(52.0, 72.0), "facing": "down"}
+	queue_redraw()
+
+func _update_departures(delta: float) -> void:
+	if departures.is_empty(): return
+	for person in departures.keys():
+		var walk: Dictionary = departures[person]
+		var target: Vector2 = walk.path[int(walk.step)]
+		var direction: Vector2 = target - Vector2(walk.position)
+		walk.facing = ("right" if direction.x > 0 else "left") if absf(direction.x) > absf(direction.y) else ("down" if direction.y > 0 else "up")
+		walk.position = Vector2(walk.position).move_toward(target, float(walk.speed) * delta)
+		if Vector2(walk.position).distance_to(target) < 0.5:
+			walk.step = int(walk.step) + 1
+			if int(walk.step) >= walk.path.size(): departures.erase(person)
+	if departures.is_empty(): departure_finished.emit()
 
 func _draw_bedroom_decor() -> void:
 	draw_rect(ROOM, Color(0.80, 0.48, 0.71, 0.14))
@@ -363,8 +395,26 @@ func _draw_bedroom_decor() -> void:
 		draw_rect(Rect2(pos, Vector2(22, 27)), Color("e8bfd4"))
 		draw_rect(Rect2(pos + Vector2(3, 3), Vector2(16, 16)), Color("a88ac3"))
 		draw_circle(pos + Vector2(11, 11), 4, Color("ffdfbf"))
+	# Tocador con espejo, zapatero y televisor: muebles fuera de las rutas principales.
+	draw_rect(Rect2(46, 257, 60, 36), Color("a67c9e"))
+	draw_rect(Rect2(50, 261, 52, 13), Color("d8adcb"))
+	draw_circle(Vector2(77, 280), 2, Color("f9d9ba"))
+	draw_rect(Rect2(54, 212, 44, 42), Color("e6bbd5"))
+	draw_rect(Rect2(58, 216, 36, 34), Color("a9cad5"))
+	draw_line(Vector2(60, 246), Vector2(88, 218), Color("e0f0ee"), 2)
 	for i in range(3):
-		draw_rect(Rect2(546, 346 - i * 5, 36 - i * 3, 5), [Color("c19bcf"), Color("e8b0c6"), Color("ebd5ad")][i])
+		draw_rect(Rect2(50 + i * 12, 248, 6, 9), [Color("f0c0d5"), Color("ae8ac6"), Color("e7d1a1")][i])
+	draw_rect(Rect2(148, 354, 64, 32), Color("9c748f"))
+	for i in range(2):
+		draw_rect(Rect2(152, 357 + i * 13, 56, 9), Color("65465d"))
+		for j in range(3): _draw_shoe(Vector2(160 + j * 18, 363 + i * 13))
+	draw_rect(Rect2(552, 369, 76, 20), Color("a37b95"))
+	draw_rect(Rect2(558, 329, 64, 37), Color("392e48"))
+	draw_rect(Rect2(562, 333, 56, 29), Color("af95bf"))
+	draw_line(Vector2(583, 366), Vector2(594, 366), Color("392e48"), 3)
+
+func _draw_shoe(pos: Vector2) -> void:
+	draw_rect(Rect2(pos - Vector2(5, 3), Vector2(11, 5)), Color("e7c8d8"))
 
 func _draw_story_target(key: String, pos: Vector2, active: bool) -> void:
 	var color := Color("f5d479") if active else Color("8ec9c2")

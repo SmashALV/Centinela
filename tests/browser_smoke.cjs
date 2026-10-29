@@ -430,7 +430,7 @@ async function main() {
             request.onsuccess = () => {
               const record = request.result;
               Object.assign(record.snapshot, {
-                phase, player_position: position, flags, moba_class: mobaClass, moba_result: "", ui_modal: uiModal, dialogue_key: "",
+                phase, player_position: position, flags: { ...flags, d0_guide_bedroom_seen: true, d0_guide_courtyard_seen: true, d0_guide_computer_seen: true }, moba_class: mobaClass, moba_result: "", ui_modal: uiModal, dialogue_key: "",
                 dialogue_position: 0, dialogue_choice: "", dialogue_history: [],
                 preview_scene: "", preview_step: 0, preview_choices: {}
               });

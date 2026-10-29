@@ -59,6 +59,9 @@ test("ranuras, bloqueo, transacción de decisión e idempotencia", async () => {
   const committed = await send(first, "save_snapshot", firstWrite, "TEST_ONLY_save_1");
   assert.equal(committed.success, true);
   assert.equal((await send(first, "load_slot", { slot: 1 })).result.phase, "bedroom");
+  const guided = { ...snapshot(1, "computer"), flags: { d0_guide_active: "computer" } };
+  assert.equal((await send(first, "save_snapshot", { slot: 1, generation: 1, snapshot: guided })).success, true);
+  assert.equal((await send(first, "load_slot", { slot: 1 })).result.flags.d0_guide_active, "computer");
   const desktop = { ...snapshot(1, "computer"), ui_modal: "desktop" };
   assert.equal((await send(first, "save_snapshot", { slot: 1, generation: 1, snapshot: desktop })).success, true);
   assert.equal((await send(first, "load_slot", { slot: 1 })).result.ui_modal, "desktop");
@@ -91,6 +94,7 @@ test("ranuras, bloqueo, transacción de decisión e idempotencia", async () => {
     { ...snapshot(1), code: "CTN-+12345" },
     { ...snapshot(1), player_position: [Infinity, 2] },
     { ...snapshot(1), flags: { alarm: "sí" } },
+    { ...snapshot(1), flags: { d0_guide_active: "computer" } },
     { ...snapshot(1), flags: { draft_mode: true } },
     { ...snapshot(1), flags: { draft_mode: true, draft_exploring: true },
       draft_content_version: "PLAYABLE_DRAFT_v0.1" },

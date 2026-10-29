@@ -129,6 +129,21 @@ async function main() {
     await page.mouse.click(canvas.x + canvas.width * 0.5, canvas.y + canvas.height * 0.41);
     await page.waitForTimeout(500);
     await page.screenshot({ path: "build/web/coral_day4_vn.png" });
+    await inject({ day: 2, mode: "scene", node: "D2_A", step: 0 });
+    await page.reload();
+    await page.waitForFunction(() => !!globalThis.CentinelaStorage);
+    await page.waitForTimeout(1500);
+    await page.mouse.click(canvas.x + canvas.width * 0.5, canvas.y + canvas.height * 0.41);
+    await page.waitForTimeout(500);
+    await page.screenshot({ path: "build/web/camila_identity_v2.png" });
+    await inject({ day: 4, mode: "ending", node: "F01", step: 6, ending: "F01", adult_support_started: true,
+      choices: { D2_A: "A", D2_B: "B", D2_C: "A" } });
+    await page.reload();
+    await page.waitForFunction(() => !!globalThis.CentinelaStorage);
+    await page.waitForTimeout(1500);
+    await page.mouse.click(canvas.x + canvas.width * 0.5, canvas.y + canvas.height * 0.41);
+    await page.waitForTimeout(500);
+    await page.screenshot({ path: "build/web/closing_education.png" });
     await inject({ snapshotChanges: { phase: "bedroom", flags: {}, coral_state: {},
       dialogue_key: "", dialogue_position: 0, dialogue_choice: "", dialogue_history: [], ui_modal: "" } });
     await page.reload();
@@ -145,6 +160,10 @@ async function main() {
       if ((await readSave())?.flags?.wakeup_seen) break;
     }
     await waitFor((state) => state?.flags?.wakeup_seen === true);
+    assert.equal((await readSave()).flags.d0_guide_active, "bedroom");
+    await page.screenshot({ path: "build/web/bedroom_guide.png" });
+    await page.keyboard.press("Enter");
+    await waitFor((state) => state?.flags?.d0_guide_bedroom_seen === true);
     await page.screenshot({ path: "build/web/bedroom_decorated.png" });
     assert.deepEqual(errors, []);
     console.log("PASS Web: D0→D1, exploración, privado de Mateo y novela visual D4");

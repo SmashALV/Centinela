@@ -74,9 +74,17 @@ func scene(scene_id: String, recovered: Object, draft: Object, state: Dictionary
 			lines.append({"speaker": interaction.get("speaker", "Narrador"), "text": text_line})
 		return {"day": 1, "title": "Conocer al grupo", "presentation": "vn", "lines": lines, "choices": []}
 	if scene_id == "I_TUTOR" or scene_id == "I_LIMIT":
+		if scene_id == "I_TUTOR" and state.get("observed", []).is_empty():
+			return {"day": int(state.get("day", 1)), "title": "Conocer tutoría", "presentation": "vn", "lines": [{"speaker": "Tutor", "text": "Este espacio está abierto si quieren conversar sobre algo del colegio, del grupo o de internet. Pueden volver cuando necesiten hablar."}], "choices": []}
 		var key: String = "TUTOR" if scene_id == "I_TUTOR" else "LIMIT"
 		var interaction: Dictionary = content.get("interactions", {}).get(key, {})
 		var lines: Array = []
+		if scene_id == "I_TUTOR":
+			var reason: String = "Nos preocupa algo que pasó en el grupo y queremos hablarlo con alguien de confianza."
+			if state.get("observed", []).has("mateo_secret_shared"): reason = "Mateo me contó que un regalo vino con una petición de secreto que lo incomoda. Quiere ayuda para decidir qué hacer."
+			elif state.get("observed", []).has("camila_request_shared"): reason = "Camila recibió preguntas sobre los horarios de Mateo. Le incomodó y quiere decidir qué compartir antes de hablarlo."
+			elif state.get("observed", []).has("sebas_fatigue_observed"): reason = "Sebas siente que debe conectarse para no perder la ayuda de alguien. Queremos hablar de esa preocupación."
+			lines.append({"speaker": "Sofi", "text": reason})
 		for text_line in interaction.get("lines", []):
 			lines.append({"speaker": interaction.get("speaker", "Narrador"), "text": text_line})
 		return {"day": int(state.get("day", 1)), "title": "Pedir apoyo" if key == "TUTOR" else "Marcar un límite", "presentation": "vn", "lines": lines, "choices": []}
@@ -89,7 +97,8 @@ func scene(scene_id: String, recovered: Object, draft: Object, state: Dictionary
 			var epilogue: Dictionary = content.get("epilogue_by_branch", {}).get(branch, {})
 			if not epilogue.is_empty(): ending_lines.append(epilogue)
 		ending_lines.append({"speaker": "Bruno", "text": "Seguiré invitándolos sin exigir explicaciones. Podemos cuidar nuestra amistad y respetar el espacio de cada uno."})
-		return {"day": 4, "title": "Epílogo " + scene_id, "presentation": "vn", "lines": ending_lines, "choices": []}
+		ending_lines.append_array(closing_lines(state))
+		return {"day": 4, "title": "Después de lo vivido", "presentation": "vn", "lines": ending_lines, "choices": []}
 	var authored: Dictionary = content.get("scenes", {}).get(scene_id, {}).duplicate(true)
 	var lines: Array = []
 	for source_id in authored.get("source_scenes", []):
@@ -98,6 +107,19 @@ func scene(scene_id: String, recovered: Object, draft: Object, state: Dictionary
 	lines.append_array(authored.get("lines", []))
 	authored.lines = lines
 	return authored
+
+func closing_lines(state: Dictionary) -> Array:
+	var result: Array = []
+	var choices: Dictionary = state.get("choices", {})
+	var reflections := {
+		"D2_A": {"A": "Respetaste lo que Camila quería compartir. Escuchar una confidencia no da permiso para difundirla.", "B": "Avisaste al grupo sin permiso de Camila. Querer ayudar también requiere cuidar su voz; reconocer el error permite empezar a reparar."},
+		"D2_B": {"A": "Escuchaste la presión que Mateo sentía junto al regalo. Aceptar ayuda o una skin no obliga a guardar secretos ni a corresponder.", "B": "Al principio restaste importancia al secreto de Mateo. Volver a escuchar y tomar en serio su incomodidad permite cambiar la respuesta."},
+		"D2_C": {"A": "Dejaste que Sebas explicara cómo se sentía. El cansancio no prueba una causa por sí solo; escuchar ayuda a conocer lo que quiere contar.", "B": "La broma hizo que Sebas dejara de hablar. Ofrecer una disculpa sin exigir perdón y escuchar de nuevo puede abrir otra conversación."}}
+	for text_line in content.get("closing_common", []):
+		result.append({"speaker": "Narrador", "text": str(text_line)})
+	for id in ["D2_A", "D2_B", "D2_C"]:
+		if choices.has(id): result.append({"speaker": "Narrador", "text": reflections[id].get(str(choices[id]), "")})
+	return result
 
 func companion_scene(state: Dictionary, person: String) -> String:
 	var day: int = int(state.get("day", 1))
@@ -139,7 +161,7 @@ func objective(state: Dictionary) -> String:
 		if talked_today(state, person): total += 1
 	if total < 4: return "Conversa con tus compañeros (%d/4)" % total
 	if int(state.get("day", 1)) == 1 and not state.get("actions", []).has("D1_LOBBY_DONE"): return "Entra al lobby para preparar la partida"
-	if int(state.get("day", 1)) == 4: return "Concreta apoyo en tutoría o un límite en la PC; después ve a la salida"
+	if int(state.get("day", 1)) == 4: return "Busca apoyo o revisa bloqueo y privacidad en la PC; después ve a la salida"
 	return "Ve a la salida para cerrar la jornada"
 
 func navigation_hint(state: Dictionary) -> String:

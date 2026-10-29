@@ -282,4 +282,4 @@ func slot_summary(chosen_slot: int) -> String:
 		return "Ranura %d · copia de recuperación" % chosen_slot
 	if data.get("slot") != chosen_slot or data.get("schema_version") != GameState.SCHEMA_VERSION or data.get("narrative_version") != GameState.NARRATIVE_VERSION:
 		return "Ranura %d · guardado incompatible" % chosen_slot
-	return "Ranura %d · %s · %s" % [chosen_slot, data.get("code", "?"), data.get("phase", "?")]
+	return "Ranura %d · Partida guardada" % chosen_slot

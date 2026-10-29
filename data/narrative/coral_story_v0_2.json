@@ -275,7 +275,7 @@
         },
         {
           "speaker": "Sofi",
-          "text": "Podemos separar lo que viste de lo que imaginamos. ¿Cómo te gustaría que te acompañe?"
+          "text": "No sabemos qué quería Kairo. Sí sabemos lo que te preguntó. ¿Quieres que te acompañe a hablarlo?"
         }
       ],
       "choices": [
@@ -306,7 +306,7 @@
         },
         {
           "speaker": "Sofi",
-          "text": "Está bien. No necesito mirar más para escucharte."
+          "text": "Tranqui, muéstrame solo lo que tú quieras. Te escucho."
         },
         {
           "speaker": "Mateo",
@@ -416,7 +416,7 @@
         },
         {
           "speaker": "Sofi",
-          "text": "Podemos hacer un plan para el grupo sin pedirle a Mateo que justifique cada minuto que no estuvo."
+          "text": "Podemos organizarnos sin pedirle a Mateo que explique cada rato que no estuvo."
         },
         {
           "speaker": "Camila",
@@ -461,7 +461,7 @@
         },
         {
           "speaker": "Sofi",
-          "text": "Podemos reconocer lo que hicimos sin convertir la preocupación en un rumor nuevo."
+          "text": "Podemos aceptar que nos equivocamos sin volver a contar lo de Camila por todos lados."
         },
         {
           "speaker": "Camila",
@@ -501,7 +501,7 @@
         },
         {
           "speaker": "Sofi",
-          "text": "Puedes sentirte contento por la ayuda en el juego y, a la vez, incómodo con el secreto."
+          "text": "Puede gustarte su ayuda y, al mismo tiempo, incomodarte lo del secreto. Las dos cosas pueden pasar."
         },
         {
           "speaker": "Mateo",
@@ -624,7 +624,7 @@
         },
         {
           "speaker": "Sofi",
-          "text": "Podemos disculparnos sin pedir que nos expliquen todo. Todavía no sabemos qué está pasando."
+          "text": "Podemos decir que lo sentimos sin exigirles que nos cuenten todo. Todavía no sabemos bien qué pasa."
         },
         {
           "speaker": "Bruno",
@@ -669,7 +669,7 @@
         },
         {
           "speaker": "Sofi",
-          "text": "Tenemos dos pasos posibles: acompañarlo a hablar con el tutor o preparar un límite digital con su permiso."
+          "text": "Tenemos dos pasos posibles: acompañarlo a hablar con el tutor o decidir a quién bloquear y qué datos ocultar con su permiso."
         },
         {
           "speaker": "Camila",
@@ -842,7 +842,7 @@
         },
         {
           "speaker": "Sofi",
-          "text": "Podemos buscar al tutor juntos. Si prefieres empezar con un límite digital, también puedes decidirlo."
+          "text": "Podemos buscar al tutor juntos. Si prefieres empezar por silenciar o bloquear el contacto, también puedes decidirlo."
         },
         {
           "speaker": "Sebas",
@@ -1141,7 +1141,7 @@
     "F02": [
       {
         "speaker": "Narrador",
-        "text": "El grupo concreta un límite digital con permiso de su titular. Nadie necesita responder a Kairo para justificar su decisión."
+        "text": "El grupo ajusta la privacidad y el contacto con permiso de su titular. Nadie necesita responder a Kairo para justificar su decisión."
       },
       {
         "speaker": "Sofi",
@@ -1220,5 +1220,15 @@
   "repair_epilogue": {
     "speaker": "Narrador",
     "text": "El apoyo no borra de inmediato la confianza dañada. Sofi y sus amigos siguen dándose tiempo para reparar lo que ocurrió."
-  }
+  },
+  "closing_sources": [
+    "https://www.esafety.gov.au/young-people/unsafe-contact",
+    "https://www.childsafety.gov.au/about-child-sexual-abuse/grooming"
+  ],
+  "closing_common": [
+    "El grooming consiste en crear confianza con una persona menor de edad para manipularla con intención de abuso sexual. Puede suceder por internet; no necesita llegar a un encuentro presencial.",
+    "En esta historia aparecieron regalos unidos a secretos, presión para estar disponible y un encuentro a escondidas. Un regalo aislado no demuestra abuso: importa lo que se exige a cambio y cómo se responde a un no.",
+    "Si algo así te incomoda, puedes dejar de responder y hablar con una persona adulta de confianza. No necesitas demostrar lo ocurrido ni tener todas las respuestas para pedir apoyo.",
+    "Cuida tu información personal y no envíes imágenes íntimas. Si ya compartiste algo, sigues teniendo derecho a ayuda: la presión o el abuso nunca son tu culpa. No descargues ni reenvíes imágenes íntimas; pide apoyo para usar bloqueo y reporte."
+  ]
 }

@@ -18,7 +18,7 @@ const PORTRAITS := {
 	"Sofi": "res://assets/portraits/sofi_neutral.png",
 	"Mateo": "res://assets/portraits/mateo_neutral.png",
 	"Bruno": "res://assets/portraits/bruno_neutral.png",
-	"Camila": "res://assets/portraits/camila_neutral.png",
+	"Camila": "res://assets/portraits/camila_v2.tres",
 	"Sebas": "res://assets/portraits/sebas_neutral.png"
 }
 const EMOTION_PORTRAITS := {
@@ -100,6 +100,7 @@ func _ready() -> void:
 	world = WorldScript.new()
 	add_child(world)
 	world.interacted.connect(_on_interacted)
+	world.departure_finished.connect(_on_departure_finished)
 	canvas = CanvasLayer.new()
 	add_child(canvas)
 	menu_background = TextureRect.new()
@@ -163,7 +164,7 @@ func _process(delta: float) -> void:
 			prompt.text = "Selecciona una ranura para comenzar"
 		elif modal_kind == "slot_confirm":
 			prompt.text = "Esc · cancelar   Elige una opción"
-		elif modal_kind == "prologue":
+		elif modal_kind in ["prologue", "stage_guide"]:
 			prompt.text = "Lectura automática · P para pausar"
 		elif modal_kind in ["preview", "preview_unplaced", "day_intro", "coral"]:
 			prompt.text = "Lectura automática · P para pausar"
@@ -428,7 +429,7 @@ func _refresh_web_menu(rows: Array[Dictionary]) -> void:
 	for i in 3:
 		var slot_number := i + 1
 		if records.has(slot_number):
-			rows[i].play.text = "Ranura %d · %s · %s" % [slot_number, records[slot_number].code, records[slot_number].phase]
+			rows[i].play.text = "Ranura %d · Partida guardada" % slot_number
 		else:
 			rows[i].play.text = "Ranura %d · nueva" % slot_number
 		rows[i].play.disabled = false
@@ -445,7 +446,7 @@ func _confirm_slot_action(chosen: int, redo: bool) -> void:
 	hud_icon.visible = false
 	hud.visible = false
 	_modal_heading("REHACER RANURA %d" % chosen if redo else "BORRAR RANURA %d" % chosen, "save")
-	_modal_text("Empezarás de nuevo desde el prólogo. Se perderá el progreso local de esta ranura." if redo else "Se eliminará el guardado local de esta ranura y quedará vacía.", 17)
+	_modal_text("Empezarás de nuevo desde el comienzo. Se perderá el progreso local de esta ranura." if redo else "Se eliminará el guardado local de esta ranura y quedará vacía.", 17)
 	var cancel := _button("Cancelar", _show_menu)
 	cancel.grab_focus()
 	_button("Sí, rehacer ranura" if redo else "Sí, borrar ranura", func(): _apply_slot_action(chosen, redo))
@@ -538,10 +539,14 @@ func _start_slot(chosen: int) -> void:
 			"objective": _render_objective()
 			"class": _render_class()
 			"desktop": _render_desktop()
+	elif not str(GameState.flags.get("d0_guide_active", "")).is_empty():
+		_render_stage_guide()
 	elif GameState.phase == "bedroom" and not GameState.flags.get("prologue_seen", false) and not GameState.flags.get("wakeup_seen", false):
 		_render_prologue()
 	elif GameState.phase == "bedroom" and not GameState.flags.get("wakeup_seen", false):
 		_show_dialogue("wakeup")
+	elif GameState.phase == "bedroom" and not GameState.flags.get("d0_guide_bedroom_seen", false):
+		_begin_stage_guide("bedroom")
 	elif GameState.phase not in ["result", "preview", "coral"]:
 		_close_modal()
 	if recovered_local:
@@ -565,7 +570,11 @@ func _load_phase() -> void:
 	if GameState.phase == "coral":
 		world.configure_story_targets(_coral_targets(), _coral_primary_target())
 	_update_hud()
-	if GameState.phase == "result":
+	if GameState.phase == "courtyard" and GameState.flags.get("friends", false) and not GameState.flags.get("d0_departure_seen", false):
+		world.begin_departures()
+	if not str(GameState.flags.get("d0_guide_active", "")).is_empty():
+		_render_stage_guide()
+	elif GameState.phase == "result":
 		_show_result()
 	elif GameState.phase == "preview":
 		if GameState.flags.get("draft_exploring", false):
@@ -589,18 +598,18 @@ func _draft_world_key() -> String:
 
 func _update_hud() -> void:
 	if GameState.phase == "coral":
-		hud.text = "DÍA %d · %s | %s" % [int(GameState.coral_state.get("day", 1)), GameState.code, _objective_text()]
+		hud.text = "DÍA %d · %s" % [int(GameState.coral_state.get("day", 1)), _objective_text()]
 		return
 	if GameState.phase == "preview":
 		if GameState.flags.get("draft_exploring", false):
 			var day_number: int = int(GameState.preview_scene.substr(1, 1))
-			hud.text = "DÍA %d · %s | %s" % [day_number, GameState.code, _objective_text()]
+			hud.text = "DÍA %d · %s" % [day_number, _objective_text()]
 		else:
 			var active_scene: Dictionary = preview_catalog.get_scene(GameState.preview_scene)
-			hud.text = "%s · %s" % [GameState.code, _scene_title(active_scene)]
+			hud.text = _scene_title(active_scene)
 		return
 	var place: String = {"bedroom": "HABITACIÓN", "courtyard": "PATIO", "computer": "COMPUTADORA", "result": "RESULTADO"}.get(GameState.phase, GameState.phase.to_upper())
-	hud.text = "DÍA 0  ·  %s  ·  %s  |  %s" % [GameState.code, place, _objective_text()]
+	hud.text = "DÍA 0 · %s | %s" % [place, _objective_text()]
 
 func _objective_text() -> String:
 	match GameState.phase:
@@ -636,7 +645,7 @@ func _on_interacted(target: String) -> void:
 				if target in ["photo", "desk"]: _inspect_d0(target)
 		"courtyard":
 			if target == "friends":
-				_show_dialogue("courtyard")
+				if not GameState.flags.get("friends", false): _show_dialogue("courtyard")
 			elif target == "exit":
 				if GameState.flags.get("friends", false):
 					_transition("computer", Vector2(384, 320))
@@ -648,9 +657,54 @@ func _on_interacted(target: String) -> void:
 			if target == "pc":
 				_show_desktop()
 
+func _begin_stage_guide(place: String) -> void:
+	if save_in_progress: return
+	var previous: Dictionary = GameState.snapshot()
+	GameState.flags.d0_guide_active = place
+	save_in_progress = true
+	if await SaveManager.save_slot_async():
+		save_in_progress = false
+		_render_stage_guide()
+	else:
+		GameState.restore(previous)
+		save_in_progress = false
+		_toast("No se pudo guardar la guía")
+
+func _render_stage_guide() -> void:
+	modal_kind = "stage_guide"
+	_begin_conversation_presentation()
+	var place: String = str(GameState.flags.get("d0_guide_active", GameState.phase))
+	var title: String = {"bedroom": "Antes de salir", "courtyard": "Un momento con tus amigos", "computer": "De vuelta en casa"}.get(place, "")
+	var message: String = {
+		"bedroom": "Sofi se prepara para ir al colegio. Muévete con WASD, acércate a la alarma y pulsa F. Después recoge la mochila y busca la puerta. La marca dorada indica dónde seguir; puedes mirar otros objetos antes de salir.",
+		"courtyard": "Antes de entrar a clase, Sofi se encuentra con sus amigos en el patio. Acércate al grupo y pulsa F para conversar. Al terminar, sus amigos se despedirán y podrás ir hacia la salida.",
+		"computer": "Pasaron las clases. Por la tarde, Sofi vuelve a casa, termina sus tareas y enciende la computadora. Sus amigos la esperan en el chat para preparar una partida. Acércate a la PC y pulsa F."
+	}.get(place, "")
+	conversation_ui.show_stage_card(title, message, _finish_stage_guide, _scaled_text_size(18))
+
+func _finish_stage_guide() -> bool:
+	if save_in_progress or modal_kind != "stage_guide": return false
+	var previous: Dictionary = GameState.snapshot()
+	GameState.flags["d0_guide_" + GameState.phase + "_seen"] = true
+	GameState.flags.erase("d0_guide_active")
+	save_in_progress = true
+	if await SaveManager.save_slot_async():
+		save_in_progress = false
+		_close_modal()
+		return true
+	GameState.restore(previous)
+	save_in_progress = false
+	return false
+
+func _on_departure_finished() -> void:
+	GameState.flags.d0_departure_seen = true
+	_autosave()
+
 func _transition(next_phase: String, position: Vector2) -> void:
 	var old_phase: String = GameState.phase
 	var old_position: Vector2 = GameState.player_position
+	var old_flags: Dictionary = GameState.flags.duplicate(true)
+	if next_phase in ["courtyard", "computer"] and not GameState.flags.get("d0_guide_" + next_phase + "_seen", false): GameState.flags.d0_guide_active = next_phase
 	GameState.phase = next_phase
 	GameState.player_position = position
 	world.enabled = false
@@ -659,8 +713,9 @@ func _transition(next_phase: String, position: Vector2) -> void:
 			return
 		_load_phase()
 		AudioManager.play_effect("confirm")
-		world.enabled = true
+		world.enabled = str(GameState.flags.get("d0_guide_active", "")).is_empty()
 	else:
+		GameState.flags = old_flags
 		GameState.phase = old_phase
 		GameState.player_position = old_position
 		if modal_kind == "":
@@ -857,9 +912,9 @@ func _show_pause() -> void:
 func _render_pause() -> void:
 	modal_kind = "pause"
 	_clear_modal()
-	_modal_heading("PAUSA · " + GameState.code, "pause")
+	_modal_heading("PAUSA", "pause")
 	var body := _preview_content()
-	_preview_text(body, SyncManager.status_label(), 15)
+	_preview_text(body, "Tu progreso se guarda en este dispositivo.", 15)
 	if SyncManager.configured:
 		_preview_button(body, "Reintentar sincronización", SyncManager.retry_now)
 	var continue_button := _preview_button(body, "Continuar", _resume_pause)
@@ -932,6 +987,7 @@ func _resume_pause() -> void:
 	AudioManager.set_music_paused(false)
 	match modal_before_pause:
 		"prologue": _render_prologue()
+		"stage_guide": _render_stage_guide()
 		"phone": _render_phone()
 		"objective": _render_objective()
 		"class": _render_class()
@@ -1192,7 +1248,9 @@ func _complete_dialogue() -> void:
 	save_in_progress = true
 	var previous := GameState.snapshot()
 	match dialogue_key:
-		"wakeup": GameState.flags.wakeup_seen = true
+		"wakeup":
+			GameState.flags.wakeup_seen = true
+			if not GameState.flags.get("d0_guide_bedroom_seen", false): GameState.flags.d0_guide_active = "bedroom"
 		"courtyard": GameState.flags.friends = true
 		"group_chat":
 			if dialogue_choice.is_empty():
@@ -1226,6 +1284,7 @@ func _complete_dialogue() -> void:
 		_show_desktop()
 	else:
 		_close_modal()
+		_load_phase()
 
 func _start_moba(hero_class: String) -> void:
 	if save_in_progress:
@@ -1406,8 +1465,10 @@ func _coral_finish_scene(previous: Dictionary = {}) -> bool:
 		var action_id: String = scene_id.trim_prefix("I_").replace("D1_", "D1_TALK_")
 		if not state.actions.has(action_id): state.actions.append(action_id)
 	elif scene_id == "I_TUTOR":
-		state.adult_support_started = true
-		if not state.actions.has("ADULT_SUPPORT_STARTED"): state.actions.append("ADULT_SUPPORT_STARTED")
+		if not state.get("observed", []).is_empty():
+			state.adult_support_started = true
+			if not state.actions.has("ADULT_SUPPORT_STARTED"): state.actions.append("ADULT_SUPPORT_STARTED")
+		elif not state.actions.has("TUTOR_INFO_SEEN"): state.actions.append("TUTOR_INFO_SEEN")
 	elif scene_id == "I_LIMIT":
 		state.limit_completed = true
 		if not state.actions.has("DIGITAL_LIMIT_COMPLETED"): state.actions.append("DIGITAL_LIMIT_COMPLETED")
@@ -1518,8 +1579,8 @@ func _render_coral_summary() -> void:
 	_modal_heading("HISTORIA CONCLUIDA", "result")
 	var body := _preview_content()
 	var ending: String = str(GameState.coral_state.get("ending", "F03"))
-	var description: String = {"F01": "Se inició una conversación de apoyo con una persona adulta.", "F02": "Se completó un límite digital con permiso.", "F03": "Hay pasos de protección pendientes; aún se puede pedir ayuda."}.get(ending, "")
-	_preview_text(body, "%s · %s" % [ending, description], 20)
+	var description: String = {"F01": "Se inició una conversación de apoyo con una persona adulta.", "F02": "Se ajustó la privacidad o el contacto con permiso.", "F03": "Hay pasos de protección pendientes; aún se puede pedir ayuda."}.get(ending, "")
+	_preview_text(body, description, 20)
 	_preview_text(body, "Sofi pudo escuchar a todo el grupo. Sus respuestas cambiaron la confianza de cada compañero y las acciones que concretaron juntos.", 16)
 	_preview_button(body, "Volver al menú", _return_to_menu)
 

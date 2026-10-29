@@ -97,9 +97,11 @@ func restore(data: Dictionary) -> bool:
 	for index in range(4, 10):
 		if data.code.unicode_at(index) < 48 or data.code.unicode_at(index) > 57:
 			return false
-	for flag in ["prologue_seen", "wakeup_seen", "alarm", "backpack", "friends", "d0_chat_done", "d0_photo_seen", "d0_desk_seen", "d0_tutoria_seen", "d0_profile_private", "preview_reviewed", "draft_mode", "draft_completed", "draft_exploring", "d1_interlude_active"]:
+	for flag in ["prologue_seen", "wakeup_seen", "alarm", "backpack", "friends", "d0_chat_done", "d0_photo_seen", "d0_desk_seen", "d0_tutoria_seen", "d0_profile_private", "d0_guide_bedroom_seen", "d0_guide_courtyard_seen", "d0_guide_computer_seen", "d0_departure_seen", "preview_reviewed", "draft_mode", "draft_completed", "draft_exploring", "d1_interlude_active"]:
 		if data.flags.has(flag) and typeof(data.flags[flag]) != TYPE_BOOL:
 			return false
+	if data.flags.has("d0_guide_active") and (data.flags.d0_guide_active not in ["bedroom", "courtyard", "computer"] or data.flags.d0_guide_active != data.get("phase")):
+		return false
 	if data.flags.get("d1_interlude_active", false) and data.get("phase") != "result":
 		return false
 	if data.flags.has("prologue_step"):
