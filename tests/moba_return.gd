@@ -33,8 +33,8 @@ func _run() -> void:
 	var rendered_text := ""
 	for label in story.conversation_ui.find_children("*", "Label", true, false):
 		rendered_text += label.text + "\n"
-	if buttons.size() != 1 or buttons[0].text != "Continuar" or not rendered_text.contains("Camila") or not rendered_text.contains("¡Ganamos!"):
-		printerr("FAIL resultado no muestra a Camila con una sola continuación")
+	if not buttons.is_empty() or not story.conversation_ui.auto_action.is_valid() or not rendered_text.contains("Camila") or not rendered_text.contains("¡Ganamos!"):
+		printerr("FAIL resultado no muestra a Camila con avance automático")
 		get_tree().quit(1)
 		return
 	if not await story._show_d1_interlude() or not GameState.flags.get("d1_interlude_active", false):
@@ -44,14 +44,21 @@ func _run() -> void:
 	var interlude_text := ""
 	for label in story.conversation_ui.find_children("*", "Label", true, false):
 		interlude_text += label.text + "\n"
-	if not interlude_text.contains("Narrador") or not interlude_text.contains("Sofi vuelve al grupo") or interlude_text.contains("Camila"):
-		printerr("FAIL el interludio no presenta a Sofi con voz de narrador")
+	if interlude_text.contains("Narrador") or not interlude_text.contains("Sofi vuelve al grupo") or not story.conversation_ui.auto_action.is_valid():
+		printerr("FAIL el interludio no presenta la transición automática de Sofi")
 		get_tree().quit(1)
 		return
-	if not await story._start_playable_draft() or GameState.phase != "preview" or GameState.preview_scene != "D1_02_A" or not GameState.flags.get("draft_exploring", false) or GameState.flags.has("d1_interlude_active"):
-		printerr("FAIL continuar no inicia la exploración del Día 1")
+	if not await story._start_coral_story() or GameState.phase != "coral" or GameState.coral_state.day != 1 or GameState.flags.has("d1_interlude_active"):
+		printerr("FAIL no se inicia la jornada compartida del Día 1")
 		get_tree().quit(1)
 		return
+	await story._coral_advance()
+	await story._coral_advance()
+	for person in ["camila", "mateo", "sebas", "bruno"]:
+		if not story.world.objects.has(person) or GameState.coral_state.mode != "explore":
+			printerr("FAIL falta compañero en Día 1: " + person)
+			get_tree().quit(1)
+			return
 	print("PASS MOBA → Camila → narrador con Sofi → Día 1 sin volver al menú")
 	SaveManager.delete_slot(1)
 	SaveManager.storage_prefix = SaveManager.SAVE_PREFIX
