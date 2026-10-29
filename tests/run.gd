@@ -654,10 +654,22 @@ func _run() -> void:
 		_check(main.draft_flow.ending_for(letter) == {"A": "F01_A", "B": "F02", "C": "F03"}[letter], "ruta provisional %s" % letter)
 		GameState.moba_result = "victoria"
 		GameState.moba_class = "Atacante"
+		GameState.phase = "result"
+		GameState.flags.erase("d1_interlude_active")
 		main._show_result()
 		var result_buttons: Array[Node] = main.conversation_ui.find_children("*", "Button", true, false)
 		_check(main.conversation_ui.visible and result_buttons.size() == 1 and result_buttons[0].text == "Continuar", "resultado deja una sola continuación lineal")
+		_check(await main._show_d1_interlude() and GameState.flags.get("d1_interlude_active", false), "interludio del narrador se guarda tras el resultado")
+		var interlude_lines := ""
+		for label in main.conversation_ui.find_children("*", "Label", true, false):
+			interlude_lines += label.text + "\n"
+		_check(interlude_lines.contains("Narrador") and interlude_lines.contains("Sofi vuelve al grupo"), "interludio cuenta la transición de Sofi")
+		var interlude_saved := GameState.snapshot()
+		main._show_menu()
+		main._start_slot(1)
+		_check(GameState.snapshot() == interlude_saved and main.modal_kind == "result" and main.conversation_ui.visible, "interludio reanuda desde la ranura")
 		_check(await main._start_playable_draft() and GameState.flags.draft_mode and GameState.preview_scene == "D1_02_A", "borrador inicia y limpia opciones")
+		_check(not GameState.flags.has("d1_interlude_active"), "interludio no reaparece durante el Día 1")
 		_check(GameState.flags.get("draft_exploring", false) and main.modal_kind == "" and main.world.scene_key == "draft_d1", "Día 1 inicia en exploración")
 		var exploring_saved := GameState.snapshot()
 		main._show_menu()

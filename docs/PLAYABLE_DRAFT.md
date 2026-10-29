@@ -1,6 +1,6 @@
 # Borrador jugable D1–D4 v0.1
 
-Tras el MOBA, la respuesta de Camila en el chat y un único **Continuar** llevan a la exploración del Día 1. El recorrido enlaza los seis fragmentos recuperados de D1–D4 y llega a un desenlace. El texto literal sigue en `data/narrative/*_RECOVERED_PREVIEW.json` y no se ha editado para construir este flujo. Todo texto nuevo está en `data/narrative/playable_draft_v0_1.json`, marcado `provisional: true` y `ready_for_publication: false`; esas marcas de producción no aparecen en la interfaz del jugador.
+Tras el MOBA, la respuesta de Camila en el chat lleva a un interludio del Narrador sobre Sofi y el día siguiente. Después comienza la exploración del Día 1. El recorrido enlaza los seis fragmentos recuperados de D1–D4 y llega a un desenlace. El texto literal sigue en `data/narrative/*_RECOVERED_PREVIEW.json` y no se ha editado para construir este flujo. Todo texto nuevo está en `data/narrative/playable_draft_v0_1.json`, marcado `provisional: true` y `ready_for_publication: false`; esas marcas de producción no aparecen en la interfaz del jugador.
 
 El archivo nuevo contiene nueve reacciones de Camila (resultado del MOBA × clase), un conector para cada una de las seis escenas y los cuatro extractos de final, y 18 reacciones breves (A/B/C en cada escena). El jugador puede guardar y reanudar cada línea y opción. Las líneas recuperadas cuya posición no consta permanecen accesibles por separado.
 

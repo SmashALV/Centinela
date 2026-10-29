@@ -478,6 +478,10 @@ async function main() {
     await page.waitForTimeout(1000);
     await page.screenshot({ path: "build/web/day0_to_day1_result.png" });
     await page.keyboard.press("Enter");
+    await waitForStore("save_snapshots", 1, (record) => record?.snapshot?.phase === "result" &&
+      record.snapshot.flags?.d1_interlude_active === true, 30000);
+    await page.screenshot({ path: "build/web/day0_to_day1_narrator.png" });
+    await page.keyboard.press("Enter");
     await waitForStore("save_snapshots", 1, (record) => record?.snapshot?.phase === "preview" &&
       record.snapshot.preview_scene === "D1_02_A" && record.snapshot.flags.draft_mode === true, 30000);
     await page.screenshot({ path: "build/web/day1_exploration.png" });
@@ -614,6 +618,9 @@ async function main() {
     await page.mouse.click(canvas.x + canvas.width * 0.5, canvas.y + canvas.height * 0.41);
     await page.waitForTimeout(500);
     await page.screenshot({ path: "build/web/draft_entry.png" });
+    await page.keyboard.press("Enter");
+    await waitForStore("save_snapshots", 1, (record) => record?.snapshot?.flags?.d1_interlude_active === true);
+    await page.screenshot({ path: "build/web/draft_entry_narrator.png" });
     await page.keyboard.press("Enter");
     await waitForStore("save_snapshots", 1, (record) =>
       record?.snapshot?.flags?.draft_mode === true &&

@@ -37,11 +37,22 @@ func _run() -> void:
 		printerr("FAIL resultado no muestra a Camila con una sola continuación")
 		get_tree().quit(1)
 		return
-	if not await story._start_playable_draft() or GameState.phase != "preview" or GameState.preview_scene != "D1_02_A" or not GameState.flags.get("draft_exploring", false):
+	if not await story._show_d1_interlude() or not GameState.flags.get("d1_interlude_active", false):
+		printerr("FAIL resultado no avanza al interludio del narrador")
+		get_tree().quit(1)
+		return
+	var interlude_text := ""
+	for label in story.conversation_ui.find_children("*", "Label", true, false):
+		interlude_text += label.text + "\n"
+	if not interlude_text.contains("Narrador") or not interlude_text.contains("Sofi vuelve al grupo") or interlude_text.contains("Camila"):
+		printerr("FAIL el interludio no presenta a Sofi con voz de narrador")
+		get_tree().quit(1)
+		return
+	if not await story._start_playable_draft() or GameState.phase != "preview" or GameState.preview_scene != "D1_02_A" or not GameState.flags.get("draft_exploring", false) or GameState.flags.has("d1_interlude_active"):
 		printerr("FAIL continuar no inicia la exploración del Día 1")
 		get_tree().quit(1)
 		return
-	print("PASS MOBA → resultado de Camila → Día 1 sin volver al menú")
+	print("PASS MOBA → Camila → narrador con Sofi → Día 1 sin volver al menú")
 	SaveManager.delete_slot(1)
 	SaveManager.storage_prefix = SaveManager.SAVE_PREFIX
 	get_tree().quit(0)

@@ -1159,9 +1159,26 @@ func _start_moba(hero_class: String) -> void:
 func _show_result() -> void:
 	modal_kind = "result"
 	_begin_conversation_presentation()
+	if GameState.flags.get("d1_interlude_active", false):
+		conversation_ui.show_scene("courtyard", "Día 1 · Un nuevo jugador", "Narrador", draft_flow.connector("D1_02_A"), [], _start_playable_draft, "Continuar", "Sofi", "", false, _scaled_text_size(18))
+		return
 	var note: String = "Partida finalizada · " + GameState.moba_result.capitalize()
 	var messages: Array = [{"speaker": "Camila", "text": draft_flow.camila_reaction(GameState.moba_result, GameState.moba_class)}]
-	conversation_ui.show_chat("los-chicos", messages, [], _start_playable_draft, "Continuar", Callable(), _scaled_text_size(16), note)
+	conversation_ui.show_chat("los-chicos", messages, [], _show_d1_interlude, "Continuar", Callable(), _scaled_text_size(16), note)
+
+func _show_d1_interlude() -> bool:
+	if save_in_progress or GameState.phase != "result":
+		return false
+	save_in_progress = true
+	GameState.flags.d1_interlude_active = true
+	if await SaveManager.save_slot_async():
+		save_in_progress = false
+		_show_result()
+		return true
+	GameState.flags.erase("d1_interlude_active")
+	save_in_progress = false
+	_toast("No se pudo guardar el avance; reintenta")
+	return false
 
 func _start_playable_draft() -> bool:
 	if save_in_progress or draft_flow.content.is_empty() or preview_catalog.scenes.is_empty():
@@ -1170,6 +1187,7 @@ func _start_playable_draft() -> bool:
 	GameState.flags.draft_mode = true
 	GameState.flags.draft_completed = false
 	GameState.flags.draft_ending = ""
+	GameState.flags.erase("d1_interlude_active")
 	GameState.preview_choices.clear()
 	if await _commit_preview("D1_02_A", 0, "", false, true):
 		return true
@@ -1364,7 +1382,7 @@ func _render_preview_story(scene_id: String, draft_mode: bool) -> void:
 	var additional: Callable = _render_unplaced_preview if terminal and not draft_mode and scene.has("unplaced_lines") else Callable()
 	var day_label: String = "Final" if scene.get("day") == null else "Día " + str(int(scene.day))
 	var title: String = day_label + " · " + _scene_title(scene)
-	var note: String = draft_flow.connector(scene_id) if draft_mode and step == 0 else ""
+	var note: String = draft_flow.connector(scene_id) if draft_mode and step == 0 and scene_id != "D1_02_A" else ""
 	_begin_conversation_presentation()
 	if scene_id == "D1_02_A":
 		var messages: Array = []
