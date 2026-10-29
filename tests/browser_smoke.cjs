@@ -139,6 +139,7 @@ async function main() {
       await waitForStore("save_snapshots", 1,
         (record) => record?.snapshot?.flags?.prologue_step === step);
       if (step === 1) await page.screenshot({ path: "build/web/prologue_sofi.png" });
+      if (step === 2) await page.screenshot({ path: "build/web/prologue_prevention.png" });
     }
     await page.keyboard.press("Enter");
     const initialDialogue = await waitForStore("save_snapshots", 1,
@@ -158,7 +159,7 @@ async function main() {
     assert.equal(saved.snapshot.slot, 1);
     assert.equal(saved.snapshot.phase, "bedroom");
     await page.waitForTimeout(300);
-    await page.mouse.click(canvas.x + canvas.width * 0.5, canvas.y + canvas.height * 0.58);
+    await page.mouse.click(canvas.x + canvas.width * 0.90, canvas.y + canvas.height * 0.055);
     await page.waitForTimeout(150);
     await page.screenshot({ path: "build/web/dialogue_history.png" });
     await page.keyboard.press("Escape");
@@ -630,11 +631,18 @@ async function main() {
     await page.keyboard.down("w");
     await page.waitForTimeout(600);
     await page.keyboard.up("w");
+    await page.waitForTimeout(350);
+    await page.screenshot({ path: "build/web/draft_d1_before_interact.png" });
     await page.keyboard.press("f");
     await waitForStore("save_snapshots", 1, (record) =>
       record?.snapshot?.flags?.draft_exploring === false &&
       record?.snapshot?.preview_scene === "D1_02_A" && record.snapshot.preview_step === 0);
     await page.screenshot({ path: "build/web/draft_d1_scene.png" });
+    await page.keyboard.press("Enter");
+    await waitForStore("save_snapshots", 1, (record) =>
+      record?.snapshot?.preview_scene === "D1_02_A" && record.snapshot.preview_step === 1);
+    await page.waitForTimeout(300);
+    await page.screenshot({ path: "build/web/draft_d1_kairo_chat.png" });
     for (const [sceneId, filename] of [
       ["D2_03_A", "draft_exploration_d2.png"],
       ["D3_01_A", "draft_exploration_d3.png"],
@@ -671,6 +679,42 @@ async function main() {
       assert.equal((await readStore("save_snapshots", 1)).snapshot.flags.draft_exploring, true);
       await page.screenshot({ path: `build/web/${filename}` });
     }
+    await page.evaluate(async () => {
+      const db = await new Promise((resolve, reject) => {
+        const request = indexedDB.open("centinela_2_local_v1");
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+      try {
+        await new Promise((resolve, reject) => {
+          const transaction = db.transaction("save_snapshots", "readwrite");
+          const store = transaction.objectStore("save_snapshots");
+          const request = store.get(1);
+          request.onsuccess = () => {
+            const record = request.result;
+            Object.assign(record.snapshot, { phase: "computer", player_position: [350, 300],
+              preview_scene: "", preview_step: 0, preview_choices: {}, ui_modal: "",
+              dialogue_key: "group_chat", dialogue_position: 19, dialogue_choice: "",
+              dialogue_history: [14, 15, 16, 17, 18] });
+            Object.assign(record.snapshot.flags, { prologue_seen: true, wakeup_seen: true,
+              alarm: true, backpack: true, friends: true, d0_chat_done: false,
+              draft_mode: false, draft_exploring: false, draft_completed: false });
+            delete record.snapshot.flags.prologue_step;
+            delete record.snapshot.flags.d0_chat_choice;
+            store.put(record);
+          };
+          transaction.oncomplete = resolve;
+          transaction.onerror = () => reject(transaction.error);
+        });
+      } finally { db.close(); }
+    });
+    await page.reload();
+    await page.waitForFunction(() => !!globalThis.CentinelaStorage);
+    await page.waitForTimeout(1000);
+    await page.mouse.click(canvas.x + canvas.width * 0.5, canvas.y + canvas.height * 0.41);
+    await page.waitForTimeout(500);
+    assert.equal((await readStore("save_snapshots", 1)).snapshot.dialogue_key, "group_chat");
+    await page.screenshot({ path: "build/web/day0_group_discord.png" });
     console.log("Canvas:", canvas);
     console.log("Browser:", path.basename(executablePath));
     console.log("Persisted slot:", { slot: saved.snapshot.slot, phase: saved.snapshot.phase });

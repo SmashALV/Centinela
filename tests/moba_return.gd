@@ -29,15 +29,12 @@ func _run() -> void:
 		printerr("FAIL MOBA volvió al menú en vez del resultado narrativo")
 		get_tree().quit(1)
 		return
-	var content: VBoxContainer = story.modal_box.get_child(2).get_child(0)
+	var buttons: Array[Node] = story.conversation_ui.find_children("*", "Button", true, false)
 	var rendered_text := ""
-	for child in content.get_children():
-		if child is Label:
-			rendered_text += child.text + "\n"
-		elif child is Button:
-			rendered_text += child.text + "\n"
-	if not rendered_text.contains("Al día siguiente") or not rendered_text.contains("Continuar historia · Día 1"):
-		printerr("FAIL falta enlace narrativo hacia el Día 1")
+	for label in story.conversation_ui.find_children("*", "Label", true, false):
+		rendered_text += label.text + "\n"
+	if buttons.size() != 1 or buttons[0].text != "Continuar" or not rendered_text.contains("Camila") or not rendered_text.contains("¡Ganamos!"):
+		printerr("FAIL resultado no muestra a Camila con una sola continuación")
 		get_tree().quit(1)
 		return
 	if not await story._start_playable_draft() or GameState.phase != "preview" or GameState.preview_scene != "D1_02_A" or not GameState.flags.get("draft_exploring", false):

@@ -5,11 +5,12 @@ const NarrativeScript = preload("res://scripts/narrative/NarrativeManager.gd")
 const PreviewCatalogScript = preload("res://scripts/narrative/RecoveredPreviewCatalog.gd")
 const DraftFlowScript = preload("res://scripts/narrative/PlayableDraftFlow.gd")
 const DisplayGuardScript = preload("res://scripts/DisplayGuard.gd")
+const ConversationUIScript = preload("res://scripts/ConversationUI.gd")
 const DAY_0_PREVIEW := "res://data/narrative/day_0_RECOVERED_PREVIEW.json"
 const PROLOGUE_LINES := [
-	"¡Hay días que empiezan con una alarma... y acaban convirtiéndose en una gran historia! Esta comienza en el mundo de Sofi: el colegio, sus amistades y las partidas que comparten.",
-	"Ella es Sofía Castillo, aunque todos la llaman Sofi. Tiene 15 años y le encanta jugar con Mateo, Bruno, Camila y Sebas. Juntos forman un equipo dentro y fuera de la pantalla.",
-	"Hoy acompañarás a Sofi. Explora, habla con el grupo y elige cómo actuar ante situaciones inesperadas en línea. Observa las señales y recuerda: pedir apoyo también cuenta. ¡Empecemos!"
+	"Esta es Sofi. Tiene 15 años y le encanta jugar con Mateo, Camila, Bruno y Sebas. Hoy acompañarás a su grupo dentro y fuera de la pantalla.",
+	"El grooming ocurre cuando una persona adulta se gana la confianza de un menor por internet para manipularlo con fines de abuso sexual. Puede fingir otra edad, ofrecer regalos o pedir secretos.",
+	"Para cuidarte: no compartas datos ni imágenes íntimas, no aceptes encuentros a solas y habla con un adulto de confianza si algo te incomoda. Guarda los mensajes. La culpa nunca es de quien recibe la presión."
 ]
 const PORTRAITS := {
 	"Sofi": "res://assets/portraits/sofi_neutral.png",
@@ -56,6 +57,7 @@ var prompt: Label
 var prompt_icon: TextureRect
 var modal: PanelContainer
 var modal_box: VBoxContainer
+var conversation_ui: Control
 var modal_kind: String = ""
 var modal_before_pause: String = ""
 var toast: Label
@@ -113,6 +115,8 @@ func _ready() -> void:
 	modal_box = VBoxContainer.new()
 	modal_box.add_theme_constant_override("separation", 11)
 	modal.add_child(modal_box)
+	conversation_ui = ConversationUIScript.new()
+	canvas.add_child(conversation_ui)
 	window_guard_layer = DisplayGuardScript.make_overlay(self)
 	_show_menu()
 	var return_to_result: bool = GameState.returning_from_moba
@@ -277,6 +281,11 @@ func _panel_style() -> StyleBoxFlat:
 	return style
 
 func _clear_modal() -> void:
+	if is_instance_valid(conversation_ui):
+		conversation_ui.clear_view()
+	prompt.visible = true
+	hud.visible = not GameState.code.is_empty()
+	hud_icon.visible = hud.visible
 	menu_background.visible = false
 	modal.position = Vector2(70, 38)
 	modal.custom_minimum_size = Vector2(628, 372)
@@ -302,8 +311,21 @@ func _close_modal() -> void:
 		save_in_progress = false
 	modal_kind = ""
 	modal.visible = false
+	if is_instance_valid(conversation_ui):
+		conversation_ui.clear_view()
+	prompt.visible = true
 	menu_background.visible = false
 	world.enabled = true
+	hud.visible = not GameState.code.is_empty()
+	hud_icon.visible = hud.visible
+
+func _begin_conversation_presentation() -> void:
+	_clear_modal()
+	modal.visible = false
+	hud.visible = false
+	hud_icon.visible = false
+	prompt.visible = false
+	prompt_icon.visible = false
 
 func _modal_text(value: String, size: int = 18) -> void:
 	var label := Label.new()
@@ -516,6 +538,9 @@ func _start_slot(chosen: int) -> void:
 		_toast("Partida recuperada de una copia local")
 
 func _load_phase() -> void:
+	if is_instance_valid(conversation_ui):
+		conversation_ui.clear_view()
+	prompt.visible = true
 	menu_background.visible = false
 	hud_icon.visible = true
 	hud.visible = true
@@ -946,69 +971,40 @@ func _resume_saved_dialogue() -> bool:
 
 func _render_dialogue(preserve_reveal: bool = false) -> void:
 	modal_kind = "dialogue"
-	_clear_modal()
 	var node: Dictionary = dialogue_story.current_node()
 	if not preserve_reveal:
 		dialogue_visible = 0.0
-	_modal_heading("CONVERSACIÓN", "dialogue", 20)
-	var body := _preview_content()
 	var reaction: Dictionary = D0_CHAT_REACTIONS.get(dialogue_choice, {}) if dialogue_key == "group_chat" and node.get("speaker") == "Sofi" else {}
 	var message: String = str(reaction.get("text", node.get("text", "")))
 	var speaker: String = str(reaction.get("speaker", node.get("speaker", "")))
-	dialogue_text_label = _dialogue_line(body, speaker, message)
-	if is_instance_valid(dialogue_text_label):
-		dialogue_text_label.visible_characters = int(dialogue_visible)
 	var revealing: bool = dialogue_visible < message.length()
 	var choices: Array = node.get("choices", [])
-	if revealing:
-		_preview_button(body, "Mostrar texto", _reveal_dialogue).grab_focus()
-	elif not choices.is_empty():
-		_preview_text(body, "¿Qué responde Sofi?", 16)
+	var options: Array = []
+	if not revealing:
 		for i in choices.size():
 			var choice_id: String = str(choices[i].choice_id)
-			var option := _preview_button(body, "%d. %s" % [i + 1, choices[i].text], func(): _request_dialogue_choice(choice_id))
-			if i == 0:
-				option.grab_focus()
-	elif node.get("next", null) != null:
-		_preview_button(body, "Continuar", _advance_dialogue).grab_focus()
+			options.append({"label": "%d · %s" % [i + 1, choices[i].text], "action": func(): _request_dialogue_choice(choice_id)})
+	var next_action: Callable = _reveal_dialogue if revealing else _advance_dialogue if node.get("next", null) != null else _complete_dialogue
+	var next_label: String = "Mostrar" if revealing else "Continuar"
+	_begin_conversation_presentation()
+	if dialogue_key == "group_chat":
+		var messages: Array = []
+		for position in GameState.dialogue_history:
+			var past: Dictionary = dialogue_story.data.nodes[int(position)]
+			if not str(past.get("text", "")).is_empty():
+				messages.append({"speaker": past.speaker, "text": past.text})
+		if not reaction.is_empty():
+			messages.append({"speaker": node.speaker, "text": node.text})
+		if not message.is_empty():
+			messages.append({"speaker": speaker, "text": message})
+		dialogue_text_label = conversation_ui.show_chat("los-chicos", messages, options, next_action, next_label, _render_dialogue_history, _scaled_text_size(16))
+		if message.is_empty():
+			dialogue_text_label = null
 	else:
-		_preview_button(body, "Continuar", _complete_dialogue).grab_focus()
-	_preview_button(body, "Historial de esta conversación", _render_dialogue_history, "history")
-
-func _dialogue_line(parent: VBoxContainer, speaker: String, message: String) -> Label:
-	var path: String = PORTRAITS.get(speaker, "")
-	var portrait: Texture2D = load(path) as Texture2D if not path.is_empty() else null
-	var text_parent: VBoxContainer = parent
-	var width := 545
-	if portrait != null:
-		var row := HBoxContainer.new()
-		row.add_theme_constant_override("separation", 12)
-		parent.add_child(row)
-		var frame := PanelContainer.new()
-		frame.name = "PortraitFrame"
-		frame.custom_minimum_size = Vector2(112, 112)
-		var frame_style := StyleBoxFlat.new()
-		frame_style.bg_color = Color("263550")
-		frame_style.border_color = Color("78bdbb")
-		frame_style.set_border_width_all(1)
-		frame.add_theme_stylebox_override("panel", frame_style)
-		row.add_child(frame)
-		var picture := TextureRect.new()
-		picture.name = "Portrait"
-		picture.texture = portrait
-		picture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		picture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		picture.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
-		picture.custom_minimum_size = Vector2(110, 110)
-		picture.tooltip_text = "Retrato de " + speaker
-		frame.add_child(picture)
-		text_parent = VBoxContainer.new()
-		text_parent.custom_minimum_size.x = 420
-		row.add_child(text_parent)
-		width = 420
-	if not speaker.is_empty():
-		_preview_text(text_parent, speaker, 21, width)
-	return _preview_text(text_parent, message, 18, width) if not message.is_empty() else null
+		var partner: String = "Sofi" if dialogue_key == "courtyard" and speaker != "Sofi" else "Mateo" if dialogue_key == "courtyard" else ""
+		dialogue_text_label = conversation_ui.show_scene("bedroom" if dialogue_key == "wakeup" else "courtyard", "Día 0 · " + ("Habitación" if dialogue_key == "wakeup" else "Patio"), speaker, message, options, next_action, next_label, speaker, partner, false, _scaled_text_size(18), "", _render_dialogue_history)
+	if is_instance_valid(dialogue_text_label):
+		dialogue_text_label.visible_characters = int(dialogue_visible)
 
 func _reveal_dialogue() -> void:
 	dialogue_visible = float(dialogue_text_label.text.length()) if is_instance_valid(dialogue_text_label) else 0.0
@@ -1162,20 +1158,10 @@ func _start_moba(hero_class: String) -> void:
 
 func _show_result() -> void:
 	modal_kind = "result"
-	_clear_modal()
-	_modal_heading("PARTIDA FINALIZADA", "result")
-	_modal_text("Resultado: " + GameState.moba_result, 19)
-	var body := _preview_content()
-	_preview_text(body, "Camila: " + draft_flow.camila_reaction(GameState.moba_result, GameState.moba_class), 17)
-	_preview_text(body, draft_flow.connector("D1_02_A"), 16)
-	var draft_button := _preview_button(body, "Continuar historia · Día 1", _start_playable_draft)
-	draft_button.disabled = preview_catalog.scenes.is_empty() or draft_flow.content.is_empty()
-	if not draft_button.disabled:
-		draft_button.grab_focus()
-		body.get_parent().set_deferred("scroll_vertical", 0)
-	var preview_button := _preview_button(body, "Explorar otras escenas", func(): _commit_preview("D1_02_A", 0))
-	preview_button.disabled = preview_catalog.scenes.is_empty()
-	_preview_button(body, "Volver al menú", _return_to_menu)
+	_begin_conversation_presentation()
+	var note: String = "Partida finalizada · " + GameState.moba_result.capitalize()
+	var messages: Array = [{"speaker": "Camila", "text": draft_flow.camila_reaction(GameState.moba_result, GameState.moba_class)}]
+	conversation_ui.show_chat("los-chicos", messages, [], _start_playable_draft, "Continuar", Callable(), _scaled_text_size(16), note)
 
 func _start_playable_draft() -> bool:
 	if save_in_progress or draft_flow.content.is_empty() or preview_catalog.scenes.is_empty():
@@ -1281,6 +1267,8 @@ func _scene_title(scene: Dictionary) -> String:
 	return title
 
 func _scene_portrait_path(speaker: String, scene_id: String, choice: String = "") -> String:
+	if speaker == "Kairo":
+		return "res://assets/vn/kairo_anonymous.png"
 	if speaker == "Sofi" and scene_id in ["D3_01_A", "D4_01_A", "D4_02_A", "D4_03_A", "F03"]:
 		return EMOTION_PORTRAITS["Sofi_concerned"]
 	if speaker == "Mateo":
@@ -1292,56 +1280,121 @@ func _scene_portrait_path(speaker: String, scene_id: String, choice: String = ""
 			return EMOTION_PORTRAITS["Mateo_worried"]
 	return str(PORTRAITS.get(speaker, ""))
 
-func _vn_portrait(parent: Container, portrait_path: String, size: int = 116) -> void:
-	var frame := PanelContainer.new()
-	frame.custom_minimum_size = Vector2(size, size)
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color("263550")
-	style.border_color = Color("78bdbb")
-	style.set_border_width_all(1)
-	frame.add_theme_stylebox_override("panel", style)
-	parent.add_child(frame)
-	var picture := TextureRect.new()
-	picture.name = "CharacterPortrait"
-	picture.texture = load(portrait_path) as Texture2D if not portrait_path.is_empty() else UI_ICONS["dialogue"]
-	picture.custom_minimum_size = Vector2(size - 2, size - 2)
-	picture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	picture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	picture.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
-	frame.add_child(picture)
+func _scene_sprite_key(speaker: String, scene_id: String, choice: String = "") -> String:
+	if speaker == "Sofi" and scene_id in ["D3_01_A", "D4_01_A", "D4_02_A", "D4_03_A", "F03"]:
+		return "Sofi_concerned"
+	if speaker == "Mateo":
+		if choice == "A" and scene_id in ["D3_01_A", "D4_01_A", "D4_02_A", "D4_03_A"]:
+			return "Mateo"
+		if scene_id in ["D4_01_A", "F03"]:
+			return "Mateo_alarmed"
+		if scene_id in ["D2_03_A", "D3_01_A", "D4_02_A", "D4_03_A", "F02"]:
+			return "Mateo_worried"
+	return speaker
 
-func _vn_line(parent: VBoxContainer, line: Dictionary, scene_id: String, choice: String = "") -> void:
-	var raw_speaker: String = str(line.get("speaker", ""))
+func _preview_next_action(scene_id: String) -> Callable:
+	if GameState.flags.get("draft_mode", false):
+		var next_id: String = preview_catalog.next_main(scene_id)
+		if scene_id == "D4_03_A":
+			next_id = draft_flow.ending_for(str(GameState.preview_choices.get(scene_id, "")))
+		elif scene_id == "F01_A":
+			next_id = "F01_B"
+		if not next_id.is_empty():
+			var next_explore: bool = DraftFlowScript.EXPLORATION_IDS.has(next_id) and scene_id not in ["D4_01_A", "D4_02_A"]
+			return func(): _commit_preview(next_id, 0, "", false, next_explore)
+		return _finish_draft
+	var independent_next: String = preview_catalog.next_main(scene_id) if PreviewCatalogScript.MAIN_ORDER.has(scene_id) else ""
+	if not independent_next.is_empty():
+		return func(): _commit_preview(independent_next, 0)
+	if PreviewCatalogScript.MAIN_ORDER.has(scene_id):
+		return func(): _commit_preview("ENDINGS_INDEX", 0)
+	return _finish_preview
+
+func _render_preview_story(scene_id: String, draft_mode: bool) -> void:
+	var scene: Dictionary = preview_catalog.get_scene(scene_id)
+	if scene.is_empty():
+		_modal_heading("ESCENA", "dialogue")
+		_modal_text("Esta escena no está disponible.")
+		return
+	var step: int = GameState.preview_step
+	var lines: Array = scene.get("lines", [])
+	var choices: Array = scene.get("choices", [])
+	var after_choice: Array = scene.get("after_choice", [])
+	var later_chat: Array = scene.get("later_chat", [])
+	var selected: String = str(GameState.preview_choices.get(scene_id, ""))
+	var current: Dictionary = {}
+	var options: Array = []
+	var next_action: Callable = Callable()
+	var next_label := "Continuar"
+	var terminal := false
+	if step < lines.size():
+		current = lines[step]
+		next_action = func(): _commit_preview(scene_id, step + 1)
+	elif not choices.is_empty():
+		if step == lines.size():
+			for i in choices.size():
+				var key: String = str(choices[i].key)
+				options.append({"label": "%d · %s" % [i + 1, choices[i].text], "action": func(): _request_preview_choice(scene_id, key)})
+		elif draft_mode and step == lines.size() + 1:
+			current = {"speaker": "Mateo", "text": draft_flow.choice_reaction(scene_id, selected)}
+			next_action = func(): _commit_preview(scene_id, step + 2)
+		elif step == lines.size() + (2 if draft_mode else 1):
+			current = {"speaker": "Mateo", "text": draft_flow.choice_reaction(scene_id, selected)}
+			next_action = func(): _commit_preview(scene_id, step + 1)
+		elif step < lines.size() + 2 + after_choice.size() + (1 if draft_mode else 0):
+			current = after_choice[step - lines.size() - 2 - (1 if draft_mode else 0)]
+			next_action = func(): _commit_preview(scene_id, step + 1)
+	elif not later_chat.is_empty():
+		if step == lines.size():
+			current = {"speaker": "Narrador", "text": "Mateo recibe nuevos mensajes."}
+		else:
+			var later_index: int = step - lines.size() - 1
+			if later_index < later_chat.size():
+				current = later_chat[later_index]
+		if not current.is_empty():
+			next_action = func(): _commit_preview(scene_id, step + 1)
+	var terminal_step: int = _draft_terminal_step(scene_id) if draft_mode else preview_catalog.terminal_step(scene_id)
+	if not current.is_empty() and options.is_empty() and step == terminal_step - 1:
+		next_action = _preview_next_action(scene_id)
+	if current.is_empty() and options.is_empty():
+		terminal = true
+		current = {"speaker": "Narrador", "text": "La conversación continúa."}
+		next_action = _preview_next_action(scene_id)
+		next_label = "Continuar"
+	var additional: Callable = _render_unplaced_preview if terminal and not draft_mode and scene.has("unplaced_lines") else Callable()
+	var day_label: String = "Final" if scene.get("day") == null else "Día " + str(int(scene.day))
+	var title: String = day_label + " · " + _scene_title(scene)
+	var note: String = draft_flow.connector(scene_id) if draft_mode and step == 0 else ""
+	_begin_conversation_presentation()
+	if scene_id == "D1_02_A":
+		var messages: Array = []
+		for i in range(mini(step, lines.size())):
+			messages.append(lines[i])
+		if step >= lines.size() and not selected.is_empty():
+			for choice in choices:
+				if str(choice.key) == selected:
+					messages.append({"speaker": "Sofi", "text": choice.text})
+					break
+		if not current.is_empty() and step < lines.size():
+			messages.append(current)
+		elif step > lines.size():
+			messages.append(current)
+		conversation_ui.show_chat("lobby-de-juego", messages, options, next_action, next_label, additional, _scaled_text_size(16), note, "Escena adicional")
+		return
+	var raw_speaker: String = str(current.get("speaker", "Sofi"))
 	var speaker: String = raw_speaker.get_slice(" (", 0)
 	var is_message: bool = "(mensaje" in raw_speaker
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 12)
-	parent.add_child(row)
-	var portrait_path: String = "" if speaker == "Kairo" and is_message else _scene_portrait_path(speaker, scene_id, choice)
-	_vn_portrait(row, portrait_path)
-	var dialogue_box := VBoxContainer.new()
-	dialogue_box.custom_minimum_size.x = 405
-	row.add_child(dialogue_box)
-	_preview_text(dialogue_box, ("Mensaje de " if is_message else "") + speaker, 19, 405)
-	_preview_text(dialogue_box, str(line.get("text", "")), 19, 405)
-
-func _vn_choice_stage(parent: VBoxContainer, scene_id: String, choices: Array) -> void:
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 12)
-	parent.add_child(row)
-	_vn_portrait(row, _scene_portrait_path("Sofi", scene_id), 92)
-	var prompt_box := VBoxContainer.new()
-	prompt_box.custom_minimum_size.x = 335
-	row.add_child(prompt_box)
-	_preview_text(prompt_box, "SOFI", 16, 335)
-	_preview_text(prompt_box, "¿Qué le dices a Mateo?", 20, 335)
-	_vn_portrait(row, _scene_portrait_path("Mateo", scene_id), 92)
-	for index in choices.size():
-		var choice: Dictionary = choices[index]
-		var key: String = str(choice.key)
-		var button := _preview_button(parent, "%d · %s" % [index + 1, str(choice.text)], func(): _request_preview_choice(scene_id, key))
-		if index == 0:
-			button.grab_focus()
+	var active: String = _scene_sprite_key(speaker, scene_id, selected)
+	var partner: String = "Sofi_concerned" if scene_id.begins_with("D4") or scene_id.begins_with("D3") else "Sofi"
+	if speaker == "Sofi":
+		partner = _scene_sprite_key("Mateo", scene_id)
+	elif speaker == "Kairo" and is_message:
+		active = _scene_sprite_key("Mateo", scene_id)
+	if speaker not in ["Sofi", "Mateo", "Kairo", "Camila", "Bruno", "Sebas"]:
+		active = ""
+		partner = ""
+	var background: String = "corridor" if scene_id.begins_with("D3") else "courtyard"
+	conversation_ui.show_scene(background, title, raw_speaker, str(current.get("text", "")), options, next_action, next_label, active, partner, is_message, _scaled_text_size(18), note, additional, "Escena adicional")
 
 func _render_preview() -> void:
 	modal_kind = "preview"
@@ -1368,53 +1421,7 @@ func _render_preview() -> void:
 			_preview_button(body, _scene_title(ending), func(): _commit_preview(chosen, 0))
 		_preview_button(body, "Volver al menú", _return_to_menu)
 		return
-	var scene: Dictionary = preview_catalog.get_scene(scene_id)
-	if scene.is_empty():
-		_preview_text(body, "Esta escena no está disponible. Vuelve al menú.")
-		_preview_button(body, "Menú", _return_to_menu)
-		return
-	var day_label := "Final" if scene.get("day") == null else "Día " + str(int(scene.day))
-	var step: int = GameState.preview_step
-	if step != scene.get("lines", []).size() or scene.get("choices", []).is_empty():
-		_preview_text(body, "%s · %s" % [day_label, _scene_title(scene)], 21)
-	var lines: Array = scene.get("lines", [])
-	var choices: Array = scene.get("choices", [])
-	var after_choice: Array = scene.get("after_choice", [])
-	var later_chat: Array = scene.get("later_chat", [])
-	if draft_mode and step == 0:
-		_preview_text(body, "NARRADOR · " + draft_flow.connector(scene_id), 15)
-	var terminal := false
-	if step < lines.size():
-		_vn_line(body, lines[step], scene_id)
-		_preview_button(body, "Continuar", func(): _commit_preview(scene_id, step + 1))
-	elif not choices.is_empty():
-		if step == lines.size():
-			_vn_choice_stage(body, scene_id, choices)
-		elif draft_mode and step == lines.size() + 1:
-			var old_selection: String = str(GameState.preview_choices.get(scene_id, ""))
-			_vn_line(body, {"speaker": "Mateo", "text": draft_flow.choice_reaction(scene_id, old_selection)}, scene_id, old_selection)
-			_preview_button(body, "Continuar", func(): _commit_preview(scene_id, step + 2))
-		elif step == lines.size() + (2 if draft_mode else 1):
-			var selected: String = str(GameState.preview_choices.get(scene_id, ""))
-			_vn_line(body, {"speaker": "Mateo", "text": draft_flow.choice_reaction(scene_id, selected)}, scene_id, selected)
-			_preview_button(body, "Continuar", func(): _commit_preview(scene_id, step + 1))
-		elif step < lines.size() + 2 + after_choice.size() + (1 if draft_mode else 0):
-			_vn_line(body, after_choice[step - lines.size() - 2 - (1 if draft_mode else 0)], scene_id)
-			_preview_button(body, "Continuar", func(): _commit_preview(scene_id, step + 1))
-		else:
-			terminal = true
-	elif not later_chat.is_empty():
-		if step == lines.size():
-			_preview_button(body, "Ver los mensajes", func(): _commit_preview(scene_id, step + 1))
-		elif step < lines.size() + 1 + later_chat.size():
-			_vn_line(body, later_chat[step - lines.size() - 1], scene_id)
-			_preview_button(body, "Continuar", func(): _commit_preview(scene_id, step + 1))
-		else:
-			terminal = true
-	else:
-		terminal = true
-	if terminal:
-		_render_preview_terminal(body, scene_id, scene)
+	_render_preview_story(scene_id, draft_mode)
 
 func _render_draft_summary(body: VBoxContainer) -> void:
 	_preview_text(body, "FIN DE LA HISTORIA", 21)
@@ -1434,7 +1441,7 @@ func _draft_terminal_step(scene_id: String) -> int:
 	return preview_catalog.terminal_step(scene_id) + (1 if DraftFlowScript.MAIN_IDS.has(scene_id) else 0)
 
 func _finish_draft() -> bool:
-	if not GameState.flags.get("draft_mode", false) or GameState.preview_scene not in ["F01_B", "F02", "F03"] or GameState.preview_step < _draft_terminal_step(GameState.preview_scene):
+	if not GameState.flags.get("draft_mode", false) or GameState.preview_scene not in ["F01_B", "F02", "F03"] or GameState.preview_step < _draft_terminal_step(GameState.preview_scene) - 1:
 		return false
 	var previous := GameState.snapshot()
 	GameState.flags.draft_completed = true
@@ -1469,39 +1476,9 @@ func _render_preview_summary(body: VBoxContainer) -> void:
 func _finish_preview() -> bool:
 	if not PreviewCatalogScript.ENDING_ORDER.has(GameState.preview_scene):
 		return false
-	if GameState.preview_step < preview_catalog.terminal_step(GameState.preview_scene):
+	if GameState.preview_step < preview_catalog.terminal_step(GameState.preview_scene) - 1:
 		return false
 	return await _commit_preview("ENDINGS_INDEX", 1, "", true)
-
-func _render_preview_terminal(body: VBoxContainer, scene_id: String, scene: Dictionary) -> void:
-	if GameState.flags.get("draft_mode", false):
-		_preview_text(body, "La conversación continúa.", 15)
-		var next_id: String = preview_catalog.next_main(scene_id)
-		if scene_id == "D4_03_A":
-			next_id = draft_flow.ending_for(str(GameState.preview_choices.get(scene_id, "")))
-		elif scene_id == "F01_A":
-			next_id = "F01_B"
-		if not next_id.is_empty():
-			var next_explore: bool = DraftFlowScript.EXPLORATION_IDS.has(next_id) and scene_id not in ["D4_01_A", "D4_02_A"]
-			var next_scene: Dictionary = preview_catalog.get_scene(next_id)
-			_preview_button(body, "Continuar · " + _scene_title(next_scene), func(): _commit_preview(next_id, 0, "", false, next_explore)).grab_focus()
-		elif scene_id in ["F01_B", "F02", "F03"]:
-			_preview_button(body, "Terminar historia", _finish_draft).grab_focus()
-		_preview_button(body, "Volver al menú", _return_to_menu)
-		return
-	_preview_text(body, "La conversación continúa.", 15)
-	if scene.has("unplaced_lines"):
-		_preview_button(body, "Escena adicional", _render_unplaced_preview)
-	if PreviewCatalogScript.MAIN_ORDER.has(scene_id):
-		var next_id: String = preview_catalog.next_main(scene_id)
-		if next_id.is_empty():
-			_preview_button(body, "Ver otras escenas", func(): _commit_preview("ENDINGS_INDEX", 0))
-		else:
-			_preview_button(body, "Continuar · " + _scene_title(preview_catalog.get_scene(next_id)), func(): _commit_preview(next_id, 0))
-	else:
-		_preview_button(body, "Terminar historia", _finish_preview).grab_focus()
-		_preview_button(body, "Ver otras escenas", func(): _commit_preview("ENDINGS_INDEX", 0))
-	_preview_button(body, "Volver al menú", _return_to_menu)
 
 func _render_unplaced_preview() -> void:
 	modal_kind = "preview_unplaced"

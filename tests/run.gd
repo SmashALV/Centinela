@@ -224,6 +224,8 @@ func _run() -> void:
 		_check(load("res://assets/portraits/%s_neutral.png" % portrait_name) is Texture2D, "retrato %s importado" % portrait_name)
 	for emotion_name in ["mateo_worried", "mateo_alarmed", "mateo_relieved", "sofi_concerned"]:
 		_check(load("res://assets/portraits/%s.png" % emotion_name) is Texture2D, "expresión %s importada" % emotion_name)
+	for vn_name in ["sofi_neutral", "sofi_concerned", "mateo_neutral", "mateo_worried", "mateo_alarmed", "camila_neutral", "bruno_neutral", "sebas_neutral", "kairo_anonymous", "bedroom", "courtyard", "corridor"]:
+		_check(load("res://assets/vn/%s.png" % vn_name) is Texture2D, "recurso escénico %s importado" % vn_name)
 	var bad_modal := saved.duplicate(true)
 	bad_modal.ui_modal = "class"
 	_check(not GameState.restore(bad_modal) and GameState.snapshot() == saved, "panel incompatible con fase rechazado sin alterar partida")
@@ -510,8 +512,10 @@ func _run() -> void:
 	await main._advance_prologue()
 	await main._advance_prologue()
 	_check(main.modal_kind == "dialogue" and main.dialogue_key == "wakeup" and GameState.flags.get("prologue_seen", false), "prólogo completo inicia diálogo de despertar")
-	var dialogue_body: VBoxContainer = main.modal_box.get_child(1).get_child(0)
-	_check(dialogue_body.get_child(0).has_node("PortraitFrame/Portrait"), "diálogo D0 muestra retrato de Sofi")
+	_check(main.conversation_ui.visible and main.conversation_ui.find_child("Sprite_sofi_neutral", true, false) != null, "diálogo presencial D0 muestra sprite de Sofi")
+	_check(main.conversation_ui.find_child("VNBackground", true, false) != null, "diálogo presencial usa fondo escénico")
+	var test_sprite: TextureRect = main.conversation_ui.find_child("Sprite_sofi_neutral", true, false)
+	_check(test_sprite.size == Vector2(320, 360), "sprite presencial respeta el encuadre")
 	main._show_pause()
 	await main._cycle_text_size()
 	_check(GameState.text_size == "large" and main.modal_kind == "pause", "tamaño de texto grande se guarda desde pausa")
@@ -529,7 +533,7 @@ func _run() -> void:
 	main.window_too_small = false
 	main._resume_pause()
 	_check(main.modal_kind == "dialogue" and main.dialogue_key == "wakeup", "pausa recupera diálogo con texto grande")
-	_check(main.modal_box.get_child(1) is ScrollContainer and main._scaled_text_size(18) == 23, "diálogo grande usa desplazamiento sin recortar opciones")
+	_check(main.conversation_ui.find_children("*", "ScrollContainer", true, false).size() > 0 and main._scaled_text_size(18) == 23, "diálogo grande usa desplazamiento sin recortar opciones")
 	_check(main.dialogue_text_label.visible_characters == 0, "diálogo nuevo empieza con texto oculto")
 	main._reveal_dialogue()
 	_check(main.dialogue_text_label.visible_characters == main.dialogue_story.current_node().text.length(), "primer toque revela línea completa")
@@ -594,6 +598,7 @@ func _run() -> void:
 	while main.dialogue_story.current_node().get("next", null) != null:
 		main._advance_dialogue()
 	_check(main.dialogue_story.current_node().get("choices", []).size() == 3, "chat muestra tres opciones recuperadas")
+	_check(main.conversation_ui.find_child("ChannelSidebar", true, false) != null, "chat grupal D0 usa canal y avatares")
 	var before_dialogue_choice := GameState.snapshot()
 	_check(await main._request_dialogue_choice("D0_05_A_OPT_B") and GameState.dialogue_choice == "D0_05_A_OPT_B" and GameState.snapshot() != before_dialogue_choice, "respuesta D0 se guarda al elegirla")
 	_check(main.modal_kind == "dialogue" and main.dialogue_text_label.text == "Ya, ya, paz. Mejor entremos a jugar.", "D0 muestra respuesta inmediata de Bruno")
@@ -614,6 +619,7 @@ func _run() -> void:
 	var flags_before_preview := GameState.flags.duplicate(true)
 	await main._commit_preview("D1_02_A", 0)
 	_check(GameState.phase == "preview" and main.modal_kind == "preview", "resultado abre vista previa D1")
+	_check(main.conversation_ui.find_child("ChannelSidebar", true, false) != null, "lobby D1 usa chat grupal")
 	var preview_choice_step: int = main.preview_catalog.get_scene("D1_02_A").get("lines", []).size()
 	await main._commit_preview("D1_02_A", preview_choice_step)
 	var before_preview_choice := GameState.snapshot()
@@ -649,12 +655,8 @@ func _run() -> void:
 		GameState.moba_result = "victoria"
 		GameState.moba_class = "Atacante"
 		main._show_result()
-		var result_body: VBoxContainer = main.modal_box.get_child(2).get_child(0)
-		var continue_button: Button = null
-		for child in result_body.get_children():
-			if child is Button and child.text == "Continuar historia · Día 1":
-				continue_button = child
-		_check(continue_button != null and not continue_button.disabled, "resultado ofrece continuar al Día 1")
+		var result_buttons: Array[Node] = main.conversation_ui.find_children("*", "Button", true, false)
+		_check(main.conversation_ui.visible and result_buttons.size() == 1 and result_buttons[0].text == "Continuar", "resultado deja una sola continuación lineal")
 		_check(await main._start_playable_draft() and GameState.flags.draft_mode and GameState.preview_scene == "D1_02_A", "borrador inicia y limpia opciones")
 		_check(GameState.flags.get("draft_exploring", false) and main.modal_kind == "" and main.world.scene_key == "draft_d1", "Día 1 inicia en exploración")
 		var exploring_saved := GameState.snapshot()
