@@ -1,6 +1,7 @@
 extends Control
 
 const BACKGROUNDS := {
+	"computer_lab": "res://assets/vn/computer_lab.png",
 	"bedroom": "res://assets/vn/bedroom.png",
 	"courtyard": "res://assets/vn/courtyard.png",
 	"corridor": "res://assets/vn/corridor.png"
@@ -30,9 +31,62 @@ var auto_duration := 0.0
 var view_serial := 0
 var auto_guard: Callable = Callable()
 var auto_progress: ProgressBar
+var reading_key := ""
+var click_regions: Array[Rect2] = []
+
+static func dialogue_text(value: String) -> String:
+	var result := ""
+	var capitalize_next := false
+	for character in value:
+		if character in [";", ":"]:
+			result = result.strip_edges(false, true) + ". "
+			capitalize_next = true
+		elif capitalize_next and character in [" ", "\t"]:
+			continue
+		else:
+			result += character.to_upper() if capitalize_next else character
+			if character not in ["\n", "¿", "¡", "«", "(", "\"", "'"]: capitalize_next = false
+	return result
+
+static func background_for_world(world_key: String) -> String:
+	return {"draft_d1": "computer_lab", "draft_d2": "courtyard", "draft_d3": "corridor", "draft_d4": "courtyard", "bedroom": "bedroom", "computer": "bedroom", "courtyard": "courtyard"}.get(world_key, "courtyard")
+
+func set_reading_key(kind: String, payload: Array) -> void:
+	reading_key = kind + "|" + JSON.stringify(payload)
+
+func capture_reading_state() -> Dictionary:
+	if not visible or reading_key.is_empty(): return {}
+	var result := {"key": reading_key, "remaining": auto_remaining, "duration": auto_duration, "timer_active": auto_action.is_valid()}
+	for scroll_name in ["ReadingScroll", "ChoiceScroll"]:
+		var scroll := get_node_or_null(scroll_name) as ScrollContainer
+		if is_instance_valid(scroll): result[scroll_name] = scroll.scroll_vertical
+	return result
+
+func restore_reading_state(state: Dictionary) -> bool:
+	if not visible or state.get("key", "") != reading_key: return false
+	if state.get("timer_active", false) and auto_action.is_valid():
+		auto_duration = maxf(0.1, float(state.get("duration", auto_duration)))
+		auto_remaining = clampf(float(state.get("remaining", auto_remaining)), 0.0, auto_duration)
+		if is_instance_valid(auto_progress): auto_progress.value = 100.0 * auto_remaining / auto_duration
+	for scroll_name in ["ReadingScroll", "ChoiceScroll"]:
+		var scroll := get_node_or_null(scroll_name) as ScrollContainer
+		if is_instance_valid(scroll) and state.has(scroll_name): scroll.set_deferred("scroll_vertical", int(state[scroll_name]))
+	return true
+
+func can_click_advance(point: Vector2) -> bool:
+	if not visible or not auto_action.is_valid(): return false
+	if auto_guard.is_valid() and not auto_guard.call(): return false
+	var inside := false
+	for region in click_regions:
+		if region.has_point(point): inside = true
+	if not inside: return false
+	var canvas_point: Vector2 = get_global_transform() * point
+	for child in find_children("*", "Control", true, false):
+		if (child is BaseButton or child is ScrollBar) and child.is_visible_in_tree() and child.get_global_rect().has_point(canvas_point): return false
+	return true
 
 func reading_seconds(text_value: String) -> float:
-	var words: int = text_value.split(" ", false).size()
+	var words: int = dialogue_text(text_value).split(" ", false).size()
 	var factor: float = {"slow": 1.35, "normal": 1.0, "fast": 0.75}.get(GameState.dialogue_speed, 1.0)
 	return maxf(4.0, (1.8 + words / 2.6) * factor)
 
@@ -63,12 +117,23 @@ func _process(delta: float) -> void:
 	if auto_remaining <= 0.0: _run_auto()
 
 func _input(event: InputEvent) -> void:
-	if visible and auto_action.is_valid() and event is InputEventKey and event.pressed and not event.echo and event.keycode in [KEY_ENTER, KEY_KP_ENTER]:
-		if auto_guard.is_valid() and not auto_guard.call(): return
+	if visible and event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed and event.double_click:
+		get_viewport().set_input_as_handled()
+		return
+	if not visible or not auto_action.is_valid(): return
+	if auto_guard.is_valid() and not auto_guard.call(): return
+	if event is InputEventKey and event.pressed and not event.echo and event.keycode in [KEY_ENTER, KEY_KP_ENTER]:
 		_run_auto()
 		get_viewport().set_input_as_handled()
+	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed and not event.double_click:
+		var local_event := make_input_local(event) as InputEventMouseButton
+		if can_click_advance(local_event.position):
+			_run_auto()
+			get_viewport().set_input_as_handled()
 
 func _run_auto() -> void:
+	if not auto_action.is_valid(): return
+	if auto_guard.is_valid() and not auto_guard.call(): return
 	var action: Callable = auto_action
 	var serial: int = view_serial
 	auto_action = Callable()
@@ -81,6 +146,8 @@ func _run_auto() -> void:
 func show_prologue(text_value: String, action: Callable, font_size: int) -> void:
 	clear_view()
 	visible = true
+	set_reading_key("show_prologue", [text_value])
+	click_regions = [Rect2(30, 132, 708, 291)]
 	for y in range(0, 448, 4):
 		_panel(Rect2(0, y, 768, 4), Color("eadbf3").lerp(Color("f9dce7"), float(y) / 448.0))
 	for i in range(5):
@@ -90,13 +157,14 @@ func show_prologue(text_value: String, action: Callable, font_size: int) -> void
 		_label(person, Rect2(112 + i * 110, 113, 90, 19), 12, Color("44304f")).horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_panel(Rect2(30, 132, 708, 291), Color("fff8fbe8"), Color("c493bb"), 20)
 	var scroll := ScrollContainer.new()
+	scroll.name = "ReadingScroll"
 	scroll.position = Vector2(54, 151)
 	scroll.size = Vector2(660, 254)
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	add_child(scroll)
 	var prose := Label.new()
 	prose.name = "PrologueText"
-	prose.text = text_value
+	prose.text = dialogue_text(text_value)
 	prose.custom_minimum_size.x = 635
 	prose.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	prose.add_theme_font_size_override("font_size", font_size)
@@ -107,17 +175,20 @@ func show_prologue(text_value: String, action: Callable, font_size: int) -> void
 func show_stage_card(title: String, text_value: String, action: Callable, font_size: int) -> void:
 	clear_view()
 	visible = true
+	set_reading_key("show_stage_card", [title, text_value])
+	click_regions = [Rect2(74, 93, 620, 259)]
 	_panel(Rect2(0, 0, 768, 448), Color(0.28, 0.16, 0.34, 0.63))
 	_panel(Rect2(74, 93, 620, 259), Color("fff3fa"), Color("c493bb"), 18)
 	_label(title, Rect2(100, 111, 564, 37), font_size + 2, Color("684776"))
 	var scroll := ScrollContainer.new()
+	scroll.name = "ReadingScroll"
 	scroll.position = Vector2(100, 157)
 	scroll.size = Vector2(565, 142)
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	add_child(scroll)
 	var prose := Label.new()
 	prose.name = "StageGuideText"
-	prose.text = text_value
+	prose.text = dialogue_text(text_value)
 	prose.custom_minimum_size.x = 541
 	prose.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	prose.add_theme_font_size_override("font_size", font_size)
@@ -136,6 +207,8 @@ func clear_view() -> void:
 	view_serial += 1
 	auto_action = Callable()
 	auto_remaining = 0.0
+	reading_key = ""
+	click_regions.clear()
 	visible = false
 	for child in get_children():
 		remove_child(child)
@@ -209,6 +282,7 @@ func _button(text_value: String, rect: Rect2, action: Callable, font_size: int =
 
 func _choice_list(options: Array, rect: Rect2, font_size: int) -> void:
 	var scroll := ScrollContainer.new()
+	scroll.name = "ChoiceScroll"
 	scroll.position = rect.position
 	scroll.size = rect.size
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -219,7 +293,7 @@ func _choice_list(options: Array, rect: Rect2, font_size: int) -> void:
 	scroll.add_child(list)
 	for option in options:
 		var button := Button.new()
-		button.text = str(option.get("label", ""))
+		button.text = dialogue_text(str(option.get("label", "")))
 		button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		button.custom_minimum_size = Vector2(rect.size.x - 16, 44)
 		button.add_theme_font_size_override("font_size", font_size)
@@ -245,6 +319,8 @@ func show_scene(background_key: String, title: String, speaker: String, line: St
 		header_action: Callable = Callable(), header_button_label: String = "Historial") -> Label:
 	clear_view()
 	visible = true
+	set_reading_key("show_scene", [background_key, title, speaker, line, options.map(func(option): return option.get("label", ""))])
+	click_regions = [Rect2(19, 252, 730, 183)]
 	var backdrop: String = BACKGROUNDS.get(background_key, BACKGROUNDS.courtyard)
 	var bg := TextureRect.new()
 	bg.texture = load(backdrop) as Texture2D
@@ -264,7 +340,7 @@ func show_scene(background_key: String, title: String, speaker: String, line: St
 	if SPRITES.has(right_key): _picture(SPRITES[right_key], Rect2(410, 14, 320, 360), not speaker.begins_with(right_key.get_slice("_", 0)))
 	if not caption.is_empty():
 		_panel(Rect2(17, 10, 734, 48), Color(0.31, 0.19, 0.37, 0.84), Color("d5a4ca"), 7)
-		_label(caption, Rect2(29, 18, 708, 34), maxi(12, font_size - 3))
+		_label(dialogue_text(caption), Rect2(29, 18, 708, 34), maxi(12, font_size - 3))
 	else:
 		_panel(Rect2(17, 10, 440, 31), Color(0.31, 0.19, 0.37, 0.78), Color("d5a4ca"), 7)
 		_label(title, Rect2(29, 15, 420, 25), maxi(12, font_size - 3))
@@ -298,12 +374,13 @@ func show_scene(background_key: String, title: String, speaker: String, line: St
 		_choice_list(options, Rect2(40, panel_y + 52, 686, 163), maxi(14, font_size - 2))
 		return null
 	var scroll := ScrollContainer.new()
+	scroll.name = "ReadingScroll"
 	scroll.position = Vector2(42, panel_y + 40)
 	scroll.size = Vector2(674, 116)
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	add_child(scroll)
 	var text_label := Label.new()
-	text_label.text = line
+	text_label.text = dialogue_text(line)
 	text_label.custom_minimum_size.x = 652
 	text_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	text_label.add_theme_font_size_override("font_size", font_size)
@@ -315,10 +392,14 @@ func show_scene(background_key: String, title: String, speaker: String, line: St
 func _chat_message(list: VBoxContainer, speaker: String, message: String, font_size: int) -> Label:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 10)
+	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	list.add_child(row)
 	var avatar_path: String = AVATARS.get(speaker.get_slice(" (", 0), "")
 	var avatar_frame := PanelContainer.new()
+	avatar_frame.name = "MessageAvatar"
 	avatar_frame.custom_minimum_size = Vector2(46, 46)
+	avatar_frame.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	avatar_frame.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	var avatar_style := StyleBoxFlat.new()
 	avatar_style.bg_color = Color("7e658a") if speaker.begins_with("Kairo") else Color("715778")
 	avatar_style.border_color = Color("dec685") if speaker.begins_with("Kairo") else Color("6ca8ab")
@@ -334,7 +415,7 @@ func _chat_message(list: VBoxContainer, speaker: String, message: String, font_s
 	avatar.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	avatar_frame.add_child(avatar)
 	var text_box := VBoxContainer.new()
-	text_box.custom_minimum_size.x = 512
+	text_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(text_box)
 	var name := Label.new()
 	name.text = speaker.get_slice(" (", 0)
@@ -342,8 +423,8 @@ func _chat_message(list: VBoxContainer, speaker: String, message: String, font_s
 	name.add_theme_color_override("font_color", Color("78d4ca") if name.text == "Sofi" else Color("ead69f") if name.text == "Kairo" else Color("d5dceb"))
 	text_box.add_child(name)
 	var content := Label.new()
-	content.text = message
-	content.custom_minimum_size.x = 510
+	content.text = dialogue_text(message)
+	content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	content.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	content.add_theme_font_size_override("font_size", font_size)
 	content.add_theme_color_override("font_color", Color("f4f0e9"))
@@ -355,6 +436,8 @@ func show_chat(channel: String, messages: Array, options: Array, next_action: Ca
 		header_button_label: String = "Historial") -> Label:
 	clear_view()
 	visible = true
+	set_reading_key("show_chat", [channel, messages, options.map(func(option): return option.get("label", "")), system_note])
+	click_regions = [Rect2(163, 62, 595, 377)]
 	_panel(Rect2(0, 0, 768, 448), Color("46374f"))
 	_panel(Rect2(0, 0, 152, 448), Color("34273e")).name = "ChannelSidebar"
 	_panel(Rect2(0, 0, 152, 53), Color("2b2035"))
@@ -362,24 +445,27 @@ func show_chat(channel: String, messages: Array, options: Array, next_action: Ca
 	_label("CANALES", Rect2(17, 80, 122, 24), 12, Color("9aa8b8"))
 	_panel(Rect2(7, 109, 138, 35), Color("725a7b"), Color("ba8fbb"), 6)
 	_label("#  " + channel, Rect2(18, 115, 126, 26), 14)
-	_label("●  Sofi", Rect2(18, 362, 121, 26), 14, Color("7bcfc4"))
+	_panel(Rect2(18, 372, 6, 6), Color("7bcfc4"), Color.TRANSPARENT, 3).mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_label("Sofi", Rect2(32, 362, 107, 26), 14, Color("7bcfc4"))
 	_panel(Rect2(152, 0, 616, 53), Color("594460"))
 	_label("#  " + channel, Rect2(171, 12, 389, 32), 19)
 	if header_action.is_valid():
 		_button(header_button_label, Rect2(617, 9, 132, 34), header_action, 13)
 	var choosing: bool = not options.is_empty()
 	var scroll := ScrollContainer.new()
+	scroll.name = "ReadingScroll"
 	scroll.position = Vector2(167, 62)
 	scroll.size = Vector2(584, 165 if choosing else 311)
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	add_child(scroll)
 	var list := VBoxContainer.new()
 	list.custom_minimum_size.x = 562
+	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	list.add_theme_constant_override("separation", 13)
 	scroll.add_child(list)
 	if not system_note.is_empty():
 		var note := Label.new()
-		note.text = system_note
+		note.text = dialogue_text(system_note)
 		note.custom_minimum_size.x = 548
 		note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		note.add_theme_font_size_override("font_size", maxi(12, font_size - 4))
@@ -426,7 +512,7 @@ func _shared_excerpt(list: VBoxContainer, quotes: Array, font_size: int) -> Labe
 		sender.add_theme_color_override("font_color", Color("ead69f") if sender.text == "Kairo" else Color("cbd7e7"))
 		content.add_child(sender)
 		current = Label.new()
-		current.text = str(quote.get("text", ""))
+		current.text = dialogue_text(str(quote.get("text", "")))
 		current.custom_minimum_size.x = 518
 		current.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		current.add_theme_font_size_override("font_size", font_size)
@@ -438,6 +524,8 @@ func show_direct_chat(contact: String, messages: Array, options: Array, next_act
 		next_label: String, font_size: int, system_note: String = "") -> Label:
 	clear_view()
 	visible = true
+	set_reading_key("show_direct_chat", [contact, messages, options.map(func(option): return option.get("label", "")), system_note])
+	click_regions = [Rect2(163, 77, 595, 362)]
 	_panel(Rect2(0, 0, 768, 448), Color("46374f"))
 	_panel(Rect2(0, 0, 152, 448), Color("34273e")).name = "DirectSidebar"
 	_panel(Rect2(0, 0, 152, 53), Color("2b2035"))
@@ -459,17 +547,19 @@ func show_direct_chat(contact: String, messages: Array, options: Array, next_act
 	_label(header_note, Rect2(218, 37, 520, 22), 12, Color("abb9c8"))
 	var choosing: bool = not options.is_empty()
 	var scroll := ScrollContainer.new()
+	scroll.name = "ReadingScroll"
 	scroll.position = Vector2(167, 77)
 	scroll.size = Vector2(584, 150 if choosing else 295)
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	add_child(scroll)
 	var list := VBoxContainer.new()
 	list.custom_minimum_size.x = 562
+	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	list.add_theme_constant_override("separation", 12)
 	scroll.add_child(list)
 	if not system_note.is_empty():
 		var note := Label.new()
-		note.text = system_note
+		note.text = dialogue_text(system_note)
 		note.custom_minimum_size.x = 548
 		note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		note.add_theme_font_size_override("font_size", maxi(12, font_size - 4))

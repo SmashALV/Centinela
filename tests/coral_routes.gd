@@ -35,7 +35,7 @@ func _play_scene(story: Node, scene_id: String, choice: String = "") -> bool:
 		if option.key == choice: option_text = str(option.text)
 	var pressed := false
 	for button in story.conversation_ui.find_children("*", "Button", true, false):
-		if button.text == option_text:
+		if button.text == preload("res://scripts/ConversationUI.gd").dialogue_text(option_text):
 			button.pressed.emit()
 			pressed = true
 			break

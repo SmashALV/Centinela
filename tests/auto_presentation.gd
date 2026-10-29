@@ -19,7 +19,7 @@ func _run() -> void:
 	SaveManager.save_slot()
 	main._start_slot(1)
 	var ui: Control = main.conversation_ui
-	check(ui.find_child("PrologueText", true, false).text == "\n\n".join(main.PROLOGUE_LINES), "introducción completa en una pantalla")
+	check(ui.find_child("PrologueText", true, false).text == preload("res://scripts/ConversationUI.gd").dialogue_text("\n\n".join(main.PROLOGUE_LINES)), "introducción completa en una pantalla")
 	check(ui.find_children("*", "Button", true, false).is_empty(), "introducción sin botón continuar")
 	check(ui.find_children("Sprite_*", "TextureRect", true, false).size() == 5, "caras de Sofi y sus cuatro amigos")
 	ui.auto_remaining = 0.01

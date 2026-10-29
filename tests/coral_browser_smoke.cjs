@@ -85,9 +85,17 @@ async function main() {
     await waitFor((state) => state?.flags?.d1_interlude_active === true);
     await waitFor((state) => state?.phase === "coral" && state.coral_state?.mode === "intro");
     await page.screenshot({ path: "build/web/coral_intro.png" });
-    await page.keyboard.press("Enter");
+    await page.mouse.click(canvas.x + canvas.width * 0.5, canvas.y + canvas.height * 0.76);
     await waitFor((state) => state?.coral_state?.step === 1);
-    await page.keyboard.press("Enter");
+    await page.waitForTimeout(1200);
+    await page.screenshot({ path: "build/web/dialogue_timer_before_pause.png" });
+    await page.keyboard.press("p");
+    await page.waitForTimeout(500);
+    assert.equal((await readSave()).coral_state.step, 1);
+    await page.keyboard.press("p");
+    await page.waitForTimeout(200);
+    await page.screenshot({ path: "build/web/dialogue_timer_resumed.png" });
+    await page.mouse.click(canvas.x + canvas.width * 0.5, canvas.y + canvas.height * 0.76);
     await waitFor((state) => state?.coral_state?.mode === "explore");
     await page.screenshot({ path: "build/web/coral_explore.png" });
     const inject = async (change) => page.evaluate(async (change) => {
@@ -113,8 +121,30 @@ async function main() {
         });
       } finally { db.close(); }
     }, change);
+    await inject({ day: 1, mode: "scene", node: "I_D1_CAMILA", step: 0 });
+    await page.reload();
+    await page.waitForFunction(() => !!globalThis.CentinelaStorage);
+    await page.waitForTimeout(1500);
+    await page.mouse.click(canvas.x + canvas.width * 0.5, canvas.y + canvas.height * 0.41);
+    await page.waitForTimeout(500);
+    await page.screenshot({ path: "build/web/dialogue_computer_lab.png" });
+    await inject({ day: 1, mode: "scene", node: "D1_GATE", step: 14,
+      snapshotChanges: { text_size: "large" } });
+    await page.reload();
+    await page.waitForFunction(() => !!globalThis.CentinelaStorage);
+    await page.waitForTimeout(1500);
+    await page.mouse.click(canvas.x + canvas.width * 0.5, canvas.y + canvas.height * 0.41);
+    await page.waitForTimeout(500);
+    await page.screenshot({ path: "build/web/dialogue_group_long.png" });
+    await inject({ day: 1, mode: "scene", node: "D1_B_FOLLOW", step: 8 });
+    await page.reload();
+    await page.waitForFunction(() => !!globalThis.CentinelaStorage);
+    await page.waitForTimeout(1500);
+    await page.mouse.click(canvas.x + canvas.width * 0.5, canvas.y + canvas.height * 0.41);
+    await page.waitForTimeout(500);
+    await page.screenshot({ path: "build/web/dialogue_dm_long.png" });
     await inject({ day: 1, mode: "scene", node: "D1_B_FOLLOW", step: 0, route: "B",
-      choices: { D1_GATE: "B" } });
+      choices: { D1_GATE: "B" }, snapshotChanges: { text_size: "normal" } });
     await page.reload();
     await page.waitForFunction(() => !!globalThis.CentinelaStorage);
     await page.waitForTimeout(1500);

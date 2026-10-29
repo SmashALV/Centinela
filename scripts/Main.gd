@@ -62,6 +62,8 @@ var modal_box: VBoxContainer
 var conversation_ui: Control
 var modal_kind: String = ""
 var modal_before_pause: String = ""
+var paused_reading: Dictionary = {}
+var phase_load_after_pause := false
 var toast: Label
 var toast_time := 0.0
 var autosave_elapsed := 0.0
@@ -381,6 +383,8 @@ func _button(value: String, callback: Callable, icon_key: String = "", parent: C
 	return button
 
 func _show_menu() -> void:
+	paused_reading.clear()
+	phase_load_after_pause = false
 	AudioManager.set_music_paused(false)
 	dialogue_key = ""
 	modal_kind = "menu"
@@ -553,6 +557,9 @@ func _start_slot(chosen: int) -> void:
 		_toast("Partida recuperada de una copia local")
 
 func _load_phase() -> void:
+	if modal_kind == "pause":
+		phase_load_after_pause = true
+		return
 	if is_instance_valid(conversation_ui):
 		conversation_ui.clear_view()
 	prompt.visible = true
@@ -812,7 +819,7 @@ func _render_phone() -> void:
 	else:
 		_preview_text(body, "Los chicos", 15)
 		for message in GameState.phone_messages:
-			_preview_text(body, "%s: %s" % [message.get("speaker", ""), message.get("text", "")], 14)
+			_preview_text(body, "%s\n%s" % [message.get("speaker", ""), ConversationUIScript.dialogue_text(str(message.get("text", "")))], 14)
 	if GameState.flags.get("draft_mode", false):
 		if GameState.preview_choices.has("D2_03_A"):
 			_preview_text(body, "La captura la mostró Mateo en su propio teléfono. No se guardó en el celular de Sofi.", 15)
@@ -905,6 +912,8 @@ func _advance_hint() -> void:
 	save_in_progress = false
 
 func _show_pause() -> void:
+	if modal_kind == "pause": return
+	paused_reading = conversation_ui.capture_reading_state()
 	modal_before_pause = modal_kind
 	AudioManager.set_music_paused(true)
 	_render_pause()
@@ -982,9 +991,20 @@ func _return_to_menu() -> void:
 		_show_menu()
 
 func _resume_pause() -> void:
-	if window_too_small:
+	if window_too_small or save_in_progress:
 		return
 	AudioManager.set_music_paused(false)
+	modal_kind = modal_before_pause
+	if phase_load_after_pause:
+		phase_load_after_pause = false
+		modal_kind = ""
+		_load_phase()
+		if not GameState.dialogue_key.is_empty(): _resume_saved_dialogue()
+		elif GameState.phase in ["bedroom", "courtyard", "computer"] and not GameState.flags.has("d0_guide_active"): _close_modal()
+		conversation_ui.restore_reading_state(paused_reading)
+		paused_reading.clear()
+		modal_before_pause = ""
+		return
 	match modal_before_pause:
 		"prologue": _render_prologue()
 		"stage_guide": _render_stage_guide()
@@ -1000,6 +1020,8 @@ func _resume_pause() -> void:
 		"preview_unplaced": _render_unplaced_preview()
 		"coral": _render_coral()
 		_: _close_modal()
+	conversation_ui.restore_reading_state(paused_reading)
+	paused_reading.clear()
 	modal_before_pause = ""
 
 func _render_prologue() -> void:
@@ -1115,6 +1137,9 @@ func _resume_saved_dialogue() -> bool:
 	return true
 
 func _render_dialogue(preserve_reveal: bool = false) -> void:
+	if modal_kind == "pause":
+		modal_before_pause = "dialogue"
+		return
 	modal_kind = "dialogue"
 	var node: Dictionary = dialogue_story.current_node()
 	if not preserve_reveal:
@@ -1150,7 +1175,8 @@ func _render_dialogue(preserve_reveal: bool = false) -> void:
 		var partner: String = "Sofi" if dialogue_key == "courtyard" and speaker != "Sofi" else "Mateo" if dialogue_key == "courtyard" else ""
 		dialogue_text_label = conversation_ui.show_scene("bedroom" if dialogue_key == "wakeup" else "courtyard", "Día 0 · " + ("Habitación" if dialogue_key == "wakeup" else "Patio"), speaker, message, options, next_action, next_label, speaker, partner, false, _scaled_text_size(18), "", _render_dialogue_history)
 	if is_instance_valid(dialogue_text_label):
-		dialogue_text_label.visible_characters = int(dialogue_visible)
+		dialogue_visible = float(dialogue_text_label.text.length())
+		dialogue_text_label.visible_characters = dialogue_text_label.text.length()
 
 func _reveal_dialogue() -> void:
 	dialogue_visible = float(dialogue_text_label.text.length()) if is_instance_valid(dialogue_text_label) else 0.0
@@ -1170,7 +1196,7 @@ func _render_dialogue_history() -> void:
 		var line: Dictionary = dialogue_story.data.nodes[int(position)]
 		if str(line.get("text", "")).is_empty():
 			continue
-		_preview_text(body, "%s: %s" % [line.get("speaker", ""), line.get("text", "")], 17)
+		_preview_text(body, "%s\n%s" % [line.get("speaker", ""), ConversationUIScript.dialogue_text(str(line.get("text", "")))], 17)
 	_preview_button(body, "Volver al diálogo", func(): _render_dialogue(true)).grab_focus()
 
 func _request_dialogue_choice(choice_id: String) -> bool:
@@ -1280,6 +1306,10 @@ func _complete_dialogue() -> void:
 	_update_hud()
 	var finished_key := dialogue_key
 	dialogue_key = ""
+	if modal_kind == "pause":
+		if finished_key == "group_chat": _show_desktop()
+		else: phase_load_after_pause = true
+		return
 	if finished_key == "group_chat":
 		_show_desktop()
 	else:
@@ -1309,7 +1339,7 @@ func _show_result() -> void:
 	modal_kind = "result"
 	_begin_conversation_presentation()
 	if GameState.flags.get("d1_interlude_active", false):
-		conversation_ui.show_scene("courtyard", "Día 1 · Un nuevo jugador", "Narrador", draft_flow.connector("D1_02_A"), [], _start_coral_story, "Continuar", "Sofi", "", false, _scaled_text_size(18))
+		conversation_ui.show_scene("computer_lab", "Día 1 · Un nuevo jugador", "Narrador", draft_flow.connector("D1_02_A"), [], _start_coral_story, "Continuar", "Sofi", "", false, _scaled_text_size(18))
 		return
 	var note: String = "Partida finalizada · " + GameState.moba_result.capitalize()
 	var messages: Array = [{"speaker": "Camila", "text": draft_flow.camila_reaction(GameState.moba_result, GameState.moba_class)}]
@@ -1519,7 +1549,7 @@ func _render_coral() -> void:
 	if mode == "intro":
 		var intro: Array = coral_flow.content.get("day_intros", {}).get(str(state.day), [])
 		if int(state.step) >= intro.size(): return
-		conversation_ui.show_scene("courtyard", "Día %d" % state.day, "Narrador", str(intro[int(state.step)]), [], _coral_advance, "Continuar", "Sofi", "", false, _scaled_text_size(18))
+		conversation_ui.show_scene(_conversation_background(), "Día %d" % state.day, "Narrador", str(intro[int(state.step)]), [], _coral_advance, "Continuar", "Sofi", "", false, _scaled_text_size(18))
 		return
 	var scene_id: String = str(state.get("node", ""))
 	var scene: Dictionary = coral_flow.scene(scene_id, preview_catalog, draft_flow, state)
@@ -1541,7 +1571,7 @@ func _render_coral() -> void:
 		return
 	var presentation: String = str(scene.get("presentation", "vn"))
 	if presentation in ["group", "dm"] and str(current.get("speaker", "")) == "Narrador" and options.is_empty():
-		conversation_ui.show_scene("courtyard", "Día %d · %s" % [int(scene.get("day", state.day)), str(scene.get("title", "Historia"))], "Narrador", str(current.get("text", "")), [], next_action, "Continuar", "Sofi", "", false, _scaled_text_size(18))
+		conversation_ui.show_scene(_conversation_background(), "Día %d · %s" % [int(scene.get("day", state.day)), str(scene.get("title", "Historia"))], "Narrador", str(current.get("text", "")), [], next_action, "Continuar", "Sofi", "", false, _scaled_text_size(18))
 		return
 	if presentation in ["group", "dm"]:
 		var messages: Array = lines.slice(0, mini(int(state.step) + 1, lines.size())) if mode != "reaction" else lines.duplicate(true)
@@ -1569,8 +1599,7 @@ func _render_coral() -> void:
 	if not ConversationUIScript.SPRITES.has(sprite): sprite = speaker if ConversationUIScript.SPRITES.has(speaker) else actor
 	var partner: String = "Sofi" if speaker != "Sofi" and actor != "Sofi" else actor
 	if speaker == "Narrador": sprite = "Sofi"
-	var background: String = "corridor" if str(scene.get("place", "")) in ["pasillo", "tutoria"] else "courtyard"
-	if str(scene.get("place", "")) == "habitación": background = "bedroom"
+	var background: String = _conversation_background()
 	conversation_ui.show_scene(background, "Día %d · %s" % [int(scene.get("day", state.day)), str(scene.get("title", "Historia"))], speaker, str(current.get("text", "")), options, next_action, "Continuar", sprite, partner, "(mensaje)" in speaker, _scaled_text_size(18))
 
 func _render_coral_summary() -> void:
@@ -1609,7 +1638,7 @@ func _render_day_intro() -> void:
 	_begin_conversation_presentation()
 	var scene: Dictionary = preview_catalog.get_scene(scene_id)
 	var title: String = "Día %d · %s" % [int(scene.get("day", 1)), _scene_title(scene)]
-	var background: String = "corridor" if scene_id == "D3_01_A" else "courtyard"
+	var background: String = _conversation_background()
 	conversation_ui.show_scene(background, title, "Narrador", str(introduction[step]), [], _advance_day_intro,
 		"Continuar", "Sofi", "", false, _scaled_text_size(18))
 
@@ -1713,11 +1742,11 @@ func _preview_line(parent: VBoxContainer, line: Dictionary) -> void:
 		var message_box := VBoxContainer.new()
 		card.add_child(message_box)
 		_preview_text(message_box, "CHAT MOSTRADO POR MATEO" if GameState.preview_scene == "D2_03_A" else "MENSAJE RECUPERADO", 13, 515)
-		_preview_text(message_box, speaker + ":", 16, 515)
-		_preview_text(message_box, "«" + str(line.get("text", "")) + "»", 18, 515)
+		_preview_text(message_box, speaker, 16, 515)
+		_preview_text(message_box, "«" + ConversationUIScript.dialogue_text(str(line.get("text", ""))) + "»", 18, 515)
 	else:
-		_preview_text(parent, speaker + ":", 18)
-		_preview_text(parent, "«" + str(line.get("text", "")) + "»", 19)
+		_preview_text(parent, speaker, 18)
+		_preview_text(parent, "«" + ConversationUIScript.dialogue_text(str(line.get("text", ""))) + "»", 19)
 
 func _scene_title(scene: Dictionary) -> String:
 	var title: String = str(scene.get("title", "Historia"))
@@ -1889,7 +1918,7 @@ func _render_preview_story(scene_id: String, draft_mode: bool) -> void:
 	if speaker not in ["Sofi", "Mateo", "Kairo", "Camila", "Bruno", "Sebas"]:
 		active = ""
 		partner = ""
-	var background: String = "corridor" if scene_id.begins_with("D3") else "courtyard"
+	var background: String = _conversation_background()
 	conversation_ui.show_scene(background, title, raw_speaker, str(current.get("text", "")), options, next_action, next_label, active, partner, is_message, _scaled_text_size(18), note, additional, "Escena adicional")
 
 func _render_preview() -> void:
@@ -1990,3 +2019,6 @@ func _render_unplaced_preview() -> void:
 	for line in scene.get("unplaced_lines", []):
 		_preview_line(body, line)
 	_preview_button(body, "Volver a la escena", _render_preview)
+
+func _conversation_background() -> String:
+	return ConversationUIScript.background_for_world(str(world.scene_key))

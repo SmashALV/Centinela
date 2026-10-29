@@ -551,7 +551,7 @@ func _run() -> void:
 	_check(GameState.dialogue_history == [0], "historial persiste al recargar")
 	main._render_dialogue_history()
 	var history_body: VBoxContainer = main.modal_box.get_child(1).get_child(0)
-	_check(history_body.get_child(0).text == "Sofi: Ay, nooo... ¿Ya es hora?", "historial muestra línea literal anterior")
+	_check(history_body.get_child(0).text == "Sofi\nAy, nooo... ¿Ya es hora?", "historial muestra línea literal anterior")
 	main._render_dialogue(true)
 	while main.dialogue_story.current_node().get("next", null) != null:
 		main._advance_dialogue()
