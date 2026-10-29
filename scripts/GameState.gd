@@ -4,8 +4,8 @@ const SCHEMA_VERSION := 1
 const NARRATIVE_VERSION := "provisional-d0-1"
 const PREVIEW_CONTENT_VERSION := "RECOVERED_PREVIEW_D0_v0.2"
 const PREVIEW_PACK_VERSION := "RECOVERED_PREVIEW_D0_D4_v0.2"
-const DRAFT_CONTENT_VERSION := "PLAYABLE_DRAFT_v0.2"
-const PREVIEW_SCENES := ["D1_02_A", "D2_03_A", "D2_04_A", "D3_01_A", "D4_01_A", "D4_02_A", "D4_03_A", "ENDINGS_INDEX", "F01_A", "F01_B", "F02", "F03"]
+const DRAFT_CONTENT_VERSION := "PLAYABLE_DRAFT_v0.3"
+const PREVIEW_SCENES := ["D1_02_A", "D1_03_A", "D2_03_A", "D2_04_A", "D3_01_A", "D4_01_A", "D4_02_A", "D4_03_A", "ENDINGS_INDEX", "F01_A", "F01_B", "F02", "F03"]
 
 var slot: int = 1
 var code: String = ""
@@ -78,7 +78,7 @@ func restore(data: Dictionary) -> bool:
 		return false
 	if data.has("preview_pack_version") and data.preview_pack_version != PREVIEW_PACK_VERSION:
 		return false
-	if typeof(data.get("flags")) == TYPE_DICTIONARY and data.flags.get("draft_mode", false) and data.get("draft_content_version") not in [DRAFT_CONTENT_VERSION, "PLAYABLE_DRAFT_v0.1"]:
+	if typeof(data.get("flags")) == TYPE_DICTIONARY and data.flags.get("draft_mode", false) and data.get("draft_content_version") not in [DRAFT_CONTENT_VERSION, "PLAYABLE_DRAFT_v0.2", "PLAYABLE_DRAFT_v0.1"]:
 		return false
 	if typeof(data.get("slot")) != TYPE_FLOAT and typeof(data.get("slot")) != TYPE_INT:
 		return false
@@ -102,6 +102,10 @@ func restore(data: Dictionary) -> bool:
 			return false
 	if data.flags.get("draft_exploring", false) and (not data.flags.get("draft_mode", false) or data.get("phase") != "preview" or data.get("preview_scene", "") not in ["D1_02_A", "D2_03_A", "D3_01_A", "D4_01_A"] or data.get("preview_step", 0) != 0):
 		return false
+	if data.flags.has("draft_intro_step"):
+		var intro_step: Variant = data.flags.draft_intro_step
+		if typeof(intro_step) not in [TYPE_INT, TYPE_FLOAT] or float(intro_step) != float(int(intro_step)) or int(intro_step) not in [0, 1] or not data.flags.get("draft_exploring", false):
+			return false
 	if data.flags.has("draft_ending") and data.flags.draft_ending not in ["", "F01", "F02", "F03"]:
 		return false
 	if data.flags.has("d0_chat_choice") and data.flags.d0_chat_choice not in ["D0_05_A_OPT_A", "D0_05_A_OPT_B", "D0_05_A_OPT_C"]:
@@ -176,7 +180,7 @@ func restore(data: Dictionary) -> bool:
 		return false
 	if int(step) < 0 or int(step) > 100 or float(step) != float(int(step)) or (not scene.is_empty() and not PREVIEW_SCENES.has(scene)):
 		return false
-	if scene == "D2_04_A" and not data.flags.get("draft_mode", false):
+	if scene in ["D1_03_A", "D2_04_A"] and not data.flags.get("draft_mode", false):
 		return false
 	if data.get("phase") == "preview" and scene.is_empty():
 		return false
@@ -194,6 +198,8 @@ func restore(data: Dictionary) -> bool:
 	code = str(data.get("code", ""))
 	phase = str(data.phase)
 	flags = data.get("flags", {}).duplicate(true)
+	if flags.has("draft_intro_step"):
+		flags.draft_intro_step = int(flags.draft_intro_step)
 	player_position = Vector2(float(p[0]), float(p[1]))
 	moba_class = str(data.get("moba_class", ""))
 	moba_result = str(data.get("moba_result", ""))

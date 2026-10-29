@@ -51,7 +51,7 @@ func _run() -> void:
 			return
 		var visited: Array[String] = []
 		var completed := false
-		for transition in range(180):
+		for transition in range(240):
 			if GameState.flags.get("draft_completed", false):
 				completed = true
 				break
@@ -61,6 +61,11 @@ func _run() -> void:
 				return
 			if not visited.has(scene_id):
 				visited.append(scene_id)
+			if GameState.flags.has("draft_intro_step"):
+				if story.modal_kind != "day_intro" or not await _press_button(story, "Continuar"):
+					_fail("presentación diaria inaccesible en " + scene_id)
+					return
+				continue
 			if GameState.flags.get("draft_exploring", false):
 				if not await story._commit_preview(scene_id, 0):
 					_fail("no se abrió la conversación " + scene_id)

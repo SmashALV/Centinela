@@ -1,8 +1,8 @@
 # Presentación de novela visual y retratos expresivos
 
-La interfaz del juego omite etiquetas de producción como «borrador», «prueba» y «vista previa». El estado del contenido sigue documentado en los archivos del proyecto y la protección de publicación sigue activa. Los textos literales recuperados permanecen en sus JSON originales; las reacciones añadidas se guardan como contenido editable en `scripts/Main.gd` y `data/narrative/playable_draft_v0_1.json`.
+La interfaz del juego omite etiquetas de producción como «borrador», «prueba» y «vista previa». El estado del contenido sigue documentado en los archivos del proyecto y la protección de publicación sigue activa. Los textos literales recuperados permanecen en sus JSON originales; las reacciones y escenas añadidas se guardan como contenido editable en `scripts/Main.gd` y `data/narrative/playable_draft_v0_3.json`.
 
-Las decisiones D0 y D1–D4 guardan la opción al elegirla. La pantalla siguiente muestra la reacción de Bruno, Camila o Mateo. En D1 la conversación ocurre en un canal de grupo; las escenas presenciales D2–D4 presentan a Sofi y Mateo juntos sobre el fondo. Se conserva el paso de guardado de partidas previas para que puedan reanudarse.
+Las decisiones D0 y D1–D4 guardan la opción al elegirla. La pantalla siguiente muestra la reacción de Bruno, Camila o Mateo. El lobby de D1 ocurre en un canal de grupo; su continuación D1-03 y el mensaje de la skin D2-03 usan un chat privado entre Sofi y Mateo. Las demás escenas D2–D4 presentan a Sofi y Mateo juntos sobre el fondo. Se conservan los guardados de partidas previas para que puedan reanudarse.
 
 ## Variantes generadas
 
@@ -36,5 +36,7 @@ Los siguientes PNG se generaron con `image_gen__imagegen` integrado y se copiaro
 | `bedroom.png` | Habitación modesta de adolescente peruana, mañana cálida, cama, mochila y PC, perspectiva a nivel de ojos, espacio central para sprites. | Fondo horizontal 16:9 sin personajes, letras ni interfaz. |
 | `courtyard.png` | Patio de colegio peruano contemporáneo, tarde, bancas y plantas, perspectiva a nivel de ojos, espacio para sprites. | Mantener continuidad visual y la zona libre detrás de la caja de diálogo. |
 | `corridor.png` | Pasillo escolar peruano tranquilo, luz de tarde y espacio para una conversación íntima. | Mantener continuidad visual y la zona libre detrás de la caja de diálogo. |
+
+**Actualización 0.34:** `ConversationUI.gd` incorpora una vista de mensajes directos con Mateo seleccionado, encabezado privado, mensajes de Sofi y Mateo y respuestas dentro del mismo panel. Los parlamentos marcados `(mensaje)` de D2-03 se agrupan en una tarjeta titulada «CHAT CON KAIRO · compartido por Mateo», para no sugerir que Kairo participa en el chat privado. Antes de explorar D1–D4, el Narrador presenta en dos pantallas la situación y el objetivo; ambas pantallas se guardan y pueden reanudarse. D1-03 añade una conversación no evaluable que desarrolla la relación entre Sofi y Mateo.
 
 Las reglas de selección de variantes están en `_scene_sprite_key()` de `scripts/Main.gd`; las rutas y el tamaño de presentación están en `scripts/ConversationUI.gd`. Al sustituir un PNG, comprobar el modo de color, transparencia y encuadre en Godot y en la exportación Web. La procedencia y el estado provisional del guion siguen documentados fuera de la interfaz del jugador.

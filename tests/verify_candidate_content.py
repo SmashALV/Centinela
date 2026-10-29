@@ -8,7 +8,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data" / "narrative"
-MAIN = ("D1_02_A", "D2_03_A", "D2_04_A", "D3_01_A", "D4_01_A", "D4_02_A", "D4_03_A")
+MAIN = ("D1_02_A", "D1_03_A", "D2_03_A", "D2_04_A", "D3_01_A", "D4_01_A", "D4_02_A", "D4_03_A")
 ENDINGS = ("F01_A", "F01_B", "F02", "F03")
 
 
@@ -18,11 +18,11 @@ def require(condition: bool, message: str) -> None:
 
 
 def run() -> None:
-    candidate = json.loads((DATA / "playable_draft_v0_2.json").read_text(encoding="utf-8"))
-    rubric = json.loads((ROOT / "docs" / "rubric_candidate_v1.json").read_text(encoding="utf-8"))
-    require(candidate["draft_version"] == "PLAYABLE_DRAFT_v0.2" and candidate["provisional"] is True
+    candidate = json.loads((DATA / "playable_draft_v0_3.json").read_text(encoding="utf-8"))
+    rubric = json.loads((ROOT / "docs" / "rubric_candidate_v2.json").read_text(encoding="utf-8"))
+    require(candidate["draft_version"] == "PLAYABLE_DRAFT_v0.3" and candidate["provisional"] is True
             and candidate["ready_for_publication"] is False, "Guion candidato marcado como aprobado")
-    require(rubric["rubric_version"] == "RUBRIC_CANDIDATE_v1"
+    require(rubric["rubric_version"] == "RUBRIC_CANDIDATE_v2"
             and rubric["narrative_version"] == candidate["draft_version"]
             and rubric["approval_status"] == "pending_expert_and_institutional_review"
             and rubric["ready_for_publication"] is False, "Rúbrica candidata marcada como aprobada")
@@ -36,9 +36,20 @@ def run() -> None:
     require(authored["scene_id"] == "D2_04_A" and authored["source_status"] == "new_text_pending_editorial_approval",
             "La escena nueva D2-04 carece de procedencia")
     scenes["D2_04_A"] = authored
+    private_scene = candidate["d1_private_scene"]
+    require(private_scene["scene_id"] == "D1_03_A" and private_scene["day"] == 1 and
+            private_scene["source_status"] == "new_text_pending_editorial_approval" and
+            len(private_scene["lines"]) >= 6 and not private_scene.get("choices"),
+            "La conversación privada D1-03 está incompleta")
+    scenes["D1_03_A"] = private_scene
     require(all(scene_id in scenes for scene_id in MAIN + ENDINGS), "Faltan escenas del recorrido")
     require(all(scene_id in candidate["connectors"] for scene_id in MAIN + ENDINGS), "Faltan conectores")
+    require(set(candidate["day_introductions"]) == {"D1_02_A", "D2_03_A", "D3_01_A", "D4_01_A"} and
+            all(len(lines) == 2 and all(lines) for lines in candidate["day_introductions"].values()),
+            "Presentaciones diarias incompletas")
     for scene_id in MAIN:
+        if scene_id == "D1_03_A":
+            continue
         require(len(scenes[scene_id]["choices"]) == 3 and
                 [choice["key"] for choice in scenes[scene_id]["choices"]] == ["A", "B", "C"],
                 "Opciones incompletas en " + scene_id)
@@ -48,9 +59,9 @@ def run() -> None:
     require({item["text"] for item in candidate["d3_opening_by_d2_choice"].values()} ==
             {item["text"] for item in recovered_d3}, "Una variante recuperada de D3 fue modificada")
     require(all(candidate["ending_tail"][scene_id] for scene_id in ENDINGS), "Cierre sin texto")
-    require(set(rubric["non_evaluable_scenes"]) == {"D0_05_A", "D1_02_A"}, "Escenas sociales evaluadas")
+    require(set(rubric["non_evaluable_scenes"]) == {"D0_05_A", "D1_02_A", "D1_03_A"}, "Escenas sociales evaluadas")
 
-    expected_evaluable = set(MAIN) - {"D1_02_A"}
+    expected_evaluable = set(MAIN) - {"D1_02_A", "D1_03_A"}
     require({item["scene_id"] for item in rubric["decisions"]} == expected_evaluable,
             "Cobertura de decisiones incompleta")
     dimensions = {"D1", "D2", "D3", "D4"}
@@ -99,7 +110,7 @@ def run() -> None:
     require(len(rules) == 5 and {(r["choice"], r["requires_both_flags"], r["scene"]) for r in rules} == {
         ("A", False, "F01_A"), ("B", True, "F01_A"), ("B", False, "F02"),
         ("C", True, "F01_A"), ("C", False, "F03")}, "Tabla de finales incompleta")
-    print("PASS guion candidato: 7 escenas principales, 4 extractos finales, 5 condiciones")
+    print("PASS guion candidato: 8 escenas principales, 4 extractos finales, 5 condiciones")
     print("PASS rúbrica candidata: 6 decisiones, 18 opciones, 4 dimensiones; publicación bloqueada")
 
 

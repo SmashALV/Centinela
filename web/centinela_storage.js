@@ -117,9 +117,13 @@
       if (name in flags && typeof flags[name] !== "boolean")
         throw failure("INVALID_REQUEST", "Indicador inválido");
     }
-    if ((flags.draft_mode && !["PLAYABLE_DRAFT_v0.1", "PLAYABLE_DRAFT_v0.2"].includes(snapshot.draft_content_version)) ||
+    if ((flags.draft_mode && !["PLAYABLE_DRAFT_v0.1", "PLAYABLE_DRAFT_v0.2", "PLAYABLE_DRAFT_v0.3"].includes(snapshot.draft_content_version)) ||
         ("draft_ending" in flags && !["", "F01", "F02", "F03"].includes(flags.draft_ending)))
       throw failure("INVALID_REQUEST", "Borrador inválido");
+    if ("draft_intro_step" in flags &&
+        (!Number.isInteger(flags.draft_intro_step) || ![0, 1].includes(flags.draft_intro_step) ||
+          !flags.draft_exploring))
+      throw failure("INVALID_REQUEST", "Presentación diaria inválida");
     if ("d0_chat_choice" in flags &&
         !["D0_05_A_OPT_A", "D0_05_A_OPT_B", "D0_05_A_OPT_C"].includes(flags.d0_chat_choice))
       throw failure("INVALID_REQUEST", "Elección inválida");
@@ -135,12 +139,12 @@
     const scene = snapshot.preview_scene ?? "";
     const step = snapshot.preview_step ?? 0;
     const choices = snapshot.preview_choices ?? {};
-    const previewScenes = ["D1_02_A", "D2_03_A", "D2_04_A", "D3_01_A", "D4_01_A", "D4_02_A",
+    const previewScenes = ["D1_02_A", "D1_03_A", "D2_03_A", "D2_04_A", "D3_01_A", "D4_01_A", "D4_02_A",
       "D4_03_A", "ENDINGS_INDEX", "F01_A", "F01_B", "F02", "F03"];
     if (flags.draft_exploring && (!flags.draft_mode || snapshot.phase !== "preview" ||
         !["D1_02_A", "D2_03_A", "D3_01_A", "D4_01_A"].includes(scene) || step !== 0))
       throw failure("INVALID_REQUEST", "Exploración de borrador inválida");
-    if (scene === "D2_04_A" && !flags.draft_mode)
+    if (["D1_03_A", "D2_04_A"].includes(scene) && !flags.draft_mode)
       throw failure("INVALID_REQUEST", "Escena de borrador inválida");
     if (typeof scene !== "string" || (scene && !previewScenes.includes(scene)) ||
         (snapshot.phase === "preview" && !scene) ||

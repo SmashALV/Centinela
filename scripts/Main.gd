@@ -89,6 +89,7 @@ func _ready() -> void:
 		push_error("Borrador jugable inválido: " + "; ".join(draft_errors))
 	else:
 		preview_catalog.scenes["D2_04_A"] = draft_flow.authored_scene()
+		preview_catalog.scenes["D1_03_A"] = draft_flow.d1_private_scene()
 	world = WorldScript.new()
 	add_child(world)
 	world.interacted.connect(_on_interacted)
@@ -164,7 +165,7 @@ func _process(delta: float) -> void:
 			prompt.text = "Esc · cancelar   Elige una opción"
 		elif modal_kind == "prologue":
 			prompt.text = "Enter · continuar   P · pausa"
-		elif modal_kind in ["preview", "preview_unplaced"]:
+		elif modal_kind in ["preview", "preview_unplaced", "day_intro"]:
 			prompt.text = "P · pausa   Continúa la historia"
 		else:
 			prompt.text = "Esc · volver   P · pausa"
@@ -557,15 +558,18 @@ func _load_phase() -> void:
 		_show_result()
 	elif GameState.phase == "preview":
 		if GameState.flags.get("draft_exploring", false):
-			modal_kind = ""
-			modal.visible = false
-			world.enabled = true
+			if GameState.flags.has("draft_intro_step"):
+				_render_day_intro()
+			else:
+				modal_kind = ""
+				modal.visible = false
+				world.enabled = true
 		else:
 			_render_preview()
 
 func _draft_world_key() -> String:
 	match GameState.preview_scene:
-		"D1_02_A": return "draft_d1"
+		"D1_02_A", "D1_03_A": return "draft_d1"
 		"D2_03_A", "D2_04_A": return "draft_d2"
 		"D3_01_A": return "draft_d3"
 		_: return "draft_d4"
@@ -833,6 +837,7 @@ func _resume_pause() -> void:
 		"dialogue": _render_dialogue(true)
 		"dialogue_history": _render_dialogue_history()
 		"result": _show_result()
+		"day_intro": _render_day_intro()
 		"preview": _render_preview()
 		"preview_unplaced": _render_unplaced_preview()
 		_: _close_modal()
@@ -1196,6 +1201,40 @@ func _start_playable_draft() -> bool:
 	GameState.restore(previous)
 	return false
 
+func _render_day_intro() -> void:
+	var scene_id: String = GameState.preview_scene
+	var introduction: Array = draft_flow.day_introduction(scene_id)
+	var step: int = int(GameState.flags.get("draft_intro_step", 0))
+	if step < 0 or step >= introduction.size():
+		push_error("Presentación diaria inválida: " + scene_id)
+		return
+	modal_kind = "day_intro"
+	_begin_conversation_presentation()
+	var scene: Dictionary = preview_catalog.get_scene(scene_id)
+	var title: String = "Día %d · %s" % [int(scene.get("day", 1)), _scene_title(scene)]
+	var background: String = "corridor" if scene_id == "D3_01_A" else "courtyard"
+	conversation_ui.show_scene(background, title, "Narrador", str(introduction[step]), [], _advance_day_intro,
+		"Continuar", "Sofi", "", false, _scaled_text_size(18))
+
+func _advance_day_intro() -> bool:
+	if save_in_progress or GameState.phase != "preview" or not GameState.flags.get("draft_mode", false) or not GameState.flags.get("draft_exploring", false) or not GameState.flags.has("draft_intro_step"):
+		return false
+	var previous: Dictionary = GameState.snapshot()
+	var next_step: int = int(GameState.flags.draft_intro_step) + 1
+	if next_step < draft_flow.day_introduction(GameState.preview_scene).size():
+		GameState.flags.draft_intro_step = next_step
+	else:
+		GameState.flags.erase("draft_intro_step")
+	save_in_progress = true
+	if await SaveManager.save_slot_async():
+		save_in_progress = false
+		_load_phase()
+		return true
+	GameState.restore(previous)
+	save_in_progress = false
+	_toast("No se pudo guardar la presentación del día")
+	return false
+
 func _commit_preview(next_scene: String, next_step: int, choice_key: String = "", mark_reviewed: bool = false, explore: bool = false) -> bool:
 	if save_in_progress or preview_catalog.scenes.is_empty():
 		return false
@@ -1210,6 +1249,9 @@ func _commit_preview(next_scene: String, next_step: int, choice_key: String = ""
 		if explore:
 			GameState.player_position = Vector2(180, 315)
 			GameState.hint_level = 0
+			GameState.flags.draft_intro_step = 0
+		else:
+			GameState.flags.erase("draft_intro_step")
 	if not choice_key.is_empty():
 		GameState.preview_choices[next_scene] = choice_key
 	if mark_reviewed:
@@ -1420,6 +1462,20 @@ func _render_preview_story(scene_id: String, draft_mode: bool) -> void:
 		elif step > lines.size():
 			messages.append(current)
 		conversation_ui.show_chat("lobby-de-juego", messages, options, next_action, next_label, additional, _scaled_text_size(16), note, "Escena adicional")
+		return
+	if draft_mode and scene_id in ["D1_03_A", "D2_03_A"]:
+		var messages: Array = []
+		for i in range(mini(step, lines.size())):
+			messages.append(lines[i])
+		if step >= lines.size() and not selected.is_empty():
+			for choice in choices:
+				if str(choice.key) == selected:
+					messages.append({"speaker": "Sofi", "text": choice.text})
+					break
+		if not current.is_empty() and (step < lines.size() or step > lines.size()):
+			messages.append(current)
+		conversation_ui.show_direct_chat("Mateo", messages, options, next_action, next_label,
+			_scaled_text_size(16), note)
 		return
 	var raw_speaker: String = str(current.get("speaker", "Sofi"))
 	var speaker: String = raw_speaker.get_slice(" (", 0)

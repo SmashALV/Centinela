@@ -646,7 +646,7 @@ func _run() -> void:
 	var bad_reviewed := reviewed.duplicate(true)
 	bad_reviewed.flags.preview_reviewed = "sí"
 	_check(not GameState.restore(bad_reviewed) and GameState.snapshot() == reviewed, "marca de lectura inválida rechazada")
-	_check(main.draft_flow.content.get("draft_version") == "PLAYABLE_DRAFT_v0.2", "borrador separado carga versión provisional")
+	_check(main.draft_flow.content.get("draft_version") == "PLAYABLE_DRAFT_v0.3", "borrador separado carga versión provisional")
 	for outcome in ["victoria", "derrota", "empate"]:
 		for role_name in ["Atacante", "Defensor", "Soporte"]:
 			_check(not main.draft_flow.camila_reaction(outcome, role_name).is_empty(), "Camila responde a %s/%s" % [outcome, role_name])
@@ -670,18 +670,26 @@ func _run() -> void:
 		_check(GameState.snapshot() == interlude_saved and main.modal_kind == "result" and main.conversation_ui.visible, "interludio reanuda desde la ranura")
 		_check(await main._start_playable_draft() and GameState.flags.draft_mode and GameState.preview_scene == "D1_02_A", "borrador inicia y limpia opciones")
 		_check(not GameState.flags.has("d1_interlude_active"), "interludio no reaparece durante el Día 1")
-		_check(GameState.flags.get("draft_exploring", false) and main.modal_kind == "" and main.world.scene_key == "draft_d1", "Día 1 inicia en exploración")
+		_check(GameState.flags.get("draft_exploring", false) and GameState.flags.get("draft_intro_step", -1) == 0 and main.modal_kind == "day_intro", "narrador presenta el Día 1 antes de explorar")
+		main._show_pause()
+		main._resume_pause()
+		_check(main.modal_kind == "day_intro" and GameState.flags.get("draft_intro_step", -1) == 0, "pausa devuelve a la presentación diaria")
 		var exploring_saved := GameState.snapshot()
 		main._show_menu()
 		main._start_slot(1)
-		_check(GameState.snapshot() == exploring_saved and main.world.enabled and main.modal_kind == "", "exploración reanuda desde guardado")
+		_check(GameState.snapshot() == exploring_saved and main.modal_kind == "day_intro", "presentación diaria reanuda desde guardado")
 		var invalid_exploration := exploring_saved.duplicate(true)
 		invalid_exploration.preview_step = 3
 		_check(not GameState.restore(invalid_exploration), "exploración con paso narrativo inválido rechazada")
+		_check(await main._advance_day_intro() and GameState.flags.get("draft_intro_step", -1) == 1, "segunda línea del narrador se guarda")
+		_check(await main._advance_day_intro() and not GameState.flags.has("draft_intro_step") and main.world.enabled, "presentación termina y permite explorar")
 		for scene_id in main.draft_flow.MAIN_IDS:
 			if main.draft_flow.EXPLORATION_IDS.has(scene_id):
 				if scene_id != "D1_02_A":
 					await main._commit_preview(scene_id, 0, "", false, true)
+					_check(main.modal_kind == "day_intro" and GameState.flags.get("draft_intro_step", -1) == 0, "narrador presenta " + scene_id)
+					await main._advance_day_intro()
+					await main._advance_day_intro()
 				_check(GameState.flags.get("draft_exploring", false) and main.modal_kind == "" and main.world.scene_key == "draft_d" + scene_id.substr(1, 1), "escenario explorable: " + scene_id)
 				await main._show_phone()
 				_check(main.modal_kind == "phone" and GameState.ui_modal == "phone", "celular accesible durante exploración: " + scene_id)
@@ -697,8 +705,18 @@ func _run() -> void:
 				_check(main.world.nearby == "mateo", "Mateo queda al alcance en " + scene_id)
 				main.world.interact()
 				_check(not GameState.flags.get("draft_exploring", false) and main.modal_kind == "preview", "interacción abre escena: " + scene_id)
-			var scene_data: Dictionary = main.preview_catalog.get_scene(scene_id)
 			_check(not main.draft_flow.connector(scene_id).is_empty(), "conector presente: " + scene_id)
+			if scene_id == "D1_03_A":
+				await main._commit_preview(scene_id, 0)
+				_check(main.conversation_ui.get_node_or_null("DirectSidebar") != null, "Día 1 amplía la historia en un chat personal")
+				await main._commit_preview(scene_id, main._draft_terminal_step(scene_id))
+				continue
+			if scene_id == "D2_03_A":
+				await main._commit_preview(scene_id, 5)
+				var dm_labels := ""
+				for dm_label in main.conversation_ui.find_children("*", "Label", true, false):
+					dm_labels += dm_label.text + "\n"
+				_check(main.conversation_ui.get_node_or_null("DirectSidebar") != null and dm_labels.contains("CHAT CON KAIRO · compartido por Mateo"), "Kairo aparece como captura compartida en el chat privado")
 			for option in ["A", "B", "C"]:
 				_check(not main.draft_flow.choice_reaction(scene_id, option).is_empty(), "reacción presente: %s/%s" % [scene_id, option])
 			await main._commit_preview(scene_id, main._scene_parts(scene_id, true).lines.size() + 1, letter)
@@ -722,7 +740,9 @@ func _run() -> void:
 	_check(not GameState.restore(bad_draft), "versión de borrador incompatible rechazada")
 	var legacy_draft := GameState.snapshot()
 	legacy_draft.draft_content_version = "PLAYABLE_DRAFT_v0.1"
-	_check(GameState.restore(legacy_draft) and GameState.snapshot().draft_content_version == "PLAYABLE_DRAFT_v0.2", "partida v0.1 se migra a la historia candidata v0.2")
+	_check(GameState.restore(legacy_draft) and GameState.snapshot().draft_content_version == "PLAYABLE_DRAFT_v0.3", "partida v0.1 se migra a la historia candidata v0.3")
+	legacy_draft.draft_content_version = "PLAYABLE_DRAFT_v0.2"
+	_check(GameState.restore(legacy_draft) and GameState.snapshot().draft_content_version == "PLAYABLE_DRAFT_v0.3", "partida v0.2 se migra a la historia ampliada v0.3")
 	var previous_code := GameState.code
 	main._show_menu()
 	main._confirm_slot_action(1, true)

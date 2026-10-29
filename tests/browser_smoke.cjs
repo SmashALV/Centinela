@@ -484,6 +484,12 @@ async function main() {
     await page.keyboard.press("Enter");
     await waitForStore("save_snapshots", 1, (record) => record?.snapshot?.phase === "preview" &&
       record.snapshot.preview_scene === "D1_02_A" && record.snapshot.flags.draft_mode === true, 30000);
+    await page.screenshot({ path: "build/web/day1_intro.png" });
+    await page.keyboard.press("Enter");
+    await waitForStore("save_snapshots", 1, (record) => record?.snapshot?.flags?.draft_intro_step === 1);
+    await page.keyboard.press("Enter");
+    await waitForStore("save_snapshots", 1, (record) =>
+      record?.snapshot?.flags?.draft_exploring === true && !("draft_intro_step" in record.snapshot.flags));
     await page.screenshot({ path: "build/web/day1_exploration.png" });
     await page.evaluate(async () => {
       const db = await new Promise((resolve, reject) => {
@@ -626,6 +632,12 @@ async function main() {
       record?.snapshot?.flags?.draft_mode === true &&
       record?.snapshot?.flags?.draft_exploring === true &&
       record?.snapshot?.preview_scene === "D1_02_A");
+    await page.screenshot({ path: "build/web/draft_day1_intro.png" });
+    await page.keyboard.press("Enter");
+    await waitForStore("save_snapshots", 1, (record) => record?.snapshot?.flags?.draft_intro_step === 1);
+    await page.keyboard.press("Enter");
+    await waitForStore("save_snapshots", 1, (record) =>
+      record?.snapshot?.flags?.draft_exploring === true && !("draft_intro_step" in record.snapshot.flags));
     await page.screenshot({ path: "build/web/draft_exploration_d1.png" });
     await page.keyboard.press("e");
     await waitForStore("save_snapshots", 1, (record) => record?.snapshot?.ui_modal === "phone");
@@ -650,6 +662,34 @@ async function main() {
       record?.snapshot?.preview_scene === "D1_02_A" && record.snapshot.preview_step === 1);
     await page.waitForTimeout(300);
     await page.screenshot({ path: "build/web/draft_d1_kairo_chat.png" });
+    await page.evaluate(async () => {
+      const db = await new Promise((resolve, reject) => {
+        const request = indexedDB.open("centinela_2_local_v1");
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+      try {
+        await new Promise((resolve, reject) => {
+          const transaction = db.transaction("save_snapshots", "readwrite");
+          const store = transaction.objectStore("save_snapshots");
+          const request = store.get(1);
+          request.onsuccess = () => {
+            const record = request.result;
+            record.snapshot.preview_scene = "D1_03_A";
+            record.snapshot.preview_step = 4;
+            store.put(record);
+          };
+          transaction.oncomplete = resolve;
+          transaction.onerror = () => reject(transaction.error);
+        });
+      } finally { db.close(); }
+    });
+    await page.reload();
+    await page.waitForFunction(() => !!globalThis.CentinelaStorage);
+    await page.waitForTimeout(1000);
+    await page.mouse.click(canvas.x + canvas.width * 0.5, canvas.y + canvas.height * 0.41);
+    await page.waitForTimeout(500);
+    await page.screenshot({ path: "build/web/day1_private_chat.png" });
     for (const [sceneId, filename] of [
       ["D2_03_A", "draft_exploration_d2.png"],
       ["D3_01_A", "draft_exploration_d3.png"],
@@ -685,6 +725,36 @@ async function main() {
       await page.waitForTimeout(500);
       assert.equal((await readStore("save_snapshots", 1)).snapshot.flags.draft_exploring, true);
       await page.screenshot({ path: `build/web/${filename}` });
+      if (sceneId === "D2_03_A") {
+        await page.evaluate(async () => {
+          const db = await new Promise((resolve, reject) => {
+            const request = indexedDB.open("centinela_2_local_v1");
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+          });
+          try {
+            await new Promise((resolve, reject) => {
+              const transaction = db.transaction("save_snapshots", "readwrite");
+              const store = transaction.objectStore("save_snapshots");
+              const request = store.get(1);
+              request.onsuccess = () => {
+                const record = request.result;
+                record.snapshot.flags.draft_exploring = false;
+                record.snapshot.preview_step = 6;
+                store.put(record);
+              };
+              transaction.oncomplete = resolve;
+              transaction.onerror = () => reject(transaction.error);
+            });
+          } finally { db.close(); }
+        });
+        await page.reload();
+        await page.waitForFunction(() => !!globalThis.CentinelaStorage);
+        await page.waitForTimeout(1000);
+        await page.mouse.click(canvas.x + canvas.width * 0.5, canvas.y + canvas.height * 0.41);
+        await page.waitForTimeout(500);
+        await page.screenshot({ path: "build/web/day2_private_chat.png" });
+      }
     }
     await page.evaluate(async () => {
       const db = await new Promise((resolve, reject) => {

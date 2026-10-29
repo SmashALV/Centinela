@@ -2,9 +2,9 @@ extends RefCounted
 
 class_name PlayableDraftFlow
 
-const VERSION := "PLAYABLE_DRAFT_v0.2"
-const PATH := "res://data/narrative/playable_draft_v0_2.json"
-const MAIN_IDS := ["D1_02_A", "D2_03_A", "D2_04_A", "D3_01_A", "D4_01_A", "D4_02_A", "D4_03_A"]
+const VERSION := "PLAYABLE_DRAFT_v0.3"
+const PATH := "res://data/narrative/playable_draft_v0_3.json"
+const MAIN_IDS := ["D1_02_A", "D1_03_A", "D2_03_A", "D2_04_A", "D3_01_A", "D4_01_A", "D4_02_A", "D4_03_A"]
 const EXPLORATION_IDS := ["D1_02_A", "D2_03_A", "D3_01_A", "D4_01_A"]
 const ENDING_IDS := ["F01_A", "F01_B", "F02", "F03"]
 
@@ -25,7 +25,13 @@ func load_draft() -> Array[String]:
 	for scene_id in MAIN_IDS + ENDING_IDS:
 		if str(parsed.get("connectors", {}).get(scene_id, "")).is_empty():
 			errors.append("Falta conector: " + scene_id)
+	for scene_id in EXPLORATION_IDS:
+		var introduction: Variant = parsed.get("day_introductions", {}).get(scene_id, [])
+		if typeof(introduction) != TYPE_ARRAY or introduction.size() != 2 or str(introduction[0]).is_empty() or str(introduction[1]).is_empty():
+			errors.append("Falta presentación del día: " + scene_id)
 	for scene_id in MAIN_IDS:
+		if scene_id == "D1_03_A":
+			continue
 		var reactions: Variant = parsed.get("choice_reactions", {}).get(scene_id, {})
 		for letter in ["A", "B", "C"]:
 			if typeof(reactions) != TYPE_DICTIONARY or str(reactions.get(letter, "")).is_empty():
@@ -47,6 +53,9 @@ func load_draft() -> Array[String]:
 			for i in 3:
 				if authored.choices[i].get("key") != ["A", "B", "C"][i] or str(authored.choices[i].get("text", "")).is_empty():
 					errors.append("Opción D2-04 inválida")
+	var private_scene: Variant = parsed.get("d1_private_scene", {})
+	if typeof(private_scene) != TYPE_DICTIONARY or private_scene.get("scene_id") != "D1_03_A" or private_scene.get("day") != 1 or typeof(private_scene.get("lines")) != TYPE_ARRAY or private_scene.lines.size() < 6:
+		errors.append("Falta conversación privada D1-03")
 	for flag_name in ["CONFIANZA_MATEO_SOFI", "RECONOCE_MANIPULACION"]:
 		var triggers: Variant = parsed.get("flag_triggers", {}).get(flag_name, [])
 		if typeof(triggers) != TYPE_ARRAY or triggers.is_empty():
@@ -90,6 +99,12 @@ func educational_ids(scene_id: String, letter: String) -> Dictionary:
 
 func authored_scene() -> Dictionary:
 	return content.get("authored_scene", {})
+
+func d1_private_scene() -> Dictionary:
+	return content.get("d1_private_scene", {})
+
+func day_introduction(scene_id: String) -> Array:
+	return content.get("day_introductions", {}).get(scene_id, [])
 
 func next_main(scene_id: String) -> String:
 	var index: int = MAIN_IDS.find(scene_id)

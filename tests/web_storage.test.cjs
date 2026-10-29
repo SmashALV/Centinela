@@ -63,12 +63,17 @@ test("ranuras, bloqueo, transacción de decisión e idempotencia", async () => {
   assert.equal((await send(first, "save_snapshot", { slot: 1, generation: 1, snapshot: desktop })).success, true);
   assert.equal((await send(first, "load_slot", { slot: 1 })).result.ui_modal, "desktop");
   assert.equal((await send(first, "save_snapshot", firstWrite)).success, true);
-  for (const draftVersion of ["PLAYABLE_DRAFT_v0.1", "PLAYABLE_DRAFT_v0.2"]) {
+  for (const draftVersion of ["PLAYABLE_DRAFT_v0.1", "PLAYABLE_DRAFT_v0.2", "PLAYABLE_DRAFT_v0.3"]) {
     const draft = { ...snapshot(1, "preview"), flags: { draft_mode: true },
       draft_content_version: draftVersion,
-      preview_scene: draftVersion === "PLAYABLE_DRAFT_v0.1" ? "D3_01_A" : "D2_04_A", preview_step: 0 };
+      preview_scene: draftVersion === "PLAYABLE_DRAFT_v0.1" ? "D3_01_A" :
+        draftVersion === "PLAYABLE_DRAFT_v0.3" ? "D1_03_A" : "D2_04_A", preview_step: 0 };
     assert.equal((await send(first, "save_snapshot", { slot: 1, generation: 1, snapshot: draft })).success, true);
   }
+  const dailyIntro = { ...snapshot(1, "preview"), flags: { draft_mode: true,
+    draft_exploring: true, draft_intro_step: 0 }, draft_content_version: "PLAYABLE_DRAFT_v0.3",
+    preview_scene: "D1_02_A", preview_step: 0 };
+  assert.equal((await send(first, "save_snapshot", { slot: 1, generation: 1, snapshot: dailyIntro })).success, true);
   assert.equal((await send(first, "save_snapshot", firstWrite)).success, true);
   for (const malformed of [
     { ...snapshot(1), code: "CTN-+12345" },
@@ -77,6 +82,8 @@ test("ranuras, bloqueo, transacción de decisión e idempotencia", async () => {
     { ...snapshot(1), flags: { draft_mode: true } },
     { ...snapshot(1), flags: { draft_mode: true, draft_exploring: true },
       draft_content_version: "PLAYABLE_DRAFT_v0.1" },
+    { ...snapshot(1, "preview"), flags: { draft_mode: true, draft_intro_step: 1 },
+      draft_content_version: "PLAYABLE_DRAFT_v0.3", preview_scene: "D1_02_A" },
     { ...snapshot(1), flags: { draft_ending: "F99" } },
     { ...snapshot(1), phone_messages: [42] },
     { ...snapshot(1), moba_class: "desconocida" },

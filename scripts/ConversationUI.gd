@@ -282,3 +282,104 @@ func show_chat(channel: String, messages: Array, options: Array, next_action: Ca
 		if next_action.is_valid():
 			_button(next_label, Rect2(615, 391, 132, 40), next_action, maxi(13, font_size - 3)).grab_focus()
 	return current
+
+func _shared_excerpt(list: VBoxContainer, quotes: Array, font_size: int) -> Label:
+	var card := PanelContainer.new()
+	card.custom_minimum_size.x = 544
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color("1a2736")
+	style.border_color = Color("72a6b7")
+	style.set_border_width_all(1)
+	style.set_corner_radius_all(8)
+	style.set_content_margin_all(10)
+	card.add_theme_stylebox_override("panel", style)
+	list.add_child(card)
+	var content := VBoxContainer.new()
+	content.add_theme_constant_override("separation", 5)
+	card.add_child(content)
+	var heading := Label.new()
+	heading.text = "CHAT CON KAIRO · compartido por Mateo"
+	heading.add_theme_font_size_override("font_size", maxi(12, font_size - 3))
+	heading.add_theme_color_override("font_color", Color("9dcdd3"))
+	content.add_child(heading)
+	var current: Label = heading
+	for quote in quotes:
+		var sender := Label.new()
+		sender.text = str(quote.get("speaker", "")).get_slice(" (", 0)
+		sender.add_theme_font_size_override("font_size", maxi(12, font_size - 3))
+		sender.add_theme_color_override("font_color", Color("ead69f") if sender.text == "Kairo" else Color("cbd7e7"))
+		content.add_child(sender)
+		current = Label.new()
+		current.text = str(quote.get("text", ""))
+		current.custom_minimum_size.x = 518
+		current.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		current.add_theme_font_size_override("font_size", font_size)
+		current.add_theme_color_override("font_color", Color("f4f0e9"))
+		content.add_child(current)
+	return current
+
+func show_direct_chat(contact: String, messages: Array, options: Array, next_action: Callable,
+		next_label: String, font_size: int, system_note: String = "") -> Label:
+	clear_view()
+	visible = true
+	_panel(Rect2(0, 0, 768, 448), Color("252a34"))
+	_panel(Rect2(0, 0, 152, 448), Color("181c26")).name = "DirectSidebar"
+	_panel(Rect2(0, 0, 152, 53), Color("111722"))
+	_label("SOFI", Rect2(19, 15, 124, 30), 17)
+	_label("MENSAJES DIRECTOS", Rect2(12, 80, 137, 25), 11, Color("9aa8b8"))
+	_panel(Rect2(7, 109, 138, 40), Color("354954"), Color("6aaca9"), 6)
+	_label(contact, Rect2(20, 118, 125, 27), 15)
+	_label("Sofi", Rect2(20, 362, 121, 26), 14, Color("7bcfc4"))
+	_panel(Rect2(152, 0, 616, 69), Color("303744"))
+	if AVATARS.has(contact):
+		_picture(AVATARS[contact], Rect2(167, 8, 43, 43))
+	_label(contact, Rect2(218, 8, 360, 28), 18)
+	var has_shared_excerpt: bool = false
+	for item in messages:
+		if "(mensaje)" in str(item.get("speaker", "")):
+			has_shared_excerpt = true
+			break
+	var header_note: String = "Privado con " + contact + " · captura de Kairo compartida" if has_shared_excerpt else "Mensaje directo entre Sofi y " + contact
+	_label(header_note, Rect2(218, 37, 520, 22), 12, Color("abb9c8"))
+	var choosing: bool = not options.is_empty()
+	var scroll := ScrollContainer.new()
+	scroll.position = Vector2(167, 77)
+	scroll.size = Vector2(584, 150 if choosing else 295)
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	add_child(scroll)
+	var list := VBoxContainer.new()
+	list.custom_minimum_size.x = 562
+	list.add_theme_constant_override("separation", 12)
+	scroll.add_child(list)
+	if not system_note.is_empty():
+		var note := Label.new()
+		note.text = system_note
+		note.custom_minimum_size.x = 548
+		note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		note.add_theme_font_size_override("font_size", maxi(12, font_size - 4))
+		note.add_theme_color_override("font_color", Color("aebbc7"))
+		list.add_child(note)
+	var current: Label = null
+	var quotes: Array = []
+	for item in messages:
+		var speaker: String = str(item.get("speaker", ""))
+		if "(mensaje)" in speaker:
+			quotes.append(item)
+			continue
+		if not quotes.is_empty():
+			current = _shared_excerpt(list, quotes, font_size)
+			quotes = []
+		current = _chat_message(list, speaker, str(item.get("text", "")), font_size)
+	if not quotes.is_empty():
+		current = _shared_excerpt(list, quotes, font_size)
+	scroll.set_deferred("scroll_vertical", 100000)
+	if choosing:
+		_panel(Rect2(162, 233, 597, 207), Color("1c2330"), Color("6aaca9"), 8)
+		_label("RESPONDER A " + contact.to_upper(), Rect2(174, 241, 560, 22), 13, Color("a9d8d3"))
+		_choice_list(options, Rect2(173, 267, 571, 165), maxi(13, font_size - 3))
+	else:
+		_panel(Rect2(163, 384, 595, 55), Color("1c2330"), Color("6aaca9"), 8)
+		_label("Mensaje a " + contact, Rect2(178, 400, 391, 29), 14, Color("a7b7c6"))
+		if next_action.is_valid():
+			_button(next_label, Rect2(615, 391, 132, 40), next_action, maxi(13, font_size - 3)).grab_focus()
+	return current
