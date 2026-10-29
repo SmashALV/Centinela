@@ -61,7 +61,9 @@ const SCENE_PROPS := {
 		{"sprite": "bed", "rect": Rect2(79, 112, 104, 113)},
 		{"sprite": "wardrobe", "rect": Rect2(451, 101, 86, 74)},
 		{"sprite": "bookshelf", "rect": Rect2(565, 109, 86, 57)},
-		{"sprite": "plant", "rect": Rect2(669, 121, 44, 50)}
+		{"sprite": "plant", "rect": Rect2(669, 121, 44, 50)},
+		{"sprite": "plant", "rect": Rect2(53, 323, 49, 58)},
+		{"sprite": "plant", "rect": Rect2(654, 325, 48, 55)}
 	],
 	"courtyard": [
 		{"sprite": "tree", "rect": Rect2(44, 113, 90, 91)},
@@ -290,12 +292,12 @@ func _draw() -> void:
 	elif scene_key == "draft_d4":
 		floor_color = Color("31524a")
 	if map_sprite.visible:
-		draw_rect(Rect2(0, 0, 768, ROOM.position.y), Color("14182b"))
-		draw_rect(Rect2(0, ROOM.end.y, 768, 448 - ROOM.end.y), Color("14182b"))
-		draw_rect(Rect2(0, ROOM.position.y, ROOM.position.x, ROOM.size.y), Color("14182b"))
-		draw_rect(Rect2(ROOM.end.x, ROOM.position.y, 768 - ROOM.end.x, ROOM.size.y), Color("14182b"))
+		draw_rect(Rect2(0, 0, 768, ROOM.position.y), Color("4c365b"))
+		draw_rect(Rect2(0, ROOM.end.y, 768, 448 - ROOM.end.y), Color("4c365b"))
+		draw_rect(Rect2(0, ROOM.position.y, ROOM.position.x, ROOM.size.y), Color("4c365b"))
+		draw_rect(Rect2(ROOM.end.x, ROOM.position.y, 768 - ROOM.end.x, ROOM.size.y), Color("4c365b"))
 	else:
-		draw_rect(Rect2(Vector2.ZERO, Vector2(768, 448)), Color("14182b"))
+		draw_rect(Rect2(Vector2.ZERO, Vector2(768, 448)), Color("4c365b"))
 		draw_rect(ROOM, floor_color)
 		for x in range(30, 738, 32):
 			draw_line(Vector2(x, 56), Vector2(x, 394), Color(1, 1, 1, 0.04))
@@ -303,6 +305,7 @@ func _draw() -> void:
 			draw_line(Vector2(30, y), Vector2(738, y), Color(1, 1, 1, 0.04))
 	if scene_key.begins_with("draft_d"):
 		_draw_draft_caption()
+	if scene_key == "bedroom": _draw_bedroom_decor()
 	for prop in SCENE_PROPS.get(scene_key, []):
 		draw_texture_rect(PROP_SPRITES[prop.sprite], prop.rect, false)
 	for key in objects:
@@ -338,6 +341,30 @@ func _draw() -> void:
 			_draw_character(Vector2(260, 250), "Bruno")
 			_draw_character(Vector2(400, 250), "Sebas")
 	_draw_character(player_pos, "Sofi", player_facing)
+
+func _draw_bedroom_decor() -> void:
+	draw_rect(ROOM, Color(0.80, 0.48, 0.71, 0.14))
+	var rug := StyleBoxFlat.new()
+	rug.bg_color = Color("c496bd")
+	rug.border_color = Color("f1cde0")
+	rug.set_border_width_all(4)
+	rug.set_corner_radius_all(40)
+	draw_style_box(rug, Rect2(236, 223, 300, 131))
+	draw_arc(Vector2(386, 287), 43, 0, TAU, 40, Color("e6bfd8"), 3)
+	for x in range(254, 522, 14):
+		draw_line(Vector2(x, 353), Vector2(x, 362), Color("e8c2db"), 2)
+	# Guirnalda y recuerdos: decoración de suelo/pared, sin bloquear el paso.
+	for x in range(224, 660, 32):
+		var y: float = 96 + sin(float(x) * 0.017) * 5
+		draw_circle(Vector2(x, y), 5, Color(1.0, 0.76, 0.83, 0.14))
+		draw_circle(Vector2(x, y), 2, Color("ffe4bd"))
+	for i in range(3):
+		var pos := Vector2(338 + i * 30, 138)
+		draw_rect(Rect2(pos, Vector2(22, 27)), Color("e8bfd4"))
+		draw_rect(Rect2(pos + Vector2(3, 3), Vector2(16, 16)), Color("a88ac3"))
+		draw_circle(pos + Vector2(11, 11), 4, Color("ffdfbf"))
+	for i in range(3):
+		draw_rect(Rect2(546, 346 - i * 5, 36 - i * 3, 5), [Color("c19bcf"), Color("e8b0c6"), Color("ebd5ad")][i])
 
 func _draw_story_target(key: String, pos: Vector2, active: bool) -> void:
 	var color := Color("f5d479") if active else Color("8ec9c2")

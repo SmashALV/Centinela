@@ -50,7 +50,7 @@ async function main() {
       } finally { db.close(); }
     });
     const waitFor = async (predicate) => {
-      const until = Date.now() + 20000;
+      const until = Date.now() + 45000;
       while (Date.now() < until) {
         const state = await readSave();
         if (predicate(state)) {
@@ -82,9 +82,7 @@ async function main() {
     await page.waitForTimeout(900);
     await page.mouse.click(canvas.x + canvas.width * 0.5, canvas.y + canvas.height * 0.41);
     await page.waitForTimeout(500);
-    await page.keyboard.press("Enter");
     await waitFor((state) => state?.flags?.d1_interlude_active === true);
-    await page.keyboard.press("Enter");
     await waitFor((state) => state?.phase === "coral" && state.coral_state?.mode === "intro");
     await page.screenshot({ path: "build/web/coral_intro.png" });
     await page.keyboard.press("Enter");
@@ -105,7 +103,9 @@ async function main() {
           const request = store.get(1);
           request.onsuccess = () => {
             const record = request.result;
-            Object.assign(record.snapshot.coral_state, change);
+            Object.assign(record.snapshot, change.snapshotChanges || {});
+            const { snapshotChanges, ...storyChanges } = change;
+            Object.assign(record.snapshot.coral_state, storyChanges);
             store.put(record);
           };
           transaction.oncomplete = resolve;
@@ -129,6 +129,23 @@ async function main() {
     await page.mouse.click(canvas.x + canvas.width * 0.5, canvas.y + canvas.height * 0.41);
     await page.waitForTimeout(500);
     await page.screenshot({ path: "build/web/coral_day4_vn.png" });
+    await inject({ snapshotChanges: { phase: "bedroom", flags: {}, coral_state: {},
+      dialogue_key: "", dialogue_position: 0, dialogue_choice: "", dialogue_history: [], ui_modal: "" } });
+    await page.reload();
+    await page.waitForFunction(() => !!globalThis.CentinelaStorage);
+    await page.waitForTimeout(1500);
+    await page.mouse.click(canvas.x + canvas.width * 0.5, canvas.y + canvas.height * 0.41);
+    await page.waitForTimeout(500);
+    await page.screenshot({ path: "build/web/prologue_full_pastel.png" });
+    await page.keyboard.press("Enter");
+    await waitFor((state) => state?.dialogue_key === "wakeup");
+    for (let i = 0; i < 5; i++) {
+      await page.keyboard.press("Enter");
+      await page.waitForTimeout(350);
+      if ((await readSave())?.flags?.wakeup_seen) break;
+    }
+    await waitFor((state) => state?.flags?.wakeup_seen === true);
+    await page.screenshot({ path: "build/web/bedroom_decorated.png" });
     assert.deepEqual(errors, []);
     console.log("PASS Web: D0→D1, exploración, privado de Mateo y novela visual D4");
     await page.close();

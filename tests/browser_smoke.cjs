@@ -134,13 +134,6 @@ async function main() {
         !record.snapshot.flags.prologue_seen && !record.snapshot.dialogue_key, 30000);
     await page.waitForTimeout(300);
     await page.screenshot({ path: "build/web/prologue.png" });
-    for (const step of [1, 2]) {
-      await page.keyboard.press("Enter");
-      await waitForStore("save_snapshots", 1,
-        (record) => record?.snapshot?.flags?.prologue_step === step);
-      if (step === 1) await page.screenshot({ path: "build/web/prologue_sofi.png" });
-      if (step === 2) await page.screenshot({ path: "build/web/prologue_prevention.png" });
-    }
     await page.keyboard.press("Enter");
     const initialDialogue = await waitForStore("save_snapshots", 1,
       (record) => record?.snapshot?.flags?.prologue_seen === true &&

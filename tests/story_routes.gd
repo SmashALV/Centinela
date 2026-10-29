@@ -14,6 +14,12 @@ func _ready() -> void:
 
 func _press_button(story: Node, prefix: String) -> bool:
 	var before: Dictionary = GameState.snapshot()
+	if prefix == "Continuar" and story.conversation_ui.auto_action.is_valid():
+		story.conversation_ui._run_auto()
+		for frame in range(120):
+			await get_tree().process_frame
+			if not story.save_in_progress and GameState.snapshot() != before: return true
+		return false
 	for button in story.conversation_ui.find_children("*", "Button", true, false):
 		if button.visible and button.text.begins_with(prefix):
 			button.pressed.emit()

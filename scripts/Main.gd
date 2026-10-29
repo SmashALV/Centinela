@@ -9,9 +9,9 @@ const DisplayGuardScript = preload("res://scripts/DisplayGuard.gd")
 const ConversationUIScript = preload("res://scripts/ConversationUI.gd")
 const DAY_0_PREVIEW := "res://data/narrative/day_0_RECOVERED_PREVIEW.json"
 const PROLOGUE_LINES := [
-	"Esta es Sofi. Tiene 15 años y le encanta jugar con Mateo, Camila, Bruno y Sebas. Entre el colegio, las bromas y las partidas, siempre encuentran algo de qué hablar.",
-	"Hoy empieza como cualquier otro día. Hay una mochila por preparar, amigos por encontrar y una partida pendiente. Cada uno llega con sus propias ganas y preocupaciones.",
-	"Acompaña a Sofi, explora y escucha lo que sus amigos quieran contar. Tú decidirás cómo responder; las pequeñas conversaciones pueden cambiar lo que sucede después."
+	"Sofi tiene 15 años y le encanta jugar con Mateo, Camila, Bruno y Sebas. Entre el colegio y las partidas, siempre encuentran algo de qué hablar.",
+	"Hoy hay una mochila por preparar, amigos por encontrar y una partida pendiente. Cada uno llega con sus propias preocupaciones.",
+	"Acompaña a Sofi. Explora, escucha y decide cómo responder: una conversación puede cambiar lo que sucede después."
 ]
 
 const PORTRAITS := {
@@ -127,6 +127,7 @@ func _ready() -> void:
 	modal.add_child(modal_box)
 	conversation_ui = ConversationUIScript.new()
 	canvas.add_child(conversation_ui)
+	conversation_ui.auto_guard = func(): return not save_in_progress and not window_too_small and modal_kind not in ["pause", "menu"]
 	window_guard_layer = DisplayGuardScript.make_overlay(self)
 	_show_menu()
 	var return_to_result: bool = GameState.returning_from_moba
@@ -139,14 +140,6 @@ func _ready() -> void:
 		_start_slot(GameState.slot)
 
 func _process(delta: float) -> void:
-	if modal_kind == "dialogue" and is_instance_valid(dialogue_text_label):
-		var text_length: int = dialogue_text_label.text.length()
-		if dialogue_visible < text_length:
-			var chars_per_second: float = {"slow": 18.0, "normal": 36.0, "fast": 72.0}[GameState.dialogue_speed]
-			dialogue_visible = minf(float(text_length), dialogue_visible + delta * chars_per_second)
-			dialogue_text_label.visible_characters = int(dialogue_visible)
-			if dialogue_visible >= text_length:
-				_render_dialogue(true)
 	window_check_elapsed += delta
 	if window_check_elapsed >= 0.25:
 		window_check_elapsed = 0.0
@@ -171,9 +164,9 @@ func _process(delta: float) -> void:
 		elif modal_kind == "slot_confirm":
 			prompt.text = "Esc · cancelar   Elige una opción"
 		elif modal_kind == "prologue":
-			prompt.text = "Enter · continuar   P · pausa"
+			prompt.text = "Lectura automática · P para pausar"
 		elif modal_kind in ["preview", "preview_unplaced", "day_intro", "coral"]:
-			prompt.text = "P · pausa   Continúa la historia"
+			prompt.text = "Lectura automática · P para pausar"
 		else:
 			prompt.text = "Esc · volver   P · pausa"
 
@@ -291,8 +284,8 @@ func _refresh_static_fonts() -> void:
 
 func _panel_style() -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
-	style.bg_color = Color("10192b")
-	style.border_color = Color("78bdbb")
+	style.bg_color = Color("594060")
+	style.border_color = Color("d5a4ca")
 	style.set_border_width_all(3)
 	style.set_content_margin_all(20)
 	return style
@@ -955,60 +948,22 @@ func _resume_pause() -> void:
 
 func _render_prologue() -> void:
 	modal_kind = "prologue"
-	_clear_modal()
-	modal.position = Vector2(70, 47)
-	modal.custom_minimum_size = Vector2(628, 342)
-	modal.size = Vector2(628, 342)
-	hud_icon.visible = false
-	hud.visible = false
-	_modal_heading("PRÓLOGO · EL DÍA DE SOFI", "dialogue", 21)
-	var body := _preview_content()
-	body.get_parent().custom_minimum_size.y = 190
-	var step: int = clampi(int(GameState.flags.get("prologue_step", 0)), 0, PROLOGUE_LINES.size() - 1)
-	_preview_text(body, "NARRADOR", 15)
-	if step == 1:
-		var row := HBoxContainer.new()
-		row.add_theme_constant_override("separation", 12)
-		body.add_child(row)
-		_preview_text(row, PROLOGUE_LINES[step], 19, 420)
-		var portrait := TextureRect.new()
-		portrait.name = "PrologueSofiPortrait"
-		portrait.texture = load(PORTRAITS["Sofi"]) as Texture2D
-		portrait.custom_minimum_size = Vector2(100, 100)
-		portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		row.add_child(portrait)
-	else:
-		_preview_text(body, PROLOGUE_LINES[step], 19)
-	_preview_text(body, "%d / %d" % [step + 1, PROLOGUE_LINES.size()], 14)
-	_button("Comenzar" if step == PROLOGUE_LINES.size() - 1 else "Continuar", _advance_prologue).grab_focus()
+	_begin_conversation_presentation()
+	conversation_ui.show_prologue("\n\n".join(PROLOGUE_LINES), _advance_prologue, _scaled_text_size(18))
 
 func _advance_prologue() -> void:
-	if save_in_progress or modal_kind != "prologue":
-		return
+	if save_in_progress or modal_kind != "prologue": return
 	save_in_progress = true
 	var previous: Dictionary = GameState.flags.duplicate(true)
-	var next_step: int = int(GameState.flags.get("prologue_step", 0)) + 1
-	if next_step >= PROLOGUE_LINES.size():
-		GameState.flags.erase("prologue_step")
-		GameState.flags.prologue_seen = true
-	else:
-		GameState.flags.prologue_step = next_step
+	GameState.flags.erase("prologue_step")
+	GameState.flags.prologue_seen = true
 	if await SaveManager.save_slot_async():
 		save_in_progress = false
-		if not is_inside_tree():
-			return
-		AudioManager.play_effect("confirm")
-		if next_step >= PROLOGUE_LINES.size():
-			hud_icon.visible = true
-			hud.visible = true
-			_show_dialogue("wakeup")
-		else:
-			_render_prologue()
+		if is_inside_tree(): _show_dialogue("wakeup")
 	else:
 		GameState.flags = previous
 		save_in_progress = false
-		_toast("No se pudo guardar el prólogo; reintenta")
+		_toast("No se pudo guardar el prólogo; reintentando")
 
 func _show_desktop() -> void:
 	await _open_ui_modal("desktop", Callable(self, "_render_desktop"))
@@ -1111,7 +1066,8 @@ func _render_dialogue(preserve_reveal: bool = false) -> void:
 	var reaction: Dictionary = D0_CHAT_REACTIONS.get(dialogue_choice, {}) if dialogue_key == "group_chat" and node.get("speaker") == "Sofi" else {}
 	var message: String = str(reaction.get("text", node.get("text", "")))
 	var speaker: String = str(reaction.get("speaker", node.get("speaker", "")))
-	var revealing: bool = dialogue_visible < message.length()
+	dialogue_visible = float(message.length())
+	var revealing: bool = false
 	var choices: Array = node.get("choices", [])
 	var options: Array = []
 	if not revealing:
@@ -1688,7 +1644,7 @@ func _preview_line(parent: VBoxContainer, line: Dictionary) -> void:
 		card.custom_minimum_size.x = 545
 		var style := StyleBoxFlat.new()
 		style.bg_color = Color("263550")
-		style.border_color = Color("78bdbb")
+		style.border_color = Color("d5a4ca")
 		style.set_border_width_all(1)
 		style.set_content_margin_all(10)
 		card.add_theme_stylebox_override("panel", style)
