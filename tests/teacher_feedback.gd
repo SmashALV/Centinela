@@ -77,7 +77,7 @@ func _run() -> void:
 		check(prose.contains("grooming") and prose.contains("nunca son tu culpa") and prose.contains("Avisaste al grupo sin permiso") and prose.contains("Escuchaste la presión"), "devolución y orientación en " + ending)
 	main.conversation_ui.show_scene("courtyard", "", "Camila", "¿Hablamos?", [], Callable(), "", "Camila", "Sofi", false, 18)
 	check(main.conversation_ui.find_child("CharacterName_Sofi", true, false) != null and main.conversation_ui.find_child("SpeakerName", true, false).text == "Camila", "ambos personajes tienen nombre visible")
-	check(load("res://assets/portraits/camila_v2.tres") is AtlasTexture and load("res://assets/characters/camila_directions_v2.png") is Texture2D, "nueva identidad de Camila en avatar y mapa")
+	check(load("res://assets/portraits/camila_v3.tres") is AtlasTexture and load("res://assets/characters/camila_directions_v3.png") is Texture2D, "nueva identidad de Camila en avatar y mapa")
 	SaveManager.delete_slot(1)
 	SaveManager.storage_prefix = SaveManager.SAVE_PREFIX
 	get_tree().quit(1 if failures else 0)

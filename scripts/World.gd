@@ -30,7 +30,7 @@ const CHARACTER_SHEETS := {
 	"Sofi": preload("res://assets/characters/sofi_directions.png"),
 	"Mateo": preload("res://assets/characters/mateo_directions.png"),
 	"Bruno": preload("res://assets/characters/bruno_directions.png"),
-	"Camila": preload("res://assets/characters/camila_directions_v2.png"),
+	"Camila": preload("res://assets/characters/camila_directions_v3.png"),
 	"Sebas": preload("res://assets/characters/sebas_directions.png")
 }
 const OBJECT_SPRITES := {

@@ -18,7 +18,7 @@ const PORTRAITS := {
 	"Sofi": "res://assets/portraits/sofi_neutral.png",
 	"Mateo": "res://assets/portraits/mateo_neutral.png",
 	"Bruno": "res://assets/portraits/bruno_neutral.png",
-	"Camila": "res://assets/portraits/camila_v2.tres",
+	"Camila": "res://assets/portraits/camila_v3.tres",
 	"Sebas": "res://assets/portraits/sebas_neutral.png"
 }
 const EMOTION_PORTRAITS := {

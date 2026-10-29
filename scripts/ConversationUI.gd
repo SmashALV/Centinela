@@ -11,7 +11,7 @@ const SPRITES := {
 	"Mateo": "res://assets/vn/mateo_neutral.png",
 	"Mateo_worried": "res://assets/vn/mateo_worried.png",
 	"Mateo_alarmed": "res://assets/vn/mateo_alarmed.png",
-	"Camila": "res://assets/vn/camila_v2.png",
+	"Camila": "res://assets/vn/camila_v3.png",
 	"Bruno": "res://assets/vn/bruno_neutral.png",
 	"Sebas": "res://assets/vn/sebas_neutral.png"
 }
@@ -19,7 +19,7 @@ const AVATARS := {
 	"Kairo": "res://assets/vn/kairo_anonymous.png",
 	"Sofi": "res://assets/portraits/sofi_neutral.png",
 	"Mateo": "res://assets/portraits/mateo_neutral.png",
-	"Camila": "res://assets/portraits/camila_v2.tres",
+	"Camila": "res://assets/portraits/camila_v3.tres",
 	"Bruno": "res://assets/portraits/bruno_neutral.png",
 	"Sebas": "res://assets/portraits/sebas_neutral.png"
 }
