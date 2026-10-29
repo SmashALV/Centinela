@@ -46,7 +46,7 @@ func _run() -> void:
 		if not await _press_button(story, "Continuar") or not GameState.flags.get("d1_interlude_active", false):
 			_fail("no se abrió el interludio en ruta " + route)
 			return
-		if not await _press_button(story, "Continuar") or not GameState.flags.get("draft_exploring", false):
+		if not await story._start_playable_draft() or not GameState.flags.get("draft_exploring", false):
 			_fail("no se abrió el Día 1 en ruta " + route)
 			return
 		var visited: Array[String] = []

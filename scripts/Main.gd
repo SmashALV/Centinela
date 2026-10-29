@@ -4,6 +4,7 @@ const WorldScript = preload("res://scripts/World.gd")
 const NarrativeScript = preload("res://scripts/narrative/NarrativeManager.gd")
 const PreviewCatalogScript = preload("res://scripts/narrative/RecoveredPreviewCatalog.gd")
 const DraftFlowScript = preload("res://scripts/narrative/PlayableDraftFlow.gd")
+const CoralFlowScript = preload("res://scripts/narrative/CoralStoryFlow.gd")
 const DisplayGuardScript = preload("res://scripts/DisplayGuard.gd")
 const ConversationUIScript = preload("res://scripts/ConversationUI.gd")
 const DAY_0_PREVIEW := "res://data/narrative/day_0_RECOVERED_PREVIEW.json"
@@ -66,6 +67,7 @@ var autosave_elapsed := 0.0
 var dialogue_story: RefCounted
 var preview_catalog: RefCounted
 var draft_flow: RefCounted
+var coral_flow: RefCounted
 var dialogue_key := ""
 var dialogue_choice := ""
 var dialogue_text_label: Label
@@ -90,6 +92,10 @@ func _ready() -> void:
 	else:
 		preview_catalog.scenes["D2_04_A"] = draft_flow.authored_scene()
 		preview_catalog.scenes["D1_03_A"] = draft_flow.d1_private_scene()
+	coral_flow = CoralFlowScript.new()
+	var coral_errors: Array[String] = coral_flow.load_story()
+	if not coral_errors.is_empty():
+		push_error("Guion coral inválido: " + "; ".join(coral_errors))
 	world = WorldScript.new()
 	add_child(world)
 	world.interacted.connect(_on_interacted)
@@ -165,7 +171,7 @@ func _process(delta: float) -> void:
 			prompt.text = "Esc · cancelar   Elige una opción"
 		elif modal_kind == "prologue":
 			prompt.text = "Enter · continuar   P · pausa"
-		elif modal_kind in ["preview", "preview_unplaced", "day_intro"]:
+		elif modal_kind in ["preview", "preview_unplaced", "day_intro", "coral"]:
 			prompt.text = "P · pausa   Continúa la historia"
 		else:
 			prompt.text = "Esc · volver   P · pausa"
@@ -178,7 +184,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			_show_pause()
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("ui_cancel"):
-		if ["phone", "objective", "pause", "class", "desktop", "slot_confirm", "dialogue_history"].has(modal_kind):
+		if ["phone", "objective", "pause", "class", "desktop", "slot_confirm", "dialogue_history", "observation"].has(modal_kind):
 			if modal_kind == "pause":
 				_resume_pause()
 			elif modal_kind == "slot_confirm":
@@ -191,6 +197,13 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif modal_kind == "phone" and event.is_action_pressed("phone"):
 		_close_modal()
 		get_viewport().set_input_as_handled()
+	elif modal_kind == "coral" and event is InputEventKey and event.pressed and not event.echo:
+		if GameState.coral_state.get("mode") == "scene" and event.keycode in [KEY_1, KEY_2, KEY_3]:
+			var coral_scene: Dictionary = coral_flow.scene(str(GameState.coral_state.node), preview_catalog, draft_flow, GameState.coral_state)
+			var coral_index: int = [KEY_1, KEY_2, KEY_3].find(event.keycode)
+			if int(GameState.coral_state.step) == coral_scene.get("lines", []).size() and coral_index < coral_scene.get("choices", []).size():
+				_coral_choose(str(coral_scene.choices[coral_index].key))
+				get_viewport().set_input_as_handled()
 	elif modal_kind == "preview" and event is InputEventKey and event.pressed and not event.echo:
 		var preview_scene: Dictionary = preview_catalog.get_scene(GameState.preview_scene)
 		var preview_choices: Array = preview_scene.get("choices", [])
@@ -535,7 +548,7 @@ func _start_slot(chosen: int) -> void:
 		_render_prologue()
 	elif GameState.phase == "bedroom" and not GameState.flags.get("wakeup_seen", false):
 		_show_dialogue("wakeup")
-	elif GameState.phase not in ["result", "preview"]:
+	elif GameState.phase not in ["result", "preview", "coral"]:
 		_close_modal()
 	if recovered_local:
 		_toast("Partida recuperada de una copia local")
@@ -552,7 +565,11 @@ func _load_phase() -> void:
 		world_phase = "computer"
 	elif world_phase == "preview":
 		world_phase = _draft_world_key() if GameState.flags.get("draft_mode", false) else "courtyard"
+	elif world_phase == "coral":
+		world_phase = coral_flow.world_key(GameState.coral_state)
 	world.configure(world_phase, GameState.player_position)
+	if GameState.phase == "coral":
+		world.configure_story_targets(_coral_targets(), _coral_primary_target())
 	_update_hud()
 	if GameState.phase == "result":
 		_show_result()
@@ -566,6 +583,8 @@ func _load_phase() -> void:
 				world.enabled = true
 		else:
 			_render_preview()
+	elif GameState.phase == "coral":
+		_render_coral()
 
 func _draft_world_key() -> String:
 	match GameState.preview_scene:
@@ -575,6 +594,9 @@ func _draft_world_key() -> String:
 		_: return "draft_d4"
 
 func _update_hud() -> void:
+	if GameState.phase == "coral":
+		hud.text = "DÍA %d · %s | %s" % [int(GameState.coral_state.get("day", 1)), GameState.code, _objective_text()]
+		return
 	if GameState.phase == "preview":
 		if GameState.flags.get("draft_exploring", false):
 			var day_number: int = int(GameState.preview_scene.substr(1, 1))
@@ -598,10 +620,13 @@ func _objective_text() -> String:
 		"computer": return "Usa la computadora"
 		"result": return "Continúa la historia D1–D4"
 		"preview": return "Habla con Mateo" if GameState.flags.get("draft_exploring", false) else "Continúa la conversación"
+		"coral": return coral_flow.objective(GameState.coral_state)
 	return ""
 
 func _on_interacted(target: String) -> void:
 	match GameState.phase:
+		"coral":
+			_coral_interact(target)
 		"preview":
 			if GameState.flags.get("draft_exploring", false) and target == "mateo":
 				_commit_preview(GameState.preview_scene, 0)
@@ -614,7 +639,7 @@ func _on_interacted(target: String) -> void:
 				else:
 					_transition("courtyard", Vector2(140, 300))
 			else:
-				_toast("Objeto opcional: " + world.target_label(target))
+				if target in ["photo", "desk"]: _inspect_d0(target)
 		"courtyard":
 			if target == "friends":
 				_show_dialogue("courtyard")
@@ -623,6 +648,8 @@ func _on_interacted(target: String) -> void:
 					_transition("computer", Vector2(384, 320))
 				else:
 					_toast("Primero acércate al grupo")
+			elif target == "tutoria":
+				_inspect_d0("tutoria")
 		"computer":
 			if target == "pc":
 				_show_desktop()
@@ -662,6 +689,30 @@ func _commit_flag(flag: String, message: String) -> void:
 		if modal_kind == "":
 			world.enabled = true
 		_toast("Error al guardar")
+
+func _inspect_d0(target: String) -> void:
+	if save_in_progress: return
+	var flag_name: String = "d0_" + target + "_seen"
+	if not GameState.flags.get(flag_name, false):
+		var previous: Dictionary = GameState.snapshot()
+		GameState.flags[flag_name] = true
+		save_in_progress = true
+		if not await SaveManager.save_slot_async():
+			GameState.restore(previous)
+			save_in_progress = false
+			_toast("No se pudo guardar la observación")
+			return
+		save_in_progress = false
+	_clear_modal()
+	modal_kind = "observation"
+	_modal_heading("SOFI OBSERVA", "objective")
+	var descriptions := {
+		"photo": "Sofi mira una foto con Mateo, Camila, Bruno y Sebas. Juegan juntos desde hace tiempo, aunque cada uno necesita su propio espacio y sus propios horarios.",
+		"desk": "En su escritorio, Sofi recuerda el acuerdo del grupo: avisar cuando alguien se desconecte, no compartir datos de otra persona y aceptar un no sin insistir.",
+		"tutoria": "El cartel de tutoría recuerda que se puede hablar con una persona adulta de confianza aun sin tener todas las respuestas. Pedir apoyo es una opción disponible desde el comienzo."
+	}
+	_modal_text(str(descriptions.get(target, "")), 18)
+	_button("Volver", _close_modal)
 
 func _autosave() -> void:
 	if not await SaveManager.save_slot_async() and is_inside_tree():
@@ -718,6 +769,14 @@ func _render_phone() -> void:
 			_preview_text(body, "La captura la mostró Mateo en su propio teléfono. No se guardó en el celular de Sofi.", 15)
 		elif GameState.flags.get("draft_exploring", false) and GameState.preview_scene == "D2_03_A":
 			_preview_text(body, "Mateo tiene una captura en su propio teléfono. Acércate a él para verla.", 15)
+	if GameState.phase == "coral":
+		var facts: Array = GameState.coral_state.get("observed", [])
+		_preview_text(body, "LIBRETA DE SOFI", 16)
+		var fact_labels := {"camila_request_shared": "Camila recibió una pregunta sobre los horarios de Mateo y pidió discreción.", "mateo_secret_shared": "Mateo mostró un regalo vinculado a una petición de secreto que lo incomoda.", "sebas_fatigue_observed": "Sebas contó que teme perder ayuda en el juego si no sigue el horario de Kairo."}
+		if facts.is_empty(): _preview_text(body, "Todavía no hay hechos registrados.", 14)
+		for fact in facts:
+			_preview_text(body, str(fact_labels.get(fact, "Una conversación quedó registrada.")), 14)
+		_preview_text(body, "Esta libreta distingue lo observado de las suposiciones. No necesitas recopilar pruebas para ofrecer apoyo.", 14)
 	_button("Cerrar", _close_modal)
 
 func _show_objective() -> void:
@@ -727,9 +786,58 @@ func _render_objective() -> void:
 	modal_kind = "objective"
 	_clear_modal()
 	_modal_heading("OBJETIVO", "objective")
-	_modal_text(_objective_text(), 19)
-	_button("Pista", _advance_hint)
+	_modal_text(("Orientación: " if GameState.phase != "coral" else "") + _objective_text(), 19)
+	if GameState.phase == "coral":
+		var state: Dictionary = GameState.coral_state
+		var day_key: String = str(state.get("day", 1))
+		var requests: Dictionary = state.get("hint_requests", {})
+		var shown: String = str(requests.get(day_key, ""))
+		if not shown.is_empty():
+			_modal_text(coral_flow.navigation_hint(state) if shown == "nav" else coral_flow.educational_hint(state, 1 if shown == "h1" else 2), 15)
+		_button("Pista de orientación", func(): _coral_request_hint("nav"))
+		_button("Pista para observar", func(): _coral_request_hint("h1"))
+		_button("Pista para comprender", func(): _coral_request_hint("h2"))
+	else:
+		if GameState.phase in ["bedroom", "courtyard", "computer"]:
+			if GameState.hint_level > 0: _modal_text(_d0_educational_hint(GameState.hint_level), 15)
+			_button("H1 · Observa", func(): _set_d0_hint(1))
+			_button("H2 · Comprende", func(): _set_d0_hint(2))
+		else:
+			_button("Pista", _advance_hint)
 	_button("Cerrar", _close_modal)
+
+func _d0_educational_hint(level: int) -> String:
+	if level == 1:
+		return "¿Qué podría ver alguien nuevo sobre Sofi? ¿Con quién puede hablar si una conversación le incomoda?"
+	return "Revisar privacidad, cuidar los horarios y mantener cerca a personas de confianza ayuda a reconocer y poner límites a una presión futura."
+
+func _set_d0_hint(level: int) -> void:
+	if save_in_progress: return
+	var previous: int = GameState.hint_level
+	GameState.hint_level = level
+	save_in_progress = true
+	if await SaveManager.save_slot_async():
+		save_in_progress = false
+		_render_objective()
+	else:
+		GameState.hint_level = previous
+		save_in_progress = false
+		_toast("No se pudo guardar la pista")
+
+func _coral_request_hint(kind: String) -> void:
+	if save_in_progress or GameState.phase != "coral": return
+	var previous: Dictionary = GameState.snapshot()
+	GameState.coral_state.hint_requests[str(GameState.coral_state.day)] = kind
+	var hint_action: String = "HINT_D%d_%s" % [int(GameState.coral_state.day), kind]
+	if not GameState.coral_state.actions.has(hint_action): GameState.coral_state.actions.append(hint_action)
+	save_in_progress = true
+	if await SaveManager.save_slot_async():
+		save_in_progress = false
+		_render_objective()
+	else:
+		GameState.restore(previous)
+		save_in_progress = false
+		_toast("No se pudo guardar la pista")
 
 func _advance_hint() -> void:
 	if save_in_progress:
@@ -840,6 +948,7 @@ func _resume_pause() -> void:
 		"day_intro": _render_day_intro()
 		"preview": _render_preview()
 		"preview_unplaced": _render_unplaced_preview()
+		"coral": _render_coral()
 		_: _close_modal()
 	modal_before_pause = ""
 
@@ -908,6 +1017,10 @@ func _render_desktop() -> void:
 	_clear_modal()
 	_modal_heading("ESCRITORIO · PC DE SOFI", "controls")
 	_modal_text("Mensajes y juego del grupo", 18)
+	if GameState.flags.get("d0_profile_private", false):
+		_modal_text("Perfil revisado: ubicación y horarios no son públicos. Sofi puede decidir quién ve su actividad.", 14)
+	else:
+		_button("Revisar privacidad del perfil", _inspect_profile, "objective")
 	var chat_done: bool = GameState.flags.get("d0_chat_done", false)
 	var chat_button := _button("Ver chat guardado" if chat_done else "Abrir chat del grupo", _open_desktop_chat, "phone")
 	var play_button := _button("Elegir clase e iniciar partida", _show_class, "ability")
@@ -918,6 +1031,19 @@ func _render_desktop() -> void:
 		chat_button.grab_focus()
 		_modal_text("Primero conversa con el grupo para preparar la partida.", 15)
 	_button("Cerrar escritorio", _close_modal)
+
+func _inspect_profile() -> void:
+	if save_in_progress or GameState.flags.get("d0_profile_private", false): return
+	var previous: Dictionary = GameState.snapshot()
+	GameState.flags.d0_profile_private = true
+	save_in_progress = true
+	if await SaveManager.save_slot_async():
+		save_in_progress = false
+		_render_desktop()
+	else:
+		GameState.restore(previous)
+		save_in_progress = false
+		_toast("No se pudo guardar la revisión de privacidad")
 
 func _open_desktop_chat() -> void:
 	if GameState.flags.get("d0_chat_done", false):
@@ -1167,7 +1293,7 @@ func _show_result() -> void:
 	modal_kind = "result"
 	_begin_conversation_presentation()
 	if GameState.flags.get("d1_interlude_active", false):
-		conversation_ui.show_scene("courtyard", "Día 1 · Un nuevo jugador", "Narrador", draft_flow.connector("D1_02_A"), [], _start_playable_draft, "Continuar", "Sofi", "", false, _scaled_text_size(18))
+		conversation_ui.show_scene("courtyard", "Día 1 · Un nuevo jugador", "Narrador", draft_flow.connector("D1_02_A"), [], _start_coral_story, "Continuar", "Sofi", "", false, _scaled_text_size(18))
 		return
 	var note: String = "Partida finalizada · " + GameState.moba_result.capitalize()
 	var messages: Array = [{"speaker": "Camila", "text": draft_flow.camila_reaction(GameState.moba_result, GameState.moba_class)}]
@@ -1186,6 +1312,281 @@ func _show_d1_interlude() -> bool:
 	save_in_progress = false
 	_toast("No se pudo guardar el avance; reintenta")
 	return false
+
+func _start_coral_story() -> bool:
+	if save_in_progress or coral_flow.content.is_empty() or GameState.phase != "result":
+		return false
+	var previous: Dictionary = GameState.snapshot()
+	GameState.phase = "coral"
+	GameState.coral_state = coral_flow.new_state()
+	GameState.flags.erase("d1_interlude_active")
+	GameState.player_position = Vector2(180, 315)
+	return await _save_coral(previous)
+
+func _coral_targets() -> Dictionary:
+	var state: Dictionary = GameState.coral_state
+	var day: int = int(state.get("day", 1))
+	if day == 1:
+		return {"camila": Vector2(310, 240), "bruno": Vector2(230, 250),
+			"sebas": Vector2(420, 250), "mateo": Vector2(525, 235),
+			"lobby": Vector2(650, 318), "tutoria": Vector2(165, 310)}
+	if day == 4 and state.get("chapter_scene_done", false):
+		return {"tutoria": Vector2(150, 310), "pc": Vector2(635, 303), "salida": Vector2(385, 333)}
+	var target: String = coral_flow.route_target(state)
+	return {target: Vector2(520, 235), "tutoria": Vector2(165, 310)}
+
+func _coral_primary_target() -> String:
+	var state: Dictionary = GameState.coral_state
+	if int(state.get("day", 1)) == 1:
+		var talks: int = 0
+		for action in state.get("actions", []):
+			if str(action).begins_with("D1_TALK_"): talks += 1
+		if talks < 2:
+			for person in ["camila", "bruno", "sebas", "mateo"]:
+				if not state.get("actions", []).has("D1_TALK_" + person.to_upper()):
+					return person
+		return "lobby"
+	if int(state.get("day", 1)) == 4 and state.get("chapter_scene_done", false):
+		return "tutoria" if str(state.get("choices", {}).get("D4_" + str(state.get("branch", "")), "")) == "A" else "pc"
+	return coral_flow.route_target(state)
+
+func _save_coral(previous: Dictionary) -> bool:
+	if save_in_progress:
+		return false
+	save_in_progress = true
+	if await SaveManager.save_slot_async():
+		save_in_progress = false
+		if is_inside_tree():
+			_load_phase()
+		return true
+	GameState.restore(previous)
+	save_in_progress = false
+	_toast("No se pudo guardar el avance; reintenta")
+	return false
+
+func _coral_begin_scene(scene_id: String) -> bool:
+	if save_in_progress or GameState.phase != "coral": return false
+	var previous: Dictionary = GameState.snapshot()
+	GameState.coral_state.mode = "scene"
+	GameState.coral_state.node = scene_id
+	GameState.coral_state.step = 0
+	return await _save_coral(previous)
+
+func _coral_interact(target: String) -> void:
+	var state: Dictionary = GameState.coral_state
+	if state.get("mode") != "explore" or save_in_progress: return
+	var day: int = int(state.get("day", 1))
+	if target == "tutoria":
+		if state.get("adult_support_started", false):
+			_toast("Ya iniciaron una conversación de apoyo. Puedes retomarla cuando quieras.")
+		else:
+			_coral_begin_scene("I_TUTOR")
+		return
+	if day == 1:
+		if target in ["camila", "bruno", "sebas", "mateo"]:
+			if state.get("actions", []).has("D1_TALK_" + target.to_upper()):
+				_toast("Ya hablaste con " + target.capitalize())
+			else:
+				_coral_begin_scene("I_D1_" + target.to_upper())
+		elif target == "lobby":
+			var talks: int = 0
+			for action in state.get("actions", []):
+				if str(action).begins_with("D1_TALK_"): talks += 1
+			if talks >= 2: _coral_begin_scene("D1_GATE")
+			else: _toast("Habla con dos compañeros antes de entrar al lobby")
+		return
+	if day == 4 and state.get("chapter_scene_done", false):
+		if target == "pc":
+			if state.get("limit_completed", false): _toast("El límite digital ya está registrado")
+			else: _coral_begin_scene("I_LIMIT")
+		elif target == "salida":
+			_coral_finish_day()
+		return
+	if target == coral_flow.route_target(state):
+		var scene_id: String = "D2_" + str(state.route) if day == 2 else "D3_" + str(state.branch) if day == 3 else "D4_" + str(state.branch)
+		_coral_begin_scene(scene_id)
+
+func _coral_advance() -> bool:
+	if save_in_progress or GameState.phase != "coral": return false
+	var state: Dictionary = GameState.coral_state
+	var previous: Dictionary = GameState.snapshot()
+	if state.mode == "intro":
+		var narrator_id: String = "D%d_INTRO_%d" % [int(state.day), int(state.step)]
+		if not state.seen_narrator.has(narrator_id): state.seen_narrator.append(narrator_id)
+		state.step = int(state.step) + 1
+		if int(state.step) >= 2:
+			state.mode = "explore"
+			state.step = 0
+		return await _save_coral(previous)
+	if state.mode != "scene" and state.mode != "ending": return false
+	var scene: Dictionary = coral_flow.scene(str(state.node), preview_catalog, draft_flow, state)
+	var lines: Array = scene.get("lines", [])
+	if int(state.step) < lines.size() - 1 or (int(state.step) == lines.size() - 1 and not scene.get("choices", []).is_empty()):
+		state.step = int(state.step) + 1
+		return await _save_coral(previous)
+	return await _coral_finish_scene(previous)
+
+func _coral_choose(key: String) -> bool:
+	if save_in_progress or GameState.phase != "coral" or GameState.coral_state.get("mode") != "scene": return false
+	var state: Dictionary = GameState.coral_state
+	var scene_id: String = str(state.node)
+	var scene: Dictionary = coral_flow.scene(scene_id, preview_catalog, draft_flow, state)
+	if int(state.step) != scene.get("lines", []).size(): return false
+	var valid := false
+	for choice in scene.get("choices", []):
+		if choice.get("key") == key: valid = true
+	if not valid: return false
+	var previous: Dictionary = GameState.snapshot()
+	state.choices[scene_id] = key
+	if scene_id == "D1_GATE":
+		state.route = key
+	elif scene_id.begins_with("D2_"):
+		state.branch = str(state.route) + ("1" if key == "A" else "2")
+		state.companion_states[state.route] = {"trusted": key == "A", "repair_needed": key == "B"}
+		var fact: String = str(CoralFlowScript.D2_FACTS.get(state.route, ""))
+		if not state.observed.has(fact): state.observed.append(fact)
+	elif scene_id.begins_with("D4_") and key == "A" and str(state.branch).ends_with("2"):
+		if not state.actions.has("REPAIR_OFFERED"): state.actions.append("REPAIR_OFFERED")
+	state.mode = "reaction"
+	state.step = 0
+	return await _save_coral(previous)
+
+func _coral_finish_scene(previous: Dictionary = {}) -> bool:
+	if save_in_progress or GameState.phase != "coral": return false
+	var rollback: Dictionary = previous if not previous.is_empty() else GameState.snapshot()
+	var state: Dictionary = GameState.coral_state
+	var scene_id: String = str(state.node)
+	state.node = ""
+	state.step = 0
+	state.mode = "explore"
+	if scene_id.begins_with("I_D1_"):
+		var action_id: String = scene_id.trim_prefix("I_").replace("D1_", "D1_TALK_")
+		if not state.actions.has(action_id): state.actions.append(action_id)
+	elif scene_id == "I_TUTOR":
+		state.adult_support_started = true
+		if not state.actions.has("ADULT_SUPPORT_STARTED"): state.actions.append("ADULT_SUPPORT_STARTED")
+	elif scene_id == "I_LIMIT":
+		state.limit_completed = true
+		if not state.actions.has("DIGITAL_LIMIT_COMPLETED"): state.actions.append("DIGITAL_LIMIT_COMPLETED")
+	elif scene_id == "D1_GATE":
+		state.node = "D1_%s_FOLLOW" % state.route
+		state.mode = "scene"
+	elif scene_id.begins_with("D1_") and scene_id.ends_with("_FOLLOW"):
+		state.day = 2
+		state.mode = "intro"
+		state.chapter_scene_done = false
+		GameState.player_position = Vector2(180, 315)
+	elif scene_id.begins_with("D2_"):
+		state.node = "N_D2"
+		state.mode = "scene"
+	elif scene_id == "N_D2":
+		state.day = 3
+		state.mode = "intro"
+		state.chapter_scene_done = false
+		if not state.seen_narrator.has("D2_ROUTE_" + str(state.route)):
+			state.seen_narrator.append("D2_ROUTE_" + str(state.route))
+		GameState.player_position = Vector2(180, 315)
+	elif scene_id.begins_with("D3_"):
+		if str(state.branch).ends_with("2"):
+			state.companion_states[state.route].repair_offered = true
+		state.day = 4
+		state.mode = "intro"
+		state.chapter_scene_done = false
+		GameState.player_position = Vector2(180, 315)
+	elif scene_id.begins_with("D4_"):
+		state.chapter_scene_done = true
+	elif scene_id.begins_with("F0"):
+		state.mode = "summary"
+	return await _save_coral(rollback)
+
+func _coral_finish_day() -> bool:
+	if save_in_progress or GameState.phase != "coral" or int(GameState.coral_state.get("day", 0)) != 4 or not GameState.coral_state.get("chapter_scene_done", false): return false
+	var previous: Dictionary = GameState.snapshot()
+	var state: Dictionary = GameState.coral_state
+	state.ending = coral_flow.ending_for(state)
+	state.node = str(state.ending)
+	state.step = 0
+	state.mode = "ending"
+	return await _save_coral(previous)
+
+func _render_coral() -> void:
+	var state: Dictionary = GameState.coral_state
+	var mode: String = str(state.get("mode", "explore"))
+	if mode == "explore":
+		_close_modal()
+		return
+	if mode == "summary":
+		_render_coral_summary()
+		return
+	modal_kind = "coral"
+	_begin_conversation_presentation()
+	if mode == "intro":
+		var intro: Array = coral_flow.content.get("day_intros", {}).get(str(state.day), [])
+		if int(state.step) >= intro.size(): return
+		conversation_ui.show_scene("courtyard", "Día %d" % state.day, "Narrador", str(intro[int(state.step)]), [], _coral_advance, "Continuar", "Sofi", "", false, _scaled_text_size(18))
+		return
+	var scene_id: String = str(state.get("node", ""))
+	var scene: Dictionary = coral_flow.scene(scene_id, preview_catalog, draft_flow, state)
+	var lines: Array = scene.get("lines", [])
+	var selected: String = str(state.get("choices", {}).get(scene_id, ""))
+	var current: Dictionary = {}
+	var options: Array = []
+	var next_action: Callable = _coral_advance
+	if mode == "reaction":
+		current = coral_flow.content.get("reactions", {}).get(scene_id, {}).get(selected, {})
+		next_action = _coral_finish_scene
+	elif int(state.step) < lines.size():
+		current = lines[int(state.step)]
+	elif not scene.get("choices", []).is_empty():
+		for choice in scene.choices:
+			var key: String = str(choice.get("key", ""))
+			options.append({"label": str(choice.get("text", "")), "action": func(): _coral_choose(key)})
+	else:
+		return
+	var presentation: String = str(scene.get("presentation", "vn"))
+	if presentation in ["group", "dm"] and str(current.get("speaker", "")) == "Narrador" and options.is_empty():
+		conversation_ui.show_scene("courtyard", "Día %d · %s" % [int(scene.get("day", state.day)), str(scene.get("title", "Historia"))], "Narrador", str(current.get("text", "")), [], next_action, "Continuar", "Sofi", "", false, _scaled_text_size(18))
+		return
+	if presentation in ["group", "dm"]:
+		var messages: Array = lines.slice(0, mini(int(state.step) + 1, lines.size())) if mode != "reaction" else lines.duplicate(true)
+		var system_note: String = ""
+		if mode == "reaction":
+			var choice_text: String = ""
+			for choice in scene.get("choices", []):
+				if choice.get("key") == selected: choice_text = str(choice.get("text", ""))
+			messages.append({"speaker": "Sofi", "text": choice_text})
+			messages.append(current)
+		for message in messages.duplicate():
+			if str(message.get("speaker", "")) == "Narrador":
+				system_note = str(message.get("text", ""))
+				messages.erase(message)
+		if presentation == "group":
+			conversation_ui.show_chat("lobby-de-juego", messages, options, next_action, "Continuar", Callable(), _scaled_text_size(15), system_note)
+		else:
+			conversation_ui.show_direct_chat("Mateo", messages, options, next_action, "Continuar", _scaled_text_size(15), system_note)
+		return
+	var speaker: String = str(current.get("speaker", "Narrador"))
+	var actor: String = str(scene.get("actor", ""))
+	if actor.is_empty() and scene_id.begins_with("I_D1_"): actor = scene_id.trim_prefix("I_D1_").capitalize()
+	var sprite: String = _scene_sprite_key(speaker, scene_id, selected)
+	if "(mensaje)" in speaker and not actor.is_empty(): sprite = _scene_sprite_key(actor, scene_id, selected)
+	if not ConversationUIScript.SPRITES.has(sprite): sprite = speaker if ConversationUIScript.SPRITES.has(speaker) else actor
+	var partner: String = "Sofi" if speaker != "Sofi" and actor != "Sofi" else actor
+	if speaker == "Narrador": sprite = "Sofi"
+	var background: String = "corridor" if str(scene.get("place", "")) in ["pasillo", "tutoria"] else "courtyard"
+	if str(scene.get("place", "")) == "habitación": background = "bedroom"
+	conversation_ui.show_scene(background, "Día %d · %s" % [int(scene.get("day", state.day)), str(scene.get("title", "Historia"))], speaker, str(current.get("text", "")), options, next_action, "Continuar", sprite, partner, "(mensaje)" in speaker, _scaled_text_size(18))
+
+func _render_coral_summary() -> void:
+	modal_kind = "coral"
+	_clear_modal()
+	_modal_heading("HISTORIA CONCLUIDA", "result")
+	var body := _preview_content()
+	var ending: String = str(GameState.coral_state.get("ending", "F03"))
+	var description: String = {"F01": "Se inició una conversación de apoyo con una persona adulta.", "F02": "Se completó un límite digital con permiso.", "F03": "Hay pasos de protección pendientes; aún se puede pedir ayuda."}.get(ending, "")
+	_preview_text(body, "%s · %s" % [ending, description], 20)
+	_preview_text(body, "Las decisiones anteriores cambiaron qué supo Sofi, cómo reaccionaron sus amigos y qué apoyo pudo ofrecerles.", 16)
+	_preview_button(body, "Volver al menú", _return_to_menu)
 
 func _start_playable_draft() -> bool:
 	if save_in_progress or draft_flow.content.is_empty() or preview_catalog.scenes.is_empty():
@@ -1343,6 +1744,9 @@ func _scene_portrait_path(speaker: String, scene_id: String, choice: String = ""
 	return str(PORTRAITS.get(speaker, ""))
 
 func _scene_sprite_key(speaker: String, scene_id: String, choice: String = "") -> String:
+	if speaker == "Mateo" and scene_id in ["D4_B1", "D4_B2", "D4_A1", "D4_A2"]: return "Mateo_alarmed"
+	if speaker == "Mateo" and scene_id in ["D2_B", "D3_B1", "D3_B2"]: return "Mateo_worried"
+	if speaker == "Sofi" and (scene_id.begins_with("D3_") or scene_id.begins_with("D4_")): return "Sofi_concerned"
 	if speaker == "Sofi" and scene_id in ["D3_01_A", "D4_01_A", "D4_02_A", "D4_03_A", "F03"]:
 		return "Sofi_concerned"
 	if speaker == "Mateo":

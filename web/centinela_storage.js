@@ -101,7 +101,7 @@
         snapshot.slot !== slot || snapshot.schema_version !== 1 ||
         typeof snapshot.narrative_version !== "string" || !snapshot.narrative_version ||
         !/^CTN-\d{6}$/.test(snapshot.code) ||
-        !["bedroom", "courtyard", "computer", "moba", "result", "preview"].includes(snapshot.phase)) {
+        !["bedroom", "courtyard", "computer", "moba", "result", "preview", "coral"].includes(snapshot.phase)) {
       throw failure("INVALID_REQUEST", "Snapshot inválido");
     }
     const position = snapshot.player_position;
@@ -113,7 +113,43 @@
     const flags = snapshot.flags;
     if (!flags || typeof flags !== "object" || Array.isArray(flags))
       throw failure("INVALID_REQUEST", "Indicadores inválidos");
-    for (const name of ["wakeup_seen", "alarm", "backpack", "friends", "d0_chat_done", "preview_reviewed", "draft_mode", "draft_completed", "draft_exploring"]) {
+    const coral = snapshot.coral_state ?? {};
+    if (!coral || typeof coral !== "object" || Array.isArray(coral) ||
+        (snapshot.phase === "coral" && (coral.version !== "CORAL_STORY_v0.1" ||
+          ![1, 2, 3, 4].includes(coral.day) ||
+          !["intro", "explore", "scene", "reaction", "ending", "summary"].includes(coral.mode) ||
+          !["", "A", "B", "C"].includes(coral.route) ||
+          !Number.isInteger(coral.step) || coral.step < 0 || coral.step > 100 ||
+          typeof coral.node !== "string" || !Array.isArray(coral.actions) ||
+          !Array.isArray(coral.observed) || !Array.isArray(coral.seen_narrator) ||
+          !coral.choices || typeof coral.choices !== "object" || Array.isArray(coral.choices) ||
+          !coral.companion_states || typeof coral.companion_states !== "object" || Array.isArray(coral.companion_states) ||
+          !coral.hint_requests || typeof coral.hint_requests !== "object" || Array.isArray(coral.hint_requests) ||
+          typeof coral.adult_support_started !== "boolean" ||
+          typeof coral.limit_completed !== "boolean" ||
+          typeof coral.chapter_scene_done !== "boolean")))
+      throw failure("INVALID_REQUEST", "Estado narrativo inválido");
+    if (snapshot.phase === "coral") {
+      const decisions = ["D1_GATE", "D2_A", "D2_B", "D2_C", "D4_A1", "D4_A2", "D4_B1", "D4_B2", "D4_C1", "D4_C2"];
+      const nodes = ["I_D1_CAMILA", "I_D1_BRUNO", "I_D1_SEBAS", "I_D1_MATEO", "I_TUTOR", "I_LIMIT",
+        "D1_GATE", "D1_A_FOLLOW", "D1_B_FOLLOW", "D1_C_FOLLOW", "D2_A", "D2_B", "D2_C", "N_D2",
+        "D3_A1", "D3_A2", "D3_B1", "D3_B2", "D3_C1", "D3_C2",
+        "D4_A1", "D4_A2", "D4_B1", "D4_B2", "D4_C1", "D4_C2", "F01", "F02", "F03"];
+      if (!["", "A1", "A2", "B1", "B2", "C1", "C2"].includes(coral.branch) ||
+          !["", "F01", "F02", "F03"].includes(coral.ending) ||
+          (["intro", "explore", "summary"].includes(coral.mode) && coral.node !== "") ||
+          (["scene", "reaction", "ending"].includes(coral.mode) && !nodes.includes(coral.node)) ||
+          (coral.mode === "reaction" && !decisions.includes(coral.node)) ||
+          (coral.mode === "ending" && !["F01", "F02", "F03"].includes(coral.node)) ||
+          !Object.entries(coral.choices).every(([id, choice]) => decisions.includes(id) &&
+            (id === "D1_GATE" ? ["A", "B", "C"] : ["A", "B"]).includes(choice)) ||
+          !Object.entries(coral.hint_requests).every(([day, kind]) => ["1", "2", "3", "4"].includes(day) &&
+            ["nav", "h1", "h2"].includes(kind)) ||
+          !Object.entries(coral.companion_states).every(([route, state]) => ["A", "B", "C"].includes(route) &&
+            state && typeof state === "object" && !Array.isArray(state)))
+        throw failure("INVALID_REQUEST", "Estado narrativo inválido");
+    }
+    for (const name of ["wakeup_seen", "alarm", "backpack", "friends", "d0_chat_done", "d0_photo_seen", "d0_desk_seen", "d0_tutoria_seen", "d0_profile_private", "preview_reviewed", "draft_mode", "draft_completed", "draft_exploring"]) {
       if (name in flags && typeof flags[name] !== "boolean")
         throw failure("INVALID_REQUEST", "Indicador inválido");
     }
@@ -179,7 +215,7 @@
         (dialogue && uiModal) ||
         (["class", "desktop"].includes(uiModal) && snapshot.phase !== "computer") ||
         (["phone", "objective"].includes(uiModal) &&
-          !["bedroom", "courtyard", "computer"].includes(snapshot.phase) && !flags.draft_exploring) ||
+          !["bedroom", "courtyard", "computer", "coral"].includes(snapshot.phase) && !flags.draft_exploring) ||
         !Number.isInteger(hint) || hint < 0 || hint > 2 ||
         !["small", "normal", "large"].includes(size) ||
         !["slow", "normal", "fast"].includes(speed) ||

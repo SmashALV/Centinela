@@ -582,7 +582,11 @@ func _run() -> void:
 	_check(GameState.flags.get("friends", false), "presentación del grupo guardada")
 	main._transition("computer", Vector2(384, 320))
 	main._on_interacted("pc")
-	_check(main.modal_kind == "desktop" and GameState.ui_modal == "desktop" and main.modal_box.get_child(3).disabled, "PC abre escritorio con juego bloqueado antes del chat")
+	var play_locked := false
+	for desktop_button in main.modal_box.get_children():
+		if desktop_button is Button and desktop_button.text == "Elegir clase e iniciar partida":
+			play_locked = desktop_button.disabled
+	_check(main.modal_kind == "desktop" and GameState.ui_modal == "desktop" and play_locked, "PC abre escritorio con juego bloqueado antes del chat")
 	main._show_menu()
 	main._start_slot(1)
 	_check(main.modal_kind == "desktop" and GameState.ui_modal == "desktop", "escritorio se reabre desde guardado")

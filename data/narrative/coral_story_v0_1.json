@@ -1,0 +1,330 @@
+{
+  "version": "CORAL_STORY_v0.1",
+  "source_status": "authored_from_user_branching_proposal_pending_review",
+  "provisional": true,
+  "ready_for_publication": false,
+  "target_minutes": [15, 20],
+  "decision_ids": ["D1_GATE", "D2_A", "D2_B", "D2_C", "D4_A1", "D4_A2", "D4_B1", "D4_B2", "D4_C1", "D4_C2"],
+  "day_intros": {
+    "1": ["Día 1. Mateo trae al lobby a Kairo, un jugador que conoció ayer. Sofi puede hablar con sus amigos antes de entrar.", "Habla con dos compañeros y acércate a la PC del patio. Lo que Sofi decida después cambiará a quién acompañará los próximos días."],
+    "2": ["Día 2. El grupo vuelve al colegio, pero cada amistad vive algo distinto. Sofi solo conocerá lo que sus compañeros decidan contarle.", "Busca a la persona indicada en el escenario. Puedes acudir a tutoría aun si no sabes todos los detalles."],
+    "3": ["Día 3. Las decisiones de ayer dejaron conversaciones abiertas. Escuchar o reparar puede cambiar quién se anima a hablar.", "Busca a tu compañero. No hace falta reunir pruebas ni pedir un relato completo para ofrecer apoyo."],
+    "4": ["Día 4. Mateo contó al grupo que Kairo insiste en un encuentro secreto. Nadie tiene que acudir ni seguir respondiendo.", "Habla con tu compañero y ejecuta un paso concreto: pedir apoyo, establecer un límite o dejar constancia de lo que falta por hacer."]
+  },
+  "interactions": {
+    "D1_CAMILA": {"speaker": "Camila", "lines": ["Ayer jugamos mejor cuando nos escuchamos. Me gusta que nadie se quede fuera del equipo.", "Kairo fue amable, pero todavía no sabemos cómo reaccionará si Mateo prefiere jugar con nosotros."]},
+    "D1_BRUNO": {"speaker": "Bruno", "lines": ["Mateo se entusiasma rápido cuando alguien reconoce cómo juega. Eso no tiene nada de malo.", "Si vamos a invitar a alguien nuevo, podemos acordar horarios sin dejar a los demás esperando."]},
+    "D1_SEBAS": {"speaker": "Sebas", "lines": ["Kairo sabe bastante del juego. A mí me gustaría mejorar, pero también quiero poder desconectarme cuando termine la partida.", "¿Te imaginas que el grupo se reúna para practicar sin competir todo el tiempo?"]},
+    "D1_MATEO": {"speaker": "Mateo", "lines": ["Ayer Kairo me explicó una jugada que no entendía. Fue chévere que se tomara el tiempo.", "Todavía no lo conozco fuera del juego. Hoy quiero presentarlo sin que nadie se sienta obligado a jugar."]},
+    "TUTOR": {"speaker": "Tutor", "lines": ["Gracias por venir. Pueden contar solo lo que quieran compartir ahora; no necesitan tener todas las respuestas.", "Vamos a pensar juntos cómo acompañarlos y mantenerlos seguros. Nadie tiene la culpa por recibir presión."]},
+    "LIMIT": {"speaker": "Narrador", "lines": ["Sofi acompaña a su compañero a revisar la privacidad de la cuenta ficticia. La persona titular decide qué contacto bloquear o reportar.", "No tienen que contestar a Kairo. Si conservan mensajes ordinarios, será con permiso y sin difundir información íntima."]}
+  },
+  "scenes": {
+    "D1_GATE": {
+      "day": 1, "title": "El nuevo jugador", "presentation": "group", "source_scenes": ["D1_02_A"],
+      "lines": [
+        {"speaker": "Mateo", "text": "Kairo dijo que podría enseñarme una jugada en privado después. Me vendría bien practicar."},
+        {"speaker": "Camila", "text": "Yo pensaba que hoy jugaríamos todos. También podemos acordar un horario para que nadie espere solo."},
+        {"speaker": "Kairo", "text": "Tranqui, no quería quitarte del grupo, Mateo. Si quieres, entrenamos tú y yo otro día."},
+        {"speaker": "Bruno", "text": "Así queda claro para todos. Yo también tengo que terminar unas cosas antes de conectarme."},
+        {"speaker": "Mateo", "text": "Sofi, ¿cómo seguimos? Me gustaría aprender, pero tampoco quiero dejar al grupo de lado."}
+      ],
+      "choices": [
+        {"key": "A", "text": "Propongamos horarios y límites con el grupo. Nadie tiene que dejar de hablar con sus amigos."},
+        {"key": "B", "text": "Si quieres contarme por privado qué te entusiasma o preocupa, te escucho, Mateo."},
+        {"key": "C", "text": "Seguro no es para tanto. Sigamos jugando y vemos qué pasa."}
+      ]
+    },
+    "D1_A_FOLLOW": {
+      "day": 1, "title": "Un acuerdo antes de jugar", "presentation": "group",
+      "lines": [
+        {"speaker": "Sofi", "text": "Antes de entrar, propongo algo simple: cada quien elige cuándo conectarse y nadie comparte horarios de otra persona."},
+        {"speaker": "Camila", "text": "Me gusta. A veces damos por hecho que todos podemos quedarnos hasta tarde."},
+        {"speaker": "Bruno", "text": "Yo hoy solo puedo una partida. Si me voy, no significa que esté molesto con ustedes."},
+        {"speaker": "Mateo", "text": "Gracias por decirlo. Yo quiero practicar con Kairo, pero no quiero desaparecer del grupo."},
+        {"speaker": "Kairo", "text": "Claro, hagan su plan. Mateo, luego me dices si podemos entrenar aparte."},
+        {"speaker": "Sofi", "text": "Podemos hablarlo cuando llegue el momento. Por ahora juguemos todos y respetemos si alguien dice que no."},
+        {"speaker": "Sebas", "text": "¡Eso! Hoy quiero jugar para pasarla bien, no para quedarme hasta la madrugada."},
+        {"speaker": "Narrador", "text": "El acuerdo no revela qué pretende Kairo. Sí deja al grupo una forma de reconocer cuándo alguien insiste más allá de un límite."}
+      ]
+    },
+    "D1_B_FOLLOW": {
+      "day": 1, "title": "Mensaje personal de Mateo", "presentation": "dm", "source_scenes": ["D1_03_A"],
+      "lines": [
+        {"speaker": "Mateo", "text": "Gracias por hablarme aquí. A veces siento que en el canal del grupo todo se convierte en broma antes de que termine de explicarme."},
+        {"speaker": "Sofi", "text": "Podemos hablar en privado y seguir siendo parte del grupo. Si prefieres que algo no se comparta, dímelo."},
+        {"speaker": "Mateo", "text": "Eso quería escuchar. Mañana te cuento si Kairo volvió a escribirme; primero quiero entender cómo me siento."},
+        {"speaker": "Narrador", "text": "Escuchar a Mateo no convierte a Sofi en responsable de investigar su cuenta. La confianza crece cuando él conserva la decisión de qué contar."}
+      ]
+    },
+    "D1_C_FOLLOW": {
+      "day": 1, "title": "Una partida más", "presentation": "group",
+      "lines": [
+        {"speaker": "Sofi", "text": "Bueno, entremos de una vez. Si después quieren ordenar horarios, lo vemos mañana."},
+        {"speaker": "Sebas", "text": "De acuerdo. Solo una partida para mí; mañana tengo que madrugar."},
+        {"speaker": "Kairo", "text": "Sebas, si quieres mejorar tendrás que quedarte a practicar. Mateo sí tiene ganas de aprender."},
+        {"speaker": "Mateo", "text": "Yo quizá me quede un rato, pero Sebas puede irse cuando quiera."},
+        {"speaker": "Bruno", "text": "Entonces luego no digan que no avanzamos como equipo."},
+        {"speaker": "Camila", "text": "Bruno, cada uno tiene cosas fuera del juego. No hagamos de esto una prueba de amistad."},
+        {"speaker": "Narrador", "text": "La partida sigue. Sofi aún no conoce lo que Kairo dirá después por privado. Sí puede recordar quién quería desconectarse y cómo respondió el grupo."}
+      ]
+    },
+    "D2_A": {
+      "day": 2, "title": "Lo que Camila eligió contar", "presentation": "vn", "actor": "Camila", "place": "banco",
+      "lines": [
+        {"speaker": "Camila", "text": "Sofi, ¿podemos sentarnos un momento? Kairo me escribió después de la partida."},
+        {"speaker": "Sofi", "text": "Claro. Tú decides qué quieres contarme."},
+        {"speaker": "Camila", "text": "Preguntó a qué hora se conecta Mateo y si suele quedarse solo. No le respondí. Me incomodó que quisiera saberlo por mí."},
+        {"speaker": "Sofi", "text": "Hiciste bien en tomarte tiempo. ¿Mateo sabe que te escribió?"},
+        {"speaker": "Camila", "text": "Todavía no. Quiero hablar con él, pero no quiero que mi mensaje circule por el grupo como si fuera un anuncio."},
+        {"speaker": "Camila", "text": "No sé qué pretende Kairo. Sí sé que no quiero compartir horarios de otra persona."},
+        {"speaker": "Sofi", "text": "¿Te gustaría que Mateo sepa que te preguntaron por él o prefieres hablar primero con alguien de confianza?"},
+        {"speaker": "Camila", "text": "Quiero que él lo sepa, pero necesito elegir cuándo y con qué palabras. No quiero que esto sea otra pelea en el chat."},
+        {"speaker": "Sofi", "text": "Podemos preparar lo que quieres decir sin hacer capturas ni reenviar nada. Si después cambias de idea, también está bien."},
+        {"speaker": "Camila", "text": "Gracias. Me había preocupado que, si no lo contaba de inmediato, parecería que lo estaba escondiendo. Ahora veo que puedo pedir tiempo."},
+        {"speaker": "Sofi", "text": "Podemos separar lo que viste de lo que imaginamos. ¿Cómo te gustaría que te acompañe?"}
+      ],
+      "choices": [
+        {"key": "A", "text": "Te pediré permiso antes de contárselo a Mateo. Tú decides qué parte compartir."},
+        {"key": "B", "text": "Voy a avisarlo al grupo ahora; todos deberían saber lo que me contaste."}
+      ]
+    },
+    "D2_B": {
+      "day": 2, "title": "El regalo y el secreto", "presentation": "dm", "actor": "Mateo", "place": "árbol",
+      "source_scenes": ["D2_03_A", "D2_04_A"],
+      "lines": [
+        {"speaker": "Mateo", "text": "Te muestro esto porque confío en ti. No quiero que revises todo mi teléfono; solo lo que yo elija enseñarte."},
+        {"speaker": "Sofi", "text": "Está bien. No necesito mirar más para escucharte."},
+        {"speaker": "Mateo", "text": "Me gustó que se acordara de la skin. Después pidió que lo mantuviera en secreto y me sentí en deuda."},
+        {"speaker": "Mateo", "text": "Si le digo que no, temo que deje de hablarme. ¿Tú cómo lo ves?"}
+      ],
+      "choices": [
+        {"key": "A", "text": "Un regalo no te obliga a guardar un secreto. Podemos hablar de esa presión sin que me muestres nada más."},
+        {"key": "B", "text": "Quizá solo quiere ser amable. Si te gusta la skin, no le daría tantas vueltas."}
+      ]
+    },
+    "D2_C": {
+      "day": 2, "title": "Sebas ya no disfruta jugar", "presentation": "vn", "actor": "Sebas", "place": "salida",
+      "lines": [
+        {"speaker": "Sofi", "text": "Sebas, hoy casi no hablaste en el grupo. ¿Estás bien?"},
+        {"speaker": "Sebas", "text": "Estoy cansado. Anoche seguí conectado más de lo que quería porque necesitaba terminar una partida."},
+        {"speaker": "Sofi", "text": "No tienes que explicarme todo si no quieres."},
+        {"speaker": "Sebas", "text": "Kairo dice que puede ayudarme a subir de nivel si estoy cuando él se conecte. No sé si lo dice en serio."},
+        {"speaker": "Sebas", "text": "Me preocupa perder esa ayuda si digo que hoy no juego. Pero también quiero dormir y pasar tiempo con ustedes."},
+        {"speaker": "Sofi", "text": "Ayer dijiste que te ibas después de una partida. Vi que te quedaste conectado mucho más tiempo, aunque no parecías disfrutarlo."},
+        {"speaker": "Sebas", "text": "Eso fue. Cada vez que iba a salir, pensaba que la próxima partida sería la que por fin me saliera bien."},
+        {"speaker": "Sofi", "text": "¿Alguien te pidió que te quedaras o lo decidiste por tu cuenta? No necesito saberlo todo ahora."},
+        {"speaker": "Sebas", "text": "Kairo dijo que entrenaría conmigo solo si seguía su horario. A veces acepto porque quiero mejorar; otras, porque temo que se enoje."},
+        {"speaker": "Sofi", "text": "El cansancio puede tener muchas causas. Lo que sí escucho es que quieres decidir tu propio horario."},
+        {"speaker": "Sebas", "text": "Sí. Gracias por preguntar sin hacer una historia de esto."}
+      ],
+      "choices": [
+        {"key": "A", "text": "Si quieres hablar, te escucho. Tú decides qué compartir y cuándo desconectarte."},
+        {"key": "B", "text": "Ya pues, no exageres por un juego. Seguro mañana se te pasa."}
+      ]
+    },
+    "D3_A1": {
+      "day": 3, "title": "Camila conserva su voz", "presentation": "vn", "actor": "Camila", "place": "exterior",
+      "lines": [
+        {"speaker": "Camila", "text": "Gracias por no contar lo mío sin preguntarme. Ayer hablé con Mateo y pude decirle exactamente qué me incomodó."},
+        {"speaker": "Sofi", "text": "Me alegra que pudieras hacerlo a tu manera. ¿Quieres que Bruno se una a la conversación?"},
+        {"speaker": "Camila", "text": "Sí, para acordar entre todos cuándo jugar. Pero prefiero que la pregunta de Kairo no se repita como rumor."},
+        {"speaker": "Bruno", "text": "Me doy cuenta de que le reproché a Mateo ausentarse sin preguntarle cómo estaba. Puedo disculparme."},
+        {"speaker": "Sofi", "text": "Podemos hacer un plan para el grupo sin pedirle a Mateo que justifique cada minuto que no estuvo."},
+        {"speaker": "Camila", "text": "Eso me sirve. No compartamos horarios de nadie y dejemos claro que cada uno puede desconectarse."},
+        {"speaker": "Sofi", "text": "¿Qué hacemos si alguien insiste en saber dónde está Mateo? Podemos responder que esa información le pertenece a él."},
+        {"speaker": "Camila", "text": "Sí. Y si vuelve a incomodarnos, no hace falta resolverlo solos en el canal; podemos hablar con alguien de confianza."},
+        {"speaker": "Bruno", "text": "Yo le diré que lamento haberlo tratado como si nos hubiera dejado a propósito. Si quiere hablar, lo escucharé."}
+      ]
+    },
+    "D3_A2": {
+      "day": 3, "title": "Reparar la confidencia", "presentation": "vn", "actor": "Camila", "place": "pasillo",
+      "lines": [
+        {"speaker": "Camila", "text": "Cuando lo escribiste en el grupo, sentí que ya no podía decidir cómo contar lo que me pasó."},
+        {"speaker": "Sofi", "text": "Tienes razón. Compartí tu conversación sin permiso. Lo siento; no voy a pedirte que me perdones ahora."},
+        {"speaker": "Camila", "text": "Necesito un poco de distancia. Si hablamos de Mateo, quiero que sea sin reenviar mis mensajes."},
+        {"speaker": "Bruno", "text": "Yo también reaccioné mal. Le reclamé a Mateo por no jugar y no sabía por qué se había alejado."},
+        {"speaker": "Sofi", "text": "Podemos reconocer lo que hicimos sin convertir la preocupación en un rumor nuevo."},
+        {"speaker": "Camila", "text": "Gracias por decirlo. Todavía no sé si quiero contárselo a Mateo; quiero pensarlo."},
+        {"speaker": "Sofi", "text": "Voy a borrar mi mensaje del grupo, pero sé que eso no deshace que los demás lo hayan leído."},
+        {"speaker": "Camila", "text": "Eso ayuda a que no siga circulando. Para volver a confiar necesito ver que preguntes antes de compartir algo mío."},
+        {"speaker": "Bruno", "text": "Puedo decirles que dejen de comentarlo, sin repetir qué decía el mensaje. También debo reparar lo que le dije a Mateo."},
+        {"speaker": "Sofi", "text": "Lo respetaré. Si luego quieres apoyo, podemos ir juntas a hablar con el tutor."}
+      ]
+    },
+    "D3_B1": {
+      "day": 3, "title": "Acompañar a Mateo", "presentation": "vn", "actor": "Mateo", "place": "árbol", "source_scenes": ["D3_01_A"],
+      "lines": [
+        {"speaker": "Mateo", "text": "Me sirvió que escucharas sin pedirme el celular. Ayer pensé en lo mucho que quería agradarle a Kairo."},
+        {"speaker": "Sofi", "text": "Puedes sentirte contento por la ayuda en el juego y, a la vez, incómodo con el secreto."},
+        {"speaker": "Mateo", "text": "Exacto. No quiero que una skin decida con quién hablo. Tampoco quiero que todos lean mis mensajes."},
+        {"speaker": "Sofi", "text": "Tú eliges qué mostrar. Si quieres, te acompaño a pedir apoyo sin contar más de lo que estés listo para decir."},
+        {"speaker": "Mateo", "text": "Primero quiero pensar qué límite le pondré. Saber que no estoy solo ya cambia bastante."}
+      ]
+    },
+    "D3_B2": {
+      "day": 3, "title": "Escuchar otra vez", "presentation": "vn", "actor": "Mateo", "place": "habitación",
+      "lines": [
+        {"speaker": "Mateo", "text": "El otro día sentí que pasamos muy rápido por lo del secreto. Hoy Kairo volvió a pedirme que no se lo diga a nadie."},
+        {"speaker": "Sofi", "text": "Minimicé lo que te incomodaba. Lo siento, Mateo. Quiero escucharte mejor ahora."},
+        {"speaker": "Mateo", "text": "Me dijo que si somos amigos de verdad, no debería desconfiar. Me hizo sentir culpable por querer hablar contigo."},
+        {"speaker": "Sofi", "text": "Poder hablar con tus amigos no rompe una amistad. No tienes que demostrar confianza guardando algo que te pesa."},
+        {"speaker": "Mateo", "text": "No sé qué hacer todavía. Me cuesta admitir que una persona que me ayudó también pueda estar presionándome."},
+        {"speaker": "Sofi", "text": "Podemos dar un paso a la vez. Tú decides qué contar y yo puedo acompañarte a buscar ayuda."},
+        {"speaker": "Mateo", "text": "Gracias por volver a hablarlo. Eso me ayuda más que adivinar las intenciones de Kairo."}
+      ]
+    },
+    "D3_C1": {
+      "day": 3, "title": "Sebas marca su horario", "presentation": "vn", "actor": "Sebas", "place": "pasillo",
+      "lines": [
+        {"speaker": "Sebas", "text": "Ayer me hizo bien hablar contigo. No sé si Kairo quería presionarme, pero sí sé que terminé jugando sin ganas."},
+        {"speaker": "Sofi", "text": "Podemos concentrarnos en lo que sentiste y en el horario que quieres, sin ponerle una etiqueta a todo."},
+        {"speaker": "Sebas", "text": "Voy a silenciar las notificaciones por la noche. Si alguien me ofrece ayuda solo si estoy siempre disponible, puedo decir que no."},
+        {"speaker": "Sofi", "text": "Esa es una decisión tuya. No tengo que tocar tu cuenta ni contarle al grupo lo que me dijiste."},
+        {"speaker": "Sebas", "text": "Gracias. Me gustaría que Bruno y Mateo supieran que seguiré jugando con ellos, pero a mi ritmo."},
+        {"speaker": "Sofi", "text": "Podemos hablar con el grupo de horarios sin revelar tu conversación privada."},
+        {"speaker": "Sebas", "text": "Quiero decirles que jugaré cuando tenga ganas. Si alguien se burla, quizá me cueste sostenerlo."},
+        {"speaker": "Sofi", "text": "Puedo estar a tu lado cuando lo digas. No hablaré por ti ni explicaré por qué cambiaste de horario."},
+        {"speaker": "Sebas", "text": "Eso sería suficiente. Me gustaría seguir invitando a Mateo aunque últimamente esté más ausente."},
+        {"speaker": "Sebas", "text": "Sí. Así puedo descansar y seguir sintiéndome parte del equipo."}
+      ]
+    },
+    "D3_C2": {
+      "day": 3, "title": "Un grupo dividido", "presentation": "vn", "actor": "Bruno", "place": "patio",
+      "lines": [
+        {"speaker": "Bruno", "text": "Sebas ya casi no habla del juego conmigo. Y Mateo se desconecta sin avisar. Creí que me estaban dejando de lado."},
+        {"speaker": "Sofi", "text": "Yo también hice una broma cuando Sebas intentó contarme que estaba cansado. Creo que lo hice callar."},
+        {"speaker": "Bruno", "text": "Le dije a Mateo que parecía importarle más Kairo que nosotros. Ahora pienso que pudo haberlo herido."},
+        {"speaker": "Sofi", "text": "Podemos disculparnos sin pedir que nos expliquen todo. Todavía no sabemos qué está pasando."},
+        {"speaker": "Bruno", "text": "Sí. Quiero decirles que pueden volver al grupo cuando quieran, sin tener que dar razones."},
+        {"speaker": "Sofi", "text": "Y si alguien está preocupado, podemos acompañarlo a pedir ayuda sin investigar su cuenta."},
+        {"speaker": "Bruno", "text": "Me avergüenza que Mateo quizá haya dejado de hablar porque pensó que yo lo juzgaría. ¿Cómo me acerco sin hacerlo sentir interrogado?"},
+        {"speaker": "Sofi", "text": "Podemos empezar por reconocer lo que dijimos. Después dejarle elegir si quiere conversar, ahora o en otro momento."},
+        {"speaker": "Bruno", "text": "Entonces le ofreceré compañía y aceptaré su respuesta. No necesito que me cuente sus mensajes para estar de su lado."},
+        {"speaker": "Bruno", "text": "Me parece mejor que seguir suponiendo. Voy a empezar por escuchar."}
+      ]
+    },
+    "D4_A1": {
+      "day": 4, "title": "Un plan con el grupo", "presentation": "vn", "actor": "Camila", "place": "patio",
+      "lines": [
+        {"speaker": "Camila", "text": "Mateo contó que Kairo insiste en verlo sin que nadie lo sepa. Me alegra que pudiera hablarlo sin que yo tuviera que reenviar mis mensajes."},
+        {"speaker": "Bruno", "text": "Ya le dije que lamento haberle reprochado sus ausencias. No voy a pedirle que me muestre el chat."},
+        {"speaker": "Sofi", "text": "Tenemos dos pasos posibles: acompañarlo a hablar con el tutor o preparar un límite digital con su permiso."},
+        {"speaker": "Camila", "text": "Yo puedo acompañar. También quiero que quede claro que nadie debe compartir sus horarios por él."},
+        {"speaker": "Mateo", "text": "Quiero hablar, pero no delante de todo el grupo. Si vamos a tutoría, preferiría entrar con Sofi y quizá con Camila."},
+        {"speaker": "Sofi", "text": "Está bien. Los demás pueden apoyarte sin estar presentes ni escuchar lo que decidas contar."},
+        {"speaker": "Sofi", "text": "No hace falta esperar un encuentro para pedir apoyo. La presión también ocurre en línea."}
+      ],
+      "choices": [{"key": "A", "text": "Vamos con Mateo a la puerta de tutoría e iniciemos una conversación de apoyo."}, {"key": "B", "text": "Acompañemos a Mateo a ajustar privacidad y bloquear el contacto si él lo decide."}]
+    },
+    "D4_A2": {
+      "day": 4, "title": "Reconocer y reparar", "presentation": "vn", "actor": "Camila", "place": "pasillo",
+      "lines": [
+        {"speaker": "Camila", "text": "Mateo contó que Kairo quiere verlo en secreto. Eso me preocupa. También sigo necesitando que mi conversación no vuelva a difundirse."},
+        {"speaker": "Sofi", "text": "Lo entiendo. Compartí algo tuyo sin permiso y no quiero usar esta situación para pedirte que lo olvides."},
+        {"speaker": "Bruno", "text": "Yo también le hablé mal a Mateo. Puedo disculparme y ofrecer ayuda sin exigir que me perdone."},
+        {"speaker": "Camila", "text": "Eso ayudaría. Quiero elegir yo qué decirle al tutor; no necesito que todo el grupo vaya conmigo."},
+        {"speaker": "Mateo", "text": "También quiero poder contar lo mío sin que todos vean mi chat. Me alivia que Camila y yo podamos pedir ayuda de maneras distintas."},
+        {"speaker": "Sofi", "text": "Cada uno decide qué comparte. Puedo acompañarlos hasta la puerta y esperar si prefieren hablar por separado."},
+        {"speaker": "Sofi", "text": "La propuesta de encuentro no tiene que ocurrir. Podemos pedir ayuda ahora aunque aún haya vínculos por reparar."}
+      ],
+      "choices": [{"key": "A", "text": "Reconozcamos lo ocurrido y acompañemos a Camila y Mateo a pedir apoyo, con su permiso."}, {"key": "B", "text": "Esperemos a que todos se calmen antes de decidir algún paso."}]
+    },
+    "D4_B1": {
+      "day": 4, "title": "La presión se hace visible", "presentation": "vn", "actor": "Mateo", "place": "patio", "source_scenes": ["D4_01_A", "D4_02_A", "D4_03_A"],
+      "lines": [
+        {"speaker": "Mateo", "text": "No quiero ir. Me costó decirlo porque pensé que después de aceptar su ayuda le debía algo."},
+        {"speaker": "Sofi", "text": "No le debes un encuentro ni más mensajes. Podemos pedir apoyo ahora o acompañarte a marcar un límite."},
+        {"speaker": "Mateo", "text": "Quiero decidir yo qué mostrar. Si vamos con el tutor, me gustaría que estés a mi lado."}
+      ],
+      "choices": [{"key": "A", "text": "Te acompaño a iniciar una conversación con el tutor; tú decides qué contar."}, {"key": "B", "text": "Con tu permiso, revisemos bloqueo y privacidad sin responderle otra vez."}]
+    },
+    "D4_B2": {
+      "day": 4, "title": "Todavía se puede cambiar", "presentation": "vn", "actor": "Mateo", "place": "habitación",
+      "lines": [
+        {"speaker": "Mateo", "text": "Kairo volvió a insistir en vernos sin contarle a nadie. Ya no me siento bien con eso."},
+        {"speaker": "Sofi", "text": "Antes minimicé el secreto. Lo siento. Quiero tomar en serio lo que me dices ahora."},
+        {"speaker": "Mateo", "text": "Pensé que si no iba perdería a alguien que me apoyaba en el juego. Pero no quiero esconderme de ustedes."},
+        {"speaker": "Sofi", "text": "No tienes que ir ni contestarle. Podemos buscar apoyo hoy, sin esperar a que ocurra algo más."},
+        {"speaker": "Mateo", "text": "Quizá me anime si vienes conmigo. También quisiera decidir qué mensajes conservar."}
+      ],
+      "choices": [{"key": "A", "text": "Retomemos la conversación y vayamos juntos a iniciar apoyo en tutoría."}, {"key": "B", "text": "Dejemos la conversación para después; ya veremos si vuelve a escribir."}]
+    },
+    "D4_C1": {
+      "day": 4, "title": "El apoyo que Sebas elige", "presentation": "vn", "actor": "Sebas", "place": "pasillo",
+      "lines": [
+        {"speaker": "Sebas", "text": "Mateo me dijo que Kairo quiere verlo a escondidas. Yo pensaba silenciar sus avisos, pero no sabía que también lo presionaba a él."},
+        {"speaker": "Sofi", "text": "Cada uno vivió algo distinto. No tenemos que juntar sus chats para tomar en serio la preocupación."},
+        {"speaker": "Sebas", "text": "Quiero acompañar a Mateo. También me gustaría hablar de cómo me sentí obligado a estar conectado."},
+        {"speaker": "Sofi", "text": "Podemos buscar al tutor juntos. Si prefieres empezar con un límite digital, también puedes decidirlo."},
+        {"speaker": "Sebas", "text": "Gracias. Quiero que mi voz cuente sin dejar de escuchar a Mateo."}
+      ],
+      "choices": [{"key": "A", "text": "Acompañemos a Sebas y Mateo a hablar con una persona adulta de confianza."}, {"key": "B", "text": "Completemos primero un límite de contacto y privacidad que ambos acepten."}]
+    },
+    "D4_C2": {
+      "day": 4, "title": "Rectificar a tiempo", "presentation": "vn", "actor": "Bruno", "place": "patio",
+      "lines": [
+        {"speaker": "Bruno", "text": "Mateo contó que Kairo insiste en un encuentro secreto. Yo le reclamé por ausentarse y ahora entiendo que necesitaba espacio."},
+        {"speaker": "Sofi", "text": "Yo hice una broma cuando Sebas estaba cansado. Puedo disculparme sin exigir que nos cuenten todo."},
+        {"speaker": "Bruno", "text": "¿Y si nos dicen que no quieren hablar con nosotros?"},
+        {"speaker": "Sofi", "text": "Respetamos su decisión y dejamos claro que pueden pedir apoyo. No hace falta convencerlos de perdonarnos."},
+        {"speaker": "Bruno", "text": "Puedo ofrecer acompañarlos al tutor si lo desean. Y dejar de suponer por qué alguien no entra a jugar."}
+      ],
+      "choices": [{"key": "A", "text": "Ofrezcamos una disculpa y acompañemos a quien quiera iniciar apoyo adulto."}, {"key": "B", "text": "No hagamos nada todavía; quizás el grupo se arregle solo."}]
+    }
+  },
+  "reactions": {
+    "D1_GATE": {"A": {"speaker": "Camila", "text": "Me gusta. Podemos acordarlo entre todos y escuchar si alguien necesita otro ritmo."}, "B": {"speaker": "Mateo", "text": "Gracias, Sofi. Prefiero contarte algunas cosas sin que todo el lobby las lea."}, "C": {"speaker": "Bruno", "text": "Ya, juguemos. Igual espero que nadie se quede atrás."}},
+    "D2_A": {"A": {"speaker": "Camila", "text": "Gracias. Así puedo decidir cómo hablar con Mateo sin perder mi voz."}, "B": {"speaker": "Camila", "text": "No quería que todos lo leyeran. Ahora necesito distancia para pensar qué contar."}},
+    "D2_B": {"A": {"speaker": "Mateo", "text": "Gracias por escuchar. Me incomodó que una skin viniera con una condición de silencio."}, "B": {"speaker": "Mateo", "text": "Quizá... pero quería contarte que no me sentí libre de decir que no."}},
+    "D2_C": {"A": {"speaker": "Sebas", "text": "Gracias. Quiero decidir cuándo juego y cuándo descanso."}, "B": {"speaker": "Sebas", "text": "Ya, olvídalo. No quiero que el grupo se ría de esto."}},
+    "D4_A1": {"A": {"speaker": "Camila", "text": "Voy con ustedes. Mateo puede elegir qué contar primero."}, "B": {"speaker": "Bruno", "text": "Acompañaré sin tocar su cuenta. La decisión será de Mateo."}},
+    "D4_A2": {"A": {"speaker": "Camila", "text": "Gracias por reconocerlo. Todavía necesito tiempo, pero puedo ir si decido hablar."}, "B": {"speaker": "Camila", "text": "Esperar no cambia lo que Kairo está pidiendo. Me gustaría tener una opción de apoyo."}},
+    "D4_B1": {"A": {"speaker": "Mateo", "text": "Puedo empezar por decir que me siento presionado. No tengo que contar todo de golpe."}, "B": {"speaker": "Mateo", "text": "Revisaré mi cuenta. No quiero responderle solo para justificarme."}},
+    "D4_B2": {"A": {"speaker": "Mateo", "text": "Gracias por volver. Sí quiero hablar con el tutor; acompáñame."}, "B": {"speaker": "Mateo", "text": "No estoy seguro. Me alivia saber que todavía podemos pedir ayuda."}},
+    "D4_C1": {"A": {"speaker": "Sebas", "text": "Me gustaría contar lo mío con mis palabras y acompañar a Mateo."}, "B": {"speaker": "Sebas", "text": "Puedo empezar por mi horario y mis notificaciones. Yo decidiré qué hacer en mi cuenta."}},
+    "D4_C2": {"A": {"speaker": "Bruno", "text": "Me disculparé sin pedir perdón a cambio y ofreceré acompañarlos."}, "B": {"speaker": "Bruno", "text": "Me preocupa seguir posponiéndolo, pero aún puedo cambiar de idea."}}
+  },
+  "narrator_after_d2": {
+    "A": "Camila eligió contarte algo. Escuchar no da permiso para publicar su conversación ni sus horarios. Puedes ayudar respetando lo que ella desea compartir.",
+    "B": "La señal no es solo la skin: Kairo la vinculó con un secreto que incomoda. Un regalo no obliga a Mateo a callarse ni a corresponder.",
+    "C": "Sebas parece cansado. Eso puede tener muchas causas. Acércate sin acusarlo y escucha cómo se siente."
+  },
+  "ending_lines": {
+    "F01": [
+      {"speaker": "Tutor", "text": "Gracias por venir. Pueden contar solo lo que quieran compartir ahora. Buscaremos una manera segura de acompañarlos."},
+      {"speaker": "Narrador", "text": "Iniciar apoyo fue un paso de protección. La responsabilidad por la presión es de quien la ejerció; nadie aquí tenía que resolverla a solas."}
+    ],
+    "F02": [
+      {"speaker": "Narrador", "text": "El grupo concreta un límite digital con permiso de su titular. Nadie necesita responder a Kairo para justificar su decisión."},
+      {"speaker": "Sofi", "text": "Si la preocupación continúa, podemos pedir apoyo a una persona adulta de confianza en cualquier momento."}
+    ],
+    "F03": [
+      {"speaker": "Narrador", "text": "Quedan conversaciones y acciones pendientes. Sofi no obliga a nadie a contar más; deja abierta la posibilidad de acompañar."},
+      {"speaker": "Sofi", "text": "No tienes que ir a ese encuentro. Si quieres, podemos buscar apoyo juntos desde ahora."}
+    ]
+  },
+  "epilogue_by_route": {
+    "A": [
+      {"speaker": "Camila", "text": "Todavía quiero decidir por mí misma qué contar. Me ayuda que podamos hablar de límites sin difundir mis mensajes."},
+      {"speaker": "Bruno", "text": "Estoy aprendiendo a preguntar antes de suponer por qué Mateo se aleja."}
+    ],
+    "B": [
+      {"speaker": "Mateo", "text": "Me gustó sentirme valorado, pero el secreto empezó a pesarme. Poder hablar me ayudó a pensar qué quiero hacer."},
+      {"speaker": "Camila", "text": "Si necesitas compañía para hablar, el grupo puede estar ahí sin leer tu teléfono."}
+    ],
+    "C": [
+      {"speaker": "Sebas", "text": "Quiero jugar porque me divierte, no porque tenga miedo de perder la ayuda de alguien."},
+      {"speaker": "Bruno", "text": "Sé que mis reproches no ayudaron. Puedo escuchar sin volver a exigir explicaciones."}
+    ]
+  },
+  "epilogue_by_branch": {
+    "A1": {"speaker": "Camila", "text": "Haber elegido yo cuándo hablar con Mateo me dio confianza para seguir participando en el grupo."},
+    "A2": {"speaker": "Camila", "text": "Acepto que Sofi reconoció su error. Aún necesito tiempo antes de volver a confiarle algo personal."},
+    "B1": {"speaker": "Mateo", "text": "Pude mostrar solo lo que quise y entendí que pedir apoyo no me obliga a entregar mi teléfono."},
+    "B2": {"speaker": "Mateo", "text": "Que Sofi volviera a escucharme fue un comienzo; no tengo que fingir que la primera conversación no dolió."},
+    "C1": {"speaker": "Sebas", "text": "Elegir cuándo desconectarme me permitió descansar sin alejarme de mis amigos."},
+    "C2": {"speaker": "Sebas", "text": "La broma de ayer me incomodó. La disculpa ayuda, y puedo decidir si quiero hablar más tarde."}
+  },
+  "repair_epilogue": {"speaker": "Narrador", "text": "El apoyo no borra de inmediato la confianza dañada. Sofi y sus amigos siguen dándose tiempo para reparar lo que ocurrió."}
+}

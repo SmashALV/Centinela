@@ -3,6 +3,7 @@
   "scripts": {
     "test:web-storage": "node --test tests/web_storage.test.cjs",
     "test:browser": "node tests/browser_smoke.cjs",
+    "test:coral-browser": "node tests/coral_browser_smoke.cjs",
     "test:backend-sql": "node --test tests/backend_sql.test.cjs",
     "test:research-sql": "node --test tests/research_sql.test.cjs",
     "test:dashboard-export": "node --test tests/dashboard_export.test.mjs",

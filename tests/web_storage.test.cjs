@@ -74,6 +74,15 @@ test("ranuras, bloqueo, transacción de decisión e idempotencia", async () => {
     draft_exploring: true, draft_intro_step: 0 }, draft_content_version: "PLAYABLE_DRAFT_v0.3",
     preview_scene: "D1_02_A", preview_step: 0 };
   assert.equal((await send(first, "save_snapshot", { slot: 1, generation: 1, snapshot: dailyIntro })).success, true);
+  const coral = { ...snapshot(1, "coral"), coral_state: { version: "CORAL_STORY_v0.1",
+    day: 2, mode: "scene", node: "D2_B", step: 3, route: "B", branch: "",
+    choices: { D1_GATE: "B" }, companion_states: {}, actions: ["D1_TALK_CAMILA", "D1_TALK_MATEO"],
+    observed: [], seen_narrator: ["D1_INTRO_0"], hint_requests: { "1": "h1" },
+    adult_support_started: false, limit_completed: false, chapter_scene_done: false, ending: "" } };
+  assert.equal((await send(first, "save_snapshot", { slot: 1, generation: 1, snapshot: coral })).success, true);
+  assert.equal((await send(first, "load_slot", { slot: 1 })).result.coral_state.node, "D2_B");
+  assert.equal((await send(first, "save_snapshot", { slot: 1, generation: 1,
+    snapshot: { ...coral, coral_state: { ...coral.coral_state, companion_states: [] } } })).error.code, "INVALID_REQUEST");
   assert.equal((await send(first, "save_snapshot", firstWrite)).success, true);
   for (const malformed of [
     { ...snapshot(1), code: "CTN-+12345" },

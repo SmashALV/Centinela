@@ -39,12 +39,13 @@ const OBJECT_SPRITES := {
 	"photo": preload("res://assets/objects/photo.png"),
 	"door": preload("res://assets/objects/door.png"),
 	"exit": preload("res://assets/objects/door.png"),
+	"tutoria": preload("res://assets/objects/door.png"),
 	"pc": preload("res://assets/objects/pc.png")
 }
 const OBJECT_SIZES := {
 	"alarm": Vector2(46, 38), "backpack": Vector2(52, 52),
 	"desk": Vector2(80, 62), "photo": Vector2(48, 44),
-	"door": Vector2(70, 78), "exit": Vector2(70, 78),
+	"door": Vector2(70, 78), "exit": Vector2(70, 78), "tutoria": Vector2(55, 62),
 	"pc": Vector2(90, 66)
 }
 const PROP_SPRITES := {
@@ -90,7 +91,8 @@ const DRAFT_BLOCKS := {
 const TARGET_LABELS := {
 	"alarm": "Alarma", "backpack": "Mochila", "desk": "Escritorio",
 	"photo": "Foto", "door": "Puerta", "friends": "Grupo",
-	"exit": "Salida", "pc": "Computadora", "mateo": "Mateo"
+	"exit": "Salida", "pc": "Computadora", "mateo": "Mateo", "tutoria": "Tutoría",
+	"camila": "Camila", "bruno": "Bruno", "sebas": "Sebas", "lobby": "Lobby", "salida": "Salida"
 }
 const FRIENDS := [
 	{"name": "Mateo", "offset": Vector2(-60, 28), "jacket": "2f568c", "skin": "dc9f71", "style": "curly"},
@@ -109,6 +111,8 @@ var map_sprite: Sprite2D
 var ground_layer: TileMapLayer
 var collision_root: Node2D
 var player_body: CharacterBody2D
+var story_targets_active := false
+var story_primary_target := ""
 
 func _init() -> void:
 	map_sprite = Sprite2D.new()
@@ -143,16 +147,24 @@ func _ready() -> void:
 func configure(key: String, position: Vector2) -> void:
 	scene_key = key
 	player_pos = position
+	story_targets_active = false
+	story_primary_target = ""
 	_configure_layers()
 	if key == "bedroom":
 		objects = {"alarm": Vector2(150, 164), "backpack": Vector2(605, 294),
 			"desk": Vector2(278, 146), "photo": Vector2(494, 140), "door": Vector2(698, 230)}
 	elif key == "courtyard":
-		objects = {"friends": Vector2(374, 175), "exit": Vector2(690, 227)}
+		objects = {"friends": Vector2(374, 175), "tutoria": Vector2(139, 306), "exit": Vector2(690, 227)}
 	elif key.begins_with("draft_d"):
 		objects = {"mateo": Vector2(520, 225)}
 	else:
 		objects = {"pc": Vector2(382, 180)}
+	queue_redraw()
+
+func configure_story_targets(targets: Dictionary, primary: String) -> void:
+	story_targets_active = true
+	story_primary_target = primary
+	objects = targets.duplicate()
 	queue_redraw()
 
 func _configure_layers() -> void:
@@ -235,7 +247,7 @@ func _physics_process(delta: float) -> void:
 	nearby = ""
 	var best := 1.0
 	for key in objects:
-		var reach := 84.0 if key in ["friends", "mateo"] else 49.0
+		var reach := 84.0 if key in ["friends", "mateo", "camila", "bruno", "sebas"] else 64.0 if story_targets_active else 49.0
 		var distance: float = player_pos.distance_to(objects[key]) / reach
 		if distance < best:
 			best = distance
@@ -250,6 +262,8 @@ func target_label(key: String) -> String:
 	return str(TARGET_LABELS.get(key, key))
 
 func objective_target() -> String:
+	if story_targets_active:
+		return story_primary_target
 	match scene_key:
 		"bedroom":
 			if not GameState.flags.get("alarm", false): return "alarm"
@@ -294,6 +308,9 @@ func _draw() -> void:
 	for key in objects:
 		var pos: Vector2 = objects[key]
 		var active: bool = key == nearby
+		if story_targets_active:
+			_draw_story_target(key, pos, active)
+			continue
 		if key == "friends":
 			var color := Color("f5d479") if active else Color("8ec9c2")
 			draw_rect(Rect2(pos + Vector2(-83, -12), Vector2(166, 67)), color, false, 2.0 if active else 1.0)
@@ -314,7 +331,7 @@ func _draw() -> void:
 	if scene_key == "courtyard":
 		for friend in FRIENDS:
 			_draw_character(Vector2(objects.friends) + friend.offset, str(friend.name), "down", true)
-	elif scene_key.begins_with("draft_d"):
+	elif scene_key.begins_with("draft_d") and not story_targets_active:
 		_draw_character(objects.mateo, "Mateo")
 		if scene_key == "draft_d1":
 			_draw_character(Vector2(330, 245), "Camila")
@@ -322,8 +339,25 @@ func _draw() -> void:
 			_draw_character(Vector2(400, 250), "Sebas")
 	_draw_character(player_pos, "Sofi", player_facing)
 
+func _draw_story_target(key: String, pos: Vector2, active: bool) -> void:
+	var color := Color("f5d479") if active else Color("8ec9c2")
+	if key.capitalize() in CHARACTER_SHEETS:
+		_draw_character(pos, key.capitalize())
+	else:
+		draw_rect(Rect2(pos - Vector2(21, 20), Vector2(42, 40)), Color("193448", 0.88), true)
+		draw_rect(Rect2(pos - Vector2(21, 20), Vector2(42, 40)), color, false, 2.0)
+		if key == "lobby" or key == "pc":
+			draw_texture_rect(OBJECT_SPRITES.pc, Rect2(pos - Vector2(17, 17), Vector2(34, 34)), false)
+	draw_rect(Rect2(pos + Vector2(-43, -64), Vector2(86, 19)), Color("10192b", 0.9))
+	var target_name: String = {"lobby": "Lobby", "tutoria": "Tutoría", "pc": "PC", "salida": "Salida"}.get(key, key.capitalize())
+	draw_string(ThemeDB.fallback_font, pos + Vector2(-42, -49), "F · " + target_name, HORIZONTAL_ALIGNMENT_CENTER, 84, 11, color)
+	if key == story_primary_target:
+		_draw_objective_marker(pos + Vector2(0, 31))
+
 func _draw_draft_caption() -> void:
 	var caption: String = str({"draft_d1": "DÍA 1 · LOBBY", "draft_d2": "DÍA 2 · EXTERIOR DEL COLEGIO", "draft_d3": "DÍA 3 · PASILLO", "draft_d4": "DÍA 4 · PATIO"}.get(scene_key, ""))
+	if story_targets_active:
+		caption = "DÍA %d · %s" % [int(GameState.coral_state.get("day", 1)), {"draft_d1": "LOBBY", "draft_d2": "EXTERIOR", "draft_d3": "PASILLO", "draft_d4": "PATIO"}.get(scene_key, "")]
 	draw_rect(Rect2(56, 62, 355, 27), Color("10192b", 0.8))
 	draw_string(ThemeDB.fallback_font, Vector2(65, 81), caption, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color("fff3df"))
 

@@ -5,6 +5,9 @@ const NARRATIVE_VERSION := "provisional-d0-1"
 const PREVIEW_CONTENT_VERSION := "RECOVERED_PREVIEW_D0_v0.2"
 const PREVIEW_PACK_VERSION := "RECOVERED_PREVIEW_D0_D4_v0.2"
 const DRAFT_CONTENT_VERSION := "PLAYABLE_DRAFT_v0.3"
+const CORAL_CONTENT_VERSION := "CORAL_STORY_v0.1"
+const CORAL_DECISIONS := ["D1_GATE", "D2_A", "D2_B", "D2_C", "D4_A1", "D4_A2", "D4_B1", "D4_B2", "D4_C1", "D4_C2"]
+const CORAL_NODES := ["I_D1_CAMILA", "I_D1_BRUNO", "I_D1_SEBAS", "I_D1_MATEO", "I_TUTOR", "I_LIMIT", "D1_GATE", "D1_A_FOLLOW", "D1_B_FOLLOW", "D1_C_FOLLOW", "D2_A", "D2_B", "D2_C", "N_D2", "D3_A1", "D3_A2", "D3_B1", "D3_B2", "D3_C1", "D3_C2", "D4_A1", "D4_A2", "D4_B1", "D4_B2", "D4_C1", "D4_C2", "F01", "F02", "F03"]
 const PREVIEW_SCENES := ["D1_02_A", "D1_03_A", "D2_03_A", "D2_04_A", "D3_01_A", "D4_01_A", "D4_02_A", "D4_03_A", "ENDINGS_INDEX", "F01_A", "F01_B", "F02", "F03"]
 
 var slot: int = 1
@@ -28,6 +31,7 @@ var ui_modal: String = ""
 var hint_level: int = 0
 var music_volume: int = 50
 var effects_volume: int = 75
+var coral_state: Dictionary = {}
 var returning_from_moba: bool = false
 
 func new_game(chosen_slot: int) -> void:
@@ -53,6 +57,7 @@ func new_game(chosen_slot: int) -> void:
 	hint_level = 0
 	music_volume = 50
 	effects_volume = 75
+	coral_state = {}
 
 func snapshot() -> Dictionary:
 	return {"schema_version": SCHEMA_VERSION, "narrative_version": NARRATIVE_VERSION,
@@ -69,7 +74,8 @@ func snapshot() -> Dictionary:
 		"dialogue_choice": dialogue_choice, "dialogue_history": dialogue_history.duplicate(),
 		"dialogue_speed": dialogue_speed, "ui_modal": ui_modal,
 		"hint_level": hint_level, "music_volume": music_volume,
-		"effects_volume": effects_volume}
+		"effects_volume": effects_volume,
+		"coral_state": coral_state.duplicate(true)}
 
 func restore(data: Dictionary) -> bool:
 	if data.get("schema_version") != SCHEMA_VERSION or data.get("narrative_version") != NARRATIVE_VERSION:
@@ -91,7 +97,7 @@ func restore(data: Dictionary) -> bool:
 	for index in range(4, 10):
 		if data.code.unicode_at(index) < 48 or data.code.unicode_at(index) > 57:
 			return false
-	for flag in ["prologue_seen", "wakeup_seen", "alarm", "backpack", "friends", "d0_chat_done", "preview_reviewed", "draft_mode", "draft_completed", "draft_exploring", "d1_interlude_active"]:
+	for flag in ["prologue_seen", "wakeup_seen", "alarm", "backpack", "friends", "d0_chat_done", "d0_photo_seen", "d0_desk_seen", "d0_tutoria_seen", "d0_profile_private", "preview_reviewed", "draft_mode", "draft_completed", "draft_exploring", "d1_interlude_active"]:
 		if data.flags.has(flag) and typeof(data.flags[flag]) != TYPE_BOOL:
 			return false
 	if data.flags.get("d1_interlude_active", false) and data.get("phase") != "result":
@@ -121,8 +127,39 @@ func restore(data: Dictionary) -> bool:
 		return false
 	if typeof(data.get("moba_result", "")) != TYPE_STRING or data.get("moba_result", "") not in ["", "victoria", "derrota", "empate"]:
 		return false
-	if not ["bedroom", "courtyard", "computer", "moba", "result", "preview"].has(data.get("phase", "")):
+	if not ["bedroom", "courtyard", "computer", "moba", "result", "preview", "coral"].has(data.get("phase", "")):
 		return false
+	var coral: Variant = data.get("coral_state", {})
+	if typeof(coral) != TYPE_DICTIONARY:
+		return false
+	if data.get("phase") == "coral":
+		if coral.get("version") != CORAL_CONTENT_VERSION or int(coral.get("day", 0)) not in [1, 2, 3, 4] or coral.get("mode") not in ["intro", "explore", "scene", "reaction", "ending", "summary"] or typeof(coral.get("node", "")) != TYPE_STRING or typeof(coral.get("step", 0)) not in [TYPE_INT, TYPE_FLOAT] or int(coral.get("step", 0)) < 0 or int(coral.get("step", 0)) > 100 or coral.get("route", "") not in ["", "A", "B", "C"]:
+			return false
+		for field in ["choices", "hint_requests", "companion_states"]:
+			if typeof(coral.get(field)) != TYPE_DICTIONARY:
+				return false
+		for field in ["actions", "observed", "seen_narrator"]:
+			if typeof(coral.get(field)) != TYPE_ARRAY or coral[field].size() > 100:
+				return false
+		for field in ["adult_support_started", "limit_completed", "chapter_scene_done"]:
+			if typeof(coral.get(field)) != TYPE_BOOL:
+				return false
+		if coral.get("branch", "") not in ["", "A1", "A2", "B1", "B2", "C1", "C2"] or coral.get("ending", "") not in ["", "F01", "F02", "F03"]:
+			return false
+		var coral_mode: String = str(coral.mode)
+		var coral_node: String = str(coral.node)
+		if float(coral.step) != float(int(coral.step)) or float(coral.day) != float(int(coral.day)): return false
+		if (coral_mode in ["intro", "explore", "summary"] and not coral_node.is_empty()) or (coral_mode in ["scene", "reaction", "ending"] and coral_node not in CORAL_NODES) or (coral_mode == "reaction" and coral_node not in CORAL_DECISIONS) or (coral_mode == "ending" and coral_node not in ["F01", "F02", "F03"]):
+			return false
+		for decision_id in coral.choices:
+			if decision_id not in CORAL_DECISIONS or coral.choices[decision_id] not in (["A", "B", "C"] if decision_id == "D1_GATE" else ["A", "B"]):
+				return false
+		for hint_day in coral.hint_requests:
+			if hint_day not in ["1", "2", "3", "4"] or coral.hint_requests[hint_day] not in ["nav", "h1", "h2"]:
+				return false
+		for companion in coral.companion_states:
+			if companion not in ["A", "B", "C"] or typeof(coral.companion_states[companion]) != TYPE_DICTIONARY:
+				return false
 	var scene: Variant = data.get("preview_scene", "")
 	var step: Variant = data.get("preview_step", 0)
 	var choices: Variant = data.get("preview_choices", {})
@@ -172,7 +209,7 @@ func restore(data: Dictionary) -> bool:
 			return false
 	if (not active_dialogue.is_empty() and not saved_modal.is_empty()) or \
 		(saved_modal in ["class", "desktop"] and data.get("phase") != "computer") or \
-		(saved_modal in ["phone", "objective"] and data.get("phase") not in ["bedroom", "courtyard", "computer"] and not data.flags.get("draft_exploring", false)):
+		(saved_modal in ["phone", "objective"] and data.get("phase") not in ["bedroom", "courtyard", "computer", "coral"] and not data.flags.get("draft_exploring", false)):
 		return false
 	if (active_dialogue == "wakeup" and data.get("phase") != "bedroom") or \
 		(active_dialogue == "courtyard" and data.get("phase") != "courtyard") or \
@@ -219,4 +256,9 @@ func restore(data: Dictionary) -> bool:
 	hint_level = int(saved_hint)
 	music_volume = int(saved_music)
 	effects_volume = int(saved_effects)
+	coral_state = coral.duplicate(true)
+	if coral_state.has("step"):
+		coral_state.step = int(coral_state.step)
+	if coral_state.has("day"):
+		coral_state.day = int(coral_state.day)
 	return true
