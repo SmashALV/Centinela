@@ -65,6 +65,17 @@ test("ranuras, bloqueo, transacción de decisión e idempotencia", async () => {
   const desktop = { ...snapshot(1, "computer"), ui_modal: "desktop" };
   assert.equal((await send(first, "save_snapshot", { slot: 1, generation: 1, snapshot: desktop })).success, true);
   assert.equal((await send(first, "load_slot", { slot: 1 })).result.ui_modal, "desktop");
+  const routine = { version: "DAILY_v1", day: 0, stage: "morning", place: "bedroom",
+    scene: "", step: 0, chat_seen: false, messages_checked: false, matches: [] };
+  const dailyDesktop = { ...snapshot(1), ui_modal: "desktop", flags: { routine } };
+  assert.equal((await send(first, "save_snapshot", {slot: 1, generation: 1, snapshot: dailyDesktop})).success, true);
+  for (const bad of [{...routine, day: 1.5}, {...routine, stage: "skip_school"},
+    {...routine, scene: ["lesson"]}, {...routine, step: 16}, {...routine, matches: ["unknown"]},
+    {...routine, place: "school"}]) {
+    assert.equal((await send(first, "save_snapshot", {slot: 1, generation: 1,
+      snapshot: {...dailyDesktop, flags: {routine: bad}}})).error.code, "INVALID_REQUEST");
+    assert.equal((await send(first, "load_slot", {slot: 1})).result.flags.routine.stage, "morning");
+  }
   assert.equal((await send(first, "save_snapshot", firstWrite)).success, true);
   for (const draftVersion of ["PLAYABLE_DRAFT_v0.1", "PLAYABLE_DRAFT_v0.2", "PLAYABLE_DRAFT_v0.3"]) {
     const draft = { ...snapshot(1, "preview"), flags: { draft_mode: true },

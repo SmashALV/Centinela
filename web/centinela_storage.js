@@ -115,6 +115,19 @@
       throw failure("INVALID_REQUEST", "Indicadores inválidos");
     if ("d0_guide_active" in flags && (!["bedroom", "courtyard", "computer"].includes(flags.d0_guide_active) || flags.d0_guide_active !== snapshot.phase))
       throw failure("INVALID_REQUEST", "Guía incompatible con escenario");
+    if ("routine" in flags) {
+      const r = flags.routine;
+      if (!r || typeof r !== "object" || Array.isArray(r) || r.version !== "DAILY_v1" ||
+          !Number.isInteger(r.day) || r.day < 0 || r.day > 4 ||
+          !["morning", "breakfast", "outbound", "arrival", "class", "class_exit", "farewell", "homeward", "dinner", "evening", "bedtime", "sleep", "finished"].includes(r.stage) ||
+          !["bedroom", "living", "street", "school", "classroom", "computer", "tutor"].includes(r.place) ||
+          !["", "wake", "breakfast", "lesson", "goodbye", "dinner", "evening_chat", "match_reply"].includes(r.scene) ||
+          !Number.isInteger(r.step) || r.step < 0 || r.step > 15 ||
+          typeof r.chat_seen !== "boolean" || typeof r.messages_checked !== "boolean" ||
+          !Array.isArray(r.matches) || r.matches.length > 5 ||
+          r.matches.some(x => !["victoria", "derrota", "empate"].includes(x)))
+        throw failure("INVALID_REQUEST", "Rutina diaria inválida");
+    }
     const coral = snapshot.coral_state ?? {};
     if (!coral || typeof coral !== "object" || Array.isArray(coral) ||
         (snapshot.phase === "coral" && (!["CORAL_STORY_v0.1", "CORAL_STORY_v0.2"].includes(coral.version) ||
@@ -215,7 +228,7 @@
     const speed = snapshot.dialogue_speed ?? "normal";
     if (!["", "phone", "objective", "class", "desktop"].includes(uiModal) ||
         (dialogue && uiModal) ||
-        (["class", "desktop"].includes(uiModal) && snapshot.phase !== "computer") ||
+        (["class", "desktop"].includes(uiModal) && (flags.routine ? !["bedroom", "computer"].includes(flags.routine.place) : snapshot.phase !== "computer")) ||
         (["phone", "objective"].includes(uiModal) &&
           !["bedroom", "courtyard", "computer", "coral"].includes(snapshot.phase) && !flags.draft_exploring) ||
         !Number.isInteger(hint) || hint < 0 || hint > 2 ||

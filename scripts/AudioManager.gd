@@ -5,6 +5,7 @@ const TRACKS := {
 	"arena": "res://assets/audio/arena_loop.wav"
 }
 const EFFECTS := {
+	"school_bell": "res://assets/audio/school_bell.wav",
 	"confirm": "res://assets/audio/confirm.wav",
 	"interact": "res://assets/audio/interact.wav",
 	"ability": "res://assets/audio/ability.wav",

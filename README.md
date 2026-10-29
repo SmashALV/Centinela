@@ -6,13 +6,15 @@ Proyecto 2D de escritorio y Web en desarrollo. El diseño de referencia está en
 
 1. Abrir `project.godot` con Godot 4.4.1 o una versión compatible de Godot 4.
 2. Ejecutar la escena principal con **F6** o el proyecto con **F5**.
-3. Elegir una de las tres ranuras. En la habitación: alarma y mochila; en el patio: grupo; después, usar la PC, abrir el chat en su escritorio ficticio, elegir clase y jugar el MOBA. En el menú, **Rehacer** inicia esa ranura desde el prólogo y **Borrar** la deja vacía; ambas acciones piden confirmación. Durante el MOBA, **P** permite salir al menú. Al terminar la partida, **Continuar** muestra la reacción de Camila; luego el narrador presenta a Sofi al día siguiente y abre el recorrido del Día 1.
+3. Elegir una de las tres ranuras. La rutina actual D0–D4 es habitación → desayuno → calle → colegio → clase → despedida → regreso al atardecer → cena → Discord y partida → dormir. Los mapas cambian al alcanzar sus bordes. El día cambia al dormir. **F** interactúa con compañeros y objetos.
+
+En el menú, **Rehacer** inicia esa ranura desde el prólogo y **Borrar** la deja vacía; ambas acciones piden confirmación. Durante el MOBA, **P** permite salir al menú. Al terminar la partida, **Continuar** muestra la reacción de Camila y devuelve a Sofi a su cuarto. Interactuar con la cama inicia el descanso y la mañana siguiente. Las vistas previas históricas conservan su recorrido de compatibilidad.
 
 Controles: **WASD** movimiento, **F** interacción, **E** celular, **Tab** objetivo, **P** pausa, **Esc** volver, **Q** habilidad en MOBA y **clic izquierdo** ataque.
 
 Al crear una partida, el Día 0 presenta una introducción completa con las caras de Sofi y sus amigos, sin título ni etiqueta de narrador. El texto aparece completo y avanza automáticamente según su longitud. Las decisiones esperan al jugador; **P** pausa la lectura y **clic dentro del recuadro** o **Enter** permiten adelantarla. Pausar o cambiar de ventana conserva el tiempo restante. Las señales se descubren durante la historia. La [presentación automática y la interfaz lila y rosada](docs/AUTOMATIC_PRESENTATION_2026-10-29.md) incluyen nombres junto al personaje que habla y más decoración en el cuarto.
 
-En el MOBA, cada aliado conserva una marca de color propia, los rivales llevan una X y Sofi tiene una flecha de jugador. Las torres y bases están rotuladas y el objetivo de la partida permanece visible.
+En el MOBA, cada aliado conserva una marca de color propia, los rivales llevan una X y Sofi tiene una flecha de jugador. El objetivo es alcanzar 5 bajas de equipo antes que el rival. Hay un límite de 60 segundos; al agotarse gana quien tenga más bajas y la igualdad produce empate. No hay torres ni bases.
 
 Para ejecutar las pruebas sin abrir la ventana:
 
@@ -31,7 +33,7 @@ La suite devuelve código distinto de cero cuando falla una comprobación. Se ha
 El preset **Windows Validation** genera un ejecutable de 64 bits con los recursos incluidos. La construcción y sus comprobaciones están en [la entrega Windows del 29-10-2026](docs/WINDOWS_VALIDATION_BUILD_2026-10-29.md). Funciona con guardado local y conserva las tres ranuras. El contenido educativo sigue sujeto a revisión docente.
 
 ```powershell
-& 'E:\GODOT\Godot_v4.7.2-stable_win64.exe\Godot_v4.7.2-stable_win64_console.exe' --headless --path . --export-release 'Windows Validation' 'build/windows/Centinela_0.39.0_Dialogos_2026-10-29/Centinela_Dialogos.exe'
+& 'E:\GODOT\Godot_v4.7.2-stable_win64.exe\Godot_v4.7.2-stable_win64_console.exe' --headless --path . --export-release 'Windows Validation' 'build/windows/Centinela_0.40.0_Rutina_2026-10-29/Centinela_Rutina.exe'
 ```
 
 ## Versión Web
@@ -81,7 +83,7 @@ npm run test:dashboard-browser
 
 ## QA técnico
 
-La [matriz P7 con evidencia por caso](docs/P7_QA_2026-10-27.md) registra qué funcionó en `0.7.0-preview` y qué sigue bloqueado por aprobación de contenido, Supabase de desarrollo y staging. El [cierre técnico y de requisitos no funcionales](docs/NFR_CLOSEOUT_2026-10-28.md) registra pruebas de rutas y seguridad de entrega. El build local actual es `0.39.0-preview`; la [verificación P0–P1](docs/P0_P1_CLOSURE_2026-10-28.md) detalla el recorrido local. La [gestión de ranuras](docs/SLOT_MANAGEMENT_2026-10-28.md) explica el reinicio y borrado local; la [continuidad D0→D1](docs/D0_D1_CONTINUITY_2026-10-28.md) registra la transición. El menú de pausa permite cambiar entre texto pequeño, mediano y grande y ajustar la velocidad de los diálogos D0. Una ventana menor de 768×448 pausa el juego y exige pulsar **Continuar** después de ampliarla. Los diálogos D0 guardan el nodo activo y el historial antes de avanzar y se reanudan tras recargar. Las respuestas D0 y D1–D4 se guardan al elegirlas y muestran la reacción del compañero. Las conversaciones presenciales, el chat grupal y los mensajes directos usan interfaces distintas. También se recuperan el celular, el objetivo, el escritorio de la PC, la selección de clase y el nivel de pista si estaban abiertos.
+La [matriz P7 con evidencia por caso](docs/P7_QA_2026-10-27.md) registra qué funcionó en `0.7.0-preview` y qué sigue bloqueado por aprobación de contenido, Supabase de desarrollo y staging. El [cierre técnico y de requisitos no funcionales](docs/NFR_CLOSEOUT_2026-10-28.md) registra pruebas de rutas y seguridad de entrega. El build local actual es `0.40.0-preview`; la [verificación P0–P1](docs/P0_P1_CLOSURE_2026-10-28.md) detalla el recorrido local. La [gestión de ranuras](docs/SLOT_MANAGEMENT_2026-10-28.md) explica el reinicio y borrado local; la [continuidad D0→D1](docs/D0_D1_CONTINUITY_2026-10-28.md) registra la transición. El menú de pausa permite cambiar entre texto pequeño, mediano y grande y ajustar la velocidad de los diálogos D0. Una ventana menor de 768×448 pausa el juego y exige pulsar **Continuar** después de ampliarla. Los diálogos D0 guardan el nodo activo y el historial antes de avanzar y se reanudan tras recargar. Las respuestas D0 y D1–D4 se guardan al elegirlas y muestran la reacción del compañero. Las conversaciones presenciales, el chat grupal y los mensajes directos usan interfaces distintas. También se recuperan el celular, el objetivo, el escritorio de la PC, la selección de clase y el nivel de pista si estaban abiertos.
 
 ## Entrega P8
 
@@ -89,7 +91,9 @@ El [procedimiento de construcción, staging y operación](docs/P8_OPERATIONS.md)
 
 ## Estado actual
 
-La [revisión de diálogos y chat v0.39](docs/DIALOGUE_CHAT_2026-10-29.md) incorpora avance con clic, pausa que conserva los segundos de lectura, avatares cuadrados con mensajes largos y un fondo interior para la sala de cómputo. La nueva rutina diaria, los cambios del MOBA y las nuevas poses quedan para las siguientes fases de las correcciones recibidas.
+La [rutina completa v0.40](docs/DAILY_ROUTINE_2026-10-29.md) conecta D0–D4 desde el despertar hasta dormir, añade sala, calle, clase y atardecer, cambia mapas por sus bordes y ubica las PC en dormitorio y cómputo. El escritorio tiene fondo personal y accesos a Discord y Arena 5v5. El combate termina con 5 bajas o al minuto. Se integran nuevas posturas, rostros de Mateo y Sebas, variantes emocionales y avatares coherentes.
+
+La [revisión de diálogos y chat v0.39](docs/DIALOGUE_CHAT_2026-10-29.md) incorpora avance con clic, pausa que conserva los segundos de lectura, avatares cuadrados con mensajes largos y un fondo interior para la sala de cómputo. Ese bloque continúa integrado en la versión actual.
 
 El [rostro actual de Camila v3](docs/CAMILA_V3_ASSETS_2026-10-29.md) está integrado en ilustración, avatar y mapa.
 

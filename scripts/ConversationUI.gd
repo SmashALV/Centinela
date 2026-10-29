@@ -1,28 +1,31 @@
 extends Control
 
 const BACKGROUNDS := {
+	"living": "res://assets/vn/living.png",
+	"classroom": "res://assets/vn/classroom.png",
+	"street": "res://assets/vn/courtyard.png",
 	"computer_lab": "res://assets/vn/computer_lab.png",
 	"bedroom": "res://assets/vn/bedroom.png",
 	"courtyard": "res://assets/vn/courtyard.png",
 	"corridor": "res://assets/vn/corridor.png"
 }
 const SPRITES := {
-	"Sofi": "res://assets/vn/sofi_neutral.png",
-	"Sofi_concerned": "res://assets/vn/sofi_concerned.png",
-	"Mateo": "res://assets/vn/mateo_neutral.png",
-	"Mateo_worried": "res://assets/vn/mateo_worried.png",
-	"Mateo_alarmed": "res://assets/vn/mateo_alarmed.png",
-	"Camila": "res://assets/vn/camila_v3.png",
-	"Bruno": "res://assets/vn/bruno_neutral.png",
-	"Sebas": "res://assets/vn/sebas_neutral.png"
+	"Sofi": "res://assets/vn/sofi_v4.png",
+	"Sofi_concerned": "res://assets/vn/sofi_concerned_v4.png",
+	"Mateo": "res://assets/vn/mateo_v4.png",
+	"Mateo_worried": "res://assets/vn/mateo_worried_v4.png",
+	"Mateo_alarmed": "res://assets/vn/mateo_alarmed_v4.png",
+	"Camila": "res://assets/vn/camila_v4.png",
+	"Bruno": "res://assets/vn/bruno_v4.png",
+	"Sebas": "res://assets/vn/sebas_v4.png"
 }
 const AVATARS := {
-	"Kairo": "res://assets/vn/kairo_anonymous.png",
-	"Sofi": "res://assets/portraits/sofi_neutral.png",
-	"Mateo": "res://assets/portraits/mateo_neutral.png",
-	"Camila": "res://assets/portraits/camila_v3.tres",
-	"Bruno": "res://assets/portraits/bruno_neutral.png",
-	"Sebas": "res://assets/portraits/sebas_neutral.png"
+	"Kairo": "res://assets/portraits/kairo_v4.tres",
+	"Sofi": "res://assets/portraits/sofi_v4.tres",
+	"Mateo": "res://assets/portraits/mateo_v4.tres",
+	"Camila": "res://assets/portraits/camila_v4.tres",
+	"Bruno": "res://assets/portraits/bruno_v4.tres",
+	"Sebas": "res://assets/portraits/sebas_v4.tres"
 }
 
 var auto_action: Callable = Callable()

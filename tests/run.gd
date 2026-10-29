@@ -258,7 +258,7 @@ func _run() -> void:
 	for hero_index in 5:
 		ally_accents[arena.ALLY_ACCENTS[arena.heroes[hero_index].name]] = true
 	_check(ally_accents.size() == 5, "cinco aliados tienen marcas visuales distintas en MOBA")
-	_check(arena.objective_label.text.contains("destruir la base rival"), "MOBA muestra objetivo durante el combate")
+	_check(arena.objective_label.text.contains("5 bajas"), "MOBA muestra objetivo durante el combate")
 	_check(arena.camera.limit_left == 0 and arena.camera.limit_top == 0 and arena.camera.limit_right == 1152 and arena.camera.limit_bottom == 640, "cámara MOBA limitada a la arena")
 	_check(arena.pause_panel.get_node("Content/Music") is Button and arena.pause_panel.get_node("Content/Effects") is Button, "pausa MOBA incluye ajustes de audio")
 	_check(arena.result_panel.has_node("Content/Title"), "panel de resultado tiene título accesible")
@@ -273,7 +273,7 @@ func _run() -> void:
 	arena._notification(NOTIFICATION_APPLICATION_FOCUS_OUT)
 	_check(arena.paused and arena.pause_panel.visible, "MOBA pausa al perder foco")
 	arena._resume_match()
-	_check(arena.buildings.size() == 6, "estructuras por lado")
+	_check(arena.heroes.size() == 10 and arena.get("buildings") == null, "5 contra 5 sin torres ni bases")
 	_check(arena._timeout_result() == "empate", "desempate idéntico")
 	arena._damage_hero(5, 12)
 	_check(arena.heroes[5].hp == 68.0, "ataque de 12 HP")
@@ -281,10 +281,6 @@ func _run() -> void:
 	arena.shots.append(arena._shot(Vector2(180, 320), Vector2.RIGHT, 0, 12.0, 384.0, 192.0, false, false))
 	arena._update_shots(0.25)
 	_check(arena.heroes[5].hp == 56.0, "proyectil rápido no atraviesa héroe")
-	arena._damage_building(0, arena.buildings[4], 12.0)
-	_check(arena.buildings[4].hp == 240.0, "torre interior bloqueada")
-	arena._damage_building(0, arena.buildings[3], 12.0)
-	_check(arena.buildings[3].hp == 228.0 and arena.effective_damage[0] == 12.0, "daño estructural efectivo")
 	arena.heroes[5].hp = 24.0
 	arena._update_heroes(0.1)
 	_check(arena.heroes[5].retreating, "IA se retira al llegar a 24 HP")
@@ -334,39 +330,15 @@ func _run() -> void:
 	timing.elapsed = 4.1
 	timing._update_heroes(0.2)
 	_check(is_equal_approx(timing.heroes[0].hp, 40.4), "curación de héroe empieza tras 4 s exactos")
-	timing.buildings[2].hp = 380.0
-	timing.buildings[2].last_hit = 0.0
-	timing.elapsed = 5.1
-	timing._update_buildings(0.2)
-	_check(is_equal_approx(timing.buildings[2].hp, 380.4), "regeneración de base empieza tras 5 s exactos")
 	timing.queue_free()
-	var tower_timing: Node2D = Arena.instantiate()
-	get_tree().root.add_child(tower_timing)
-	tower_timing.countdown = 0.0
-	for hero_index in tower_timing.heroes.size():
-		if hero_index != 5:
-			tower_timing.heroes[hero_index].hp = 0.0
-			tower_timing.heroes[hero_index].dead_until = 999.0
-	tower_timing.heroes[5].pos = Vector2(340, 320)
-	tower_timing._process(1.4)
-	var first_volley: int = tower_timing.shots.filter(func(shot: Dictionary) -> bool: return shot.tower).size()
-	tower_timing._process(0.1)
-	var second_volley: int = tower_timing.shots.filter(func(shot: Dictionary) -> bool: return shot.tower).size()
-	_check(first_volley == 0 and second_volley > 0, "torres disparan después de 1,5 s")
-	tower_timing._update_shots(0.2)
-	_check(tower_timing.heroes[5].hp < 80.0 and int(80.0 - tower_timing.heroes[5].hp) % 12 == 0, "proyectil de torre inflige 12 HP")
-	tower_timing.queue_free()
 	var rules: Node2D = Arena.instantiate()
 	get_tree().root.add_child(rules)
-	rules.effective_damage = [30.0, 20.0]
-	_check(rules._timeout_result() == "victoria", "desempate por daño efectivo favorece aliados")
-	rules.effective_damage = [20.0, 30.0]
-	_check(rules._timeout_result() == "derrota", "desempate por daño efectivo favorece rivales")
-	rules.effective_damage = [20.0, 20.0]
-	_check(rules._timeout_result() == "empate", "igualdad total produce empate")
-	rules.buildings[3].hp = 0.0
-	rules.effective_damage = [0.0, 999.0]
-	_check(rules._timeout_result() == "victoria", "torres destruidas preceden al daño acumulado")
+	rules.team_kills = [3, 2]
+	_check(rules._timeout_result() == "victoria", "a los 60 s gana quien tiene más bajas")
+	rules.team_kills = [2, 3]
+	_check(rules._timeout_result() == "derrota", "rival con más bajas gana al límite")
+	rules.team_kills = [2, 2]
+	_check(rules._timeout_result() == "empate", "igualdad de bajas produce empate")
 	rules.queue_free()
 	var pause_rules: Node2D = Arena.instantiate()
 	get_tree().root.add_child(pause_rules)
@@ -377,19 +349,19 @@ func _run() -> void:
 	pause_rules.queue_free()
 	var win_rules: Node2D = Arena.instantiate()
 	get_tree().root.add_child(win_rules)
-	win_rules.buildings[3].hp = 0.0
-	win_rules.buildings[4].hp = 0.0
-	win_rules.buildings[5].hp = 1.0
-	win_rules._damage_building(0, win_rules.buildings[5], 1.0)
-	_check(win_rules.ended and GameState.moba_result == "victoria" and win_rules.elapsed == 0.0, "base rival destruida causa victoria inmediata")
+	win_rules.team_kills = [4, 0]
+	win_rules.heroes[5].hp = 12.0
+	win_rules._damage_hero(5, 12.0)
+	_check(win_rules.ended and GameState.moba_result == "victoria" and win_rules.elapsed == 0.0, "quinta baja causa victoria inmediata")
+	win_rules._damage_hero(5, 99.0)
+	_check(win_rules.team_kills[0] == 5, "una misma caída no suma dos bajas")
 	win_rules.queue_free()
 	var loss_rules: Node2D = Arena.instantiate()
 	get_tree().root.add_child(loss_rules)
-	loss_rules.buildings[0].hp = 0.0
-	loss_rules.buildings[1].hp = 0.0
-	loss_rules.buildings[2].hp = 1.0
-	loss_rules._damage_building(1, loss_rules.buildings[2], 1.0)
-	_check(loss_rules.ended and GameState.moba_result == "derrota" and loss_rules.elapsed == 0.0, "base aliada destruida causa derrota inmediata")
+	loss_rules.team_kills = [0, 4]
+	loss_rules.heroes[0].hp = 12.0
+	loss_rules._damage_hero(0, 12.0)
+	_check(loss_rules.ended and GameState.moba_result == "derrota" and loss_rules.elapsed == 0.0, "quinta baja rival causa derrota inmediata")
 	loss_rules.queue_free()
 	var geometry: Node2D = Arena.instantiate()
 	get_tree().root.add_child(geometry)
@@ -414,7 +386,7 @@ func _run() -> void:
 	for navigation_step in 200:
 		geometry.elapsed += 0.1
 		lane_runner = geometry._move_ai(lane_runner, Vector2(852, 320), 0.1)
-	_check(lane_runner.pos.x > 740.0, "IA avanza por el carril hasta torre rival")
+	_check(lane_runner.pos.x > 740.0, "IA recorre el campo hacia un rival")
 	var retreat_runner: Dictionary = geometry._hero("Prueba retirada", 0, Vector2(212.3911, 294.9304))
 	for navigation_step in 40:
 		geometry.elapsed += 0.1
@@ -429,13 +401,6 @@ func _run() -> void:
 	geometry.shots.append(geometry._shot(Vector2(500, 320), Vector2.RIGHT, 0, 12.0, 384.0, 192.0, false, false))
 	geometry._update_shots(0.5)
 	_check(geometry.heroes[5].hp == 80.0 and geometry.shots.is_empty(), "obstáculo detiene proyectil")
-	geometry.buildings[3].hp = 12.0
-	geometry.heroes[5].pos = geometry.buildings[3].pos
-	geometry._damage_building(0, geometry.buildings[3], 12.0)
-	var ruin: Rect2i = geometry._ruin_cells(geometry.buildings[3])
-	_check(geometry.navigation.is_point_solid(ruin.position) and not geometry._has_line_of_sight(Vector2(800, 320), Vector2(900, 320)), "torre destruida crea ruina sólida 2x2")
-	var ruin_rect := Rect2(Vector2(ruin.position * 32), Vector2(ruin.size * 32))
-	_check(not ruin_rect.grow(13.0).has_point(geometry.heroes[5].pos), "héroe sale de la ruina al destruirse torre")
 	geometry.queue_free()
 	var simulation: Node2D = Arena.instantiate()
 	get_tree().root.add_child(simulation)
@@ -462,12 +427,10 @@ func _run() -> void:
 		if full_match.ended:
 			break
 		full_match._process(0.1)
-	print("MOBA 60 s: resultado=", GameState.moba_result, " tiempo=", full_match.elapsed,
-		" daño_estructural=", full_match.effective_damage,
-		" HP_bases=", [full_match.buildings[2].hp, full_match.buildings[5].hp])
+	print("MOBA 5v5: resultado=", GameState.moba_result, " tiempo=", full_match.elapsed, " bajas=", full_match.team_kills)
 	_check(full_match.ended and full_match.elapsed <= 60.1, "MOBA finaliza a más tardar a los 60 s")
-	_check(full_match.effective_damage[0] + full_match.effective_damage[1] > 0.0, "MOBA registra daño estructural real")
-	_check(full_match.result_panel.visible and full_match.result_panel.get_node("Content/Title").text.begins_with("Resultado: "), "resultado visible al finalizar MOBA")
+	_check(full_match.team_kills[0] + full_match.team_kills[1] > 0, "MOBA registra bajas reales")
+	_check(full_match.result_panel.visible and not full_match.result_panel.get_node("Content/Title").text.is_empty(), "resultado visible al finalizar MOBA")
 	full_match.queue_free()
 	GameState.new_game(2)
 	GameState.phase = "moba"
@@ -492,12 +455,12 @@ func _run() -> void:
 	main._resume_pause()
 	_check(main.modal_kind == "phone", "pausa recupera celular")
 	main._render_class()
-	_check(main._scene_portrait_path("Mateo", "D4_01_A").ends_with("mateo_alarmed.png") and main._scene_portrait_path("Mateo", "D4_01_A", "A").ends_with("mateo_relieved.png") and main._scene_portrait_path("Sofi", "D4_01_A").ends_with("sofi_concerned.png"), "retrato cambia con la tensión y la respuesta")
+	_check(main._scene_portrait_path("Mateo", "D4_01_A").ends_with("mateo_alarmed_v4.tres") and main._scene_portrait_path("Mateo", "D4_01_A", "A").ends_with("mateo_v4.tres") and main._scene_portrait_path("Sofi", "D4_01_A").ends_with("sofi_concerned_v4.tres"), "retrato cambia con la tensión y la respuesta")
 	main._show_pause()
 	main._resume_pause()
 	_check(main.modal_kind == "class", "pausa recupera selección de clase")
 	main._show_menu()
-	main._start_slot(1)
+	main._start_slot(1, false)
 	_check(main.modal_kind == "prologue" and not GameState.flags.get("prologue_seen", false), "partida nueva presenta prólogo narrado")
 	var full_prologue: Label = main.conversation_ui.find_child("PrologueText", true, false)
 	_check(full_prologue != null and "Sofi" in full_prologue.text and "NARRADOR" not in full_prologue.text, "prólogo completo sin título ni narrador")
@@ -506,13 +469,13 @@ func _run() -> void:
 	main._resume_pause()
 	_check(main.modal_kind == "prologue" and main.conversation_ui.auto_action.is_valid(), "pausa recupera introducción automática")
 	main._show_menu()
-	main._start_slot(1)
+	main._start_slot(1, false)
 	_check(main.modal_kind == "prologue", "recarga recupera introducción completa")
 	await main._advance_prologue()
 	_check(main.modal_kind == "dialogue" and main.dialogue_key == "wakeup" and GameState.flags.get("prologue_seen", false), "prólogo completo inicia diálogo de despertar")
-	_check(main.conversation_ui.visible and main.conversation_ui.find_child("Sprite_sofi_neutral", true, false) != null, "diálogo presencial D0 muestra sprite de Sofi")
+	_check(main.conversation_ui.visible and main.conversation_ui.find_child("Sprite_sofi_v4", true, false) != null, "diálogo presencial D0 muestra sprite de Sofi")
 	_check(main.conversation_ui.find_child("VNBackground", true, false) != null, "diálogo presencial usa fondo escénico")
-	var test_sprite: TextureRect = main.conversation_ui.find_child("Sprite_sofi_neutral", true, false)
+	var test_sprite: TextureRect = main.conversation_ui.find_child("Sprite_sofi_v4", true, false)
 	_check(test_sprite.size == Vector2(310, 350), "sprite presencial respeta el encuadre")
 	main._show_pause()
 	await main._cycle_text_size()
@@ -546,7 +509,7 @@ func _run() -> void:
 	_check(GameState.dialogue_history == [0], "avance guarda posición de historial")
 	var saved_dialogue_position: int = main.dialogue_story.position
 	main._show_menu()
-	main._start_slot(1)
+	main._start_slot(1, false)
 	_check(main.modal_kind == "dialogue" and main.dialogue_key == "wakeup" and main.dialogue_story.position == saved_dialogue_position, "recarga reanuda nodo exacto de despertar")
 	_check(GameState.dialogue_history == [0], "historial persiste al recargar")
 	main._render_dialogue_history()
@@ -563,14 +526,14 @@ func _run() -> void:
 	await main._show_phone()
 	_check(main.modal_kind == "phone" and GameState.ui_modal == "phone", "celular abierto se guarda")
 	main._show_menu()
-	main._start_slot(1)
+	main._start_slot(1, false)
 	_check(main.modal_kind == "phone", "recarga reabre celular")
 	await main._close_modal()
 	_check(GameState.ui_modal.is_empty() and main.modal_kind == "", "cierre de celular se guarda")
 	await main._show_objective()
 	await main._advance_hint()
 	main._show_menu()
-	main._start_slot(1)
+	main._start_slot(1, false)
 	_check(main.modal_kind == "objective" and GameState.hint_level == 1, "recarga reabre objetivo y conserva pista")
 	await main._close_modal()
 	main._transition("courtyard", Vector2(140, 300))
@@ -585,12 +548,12 @@ func _run() -> void:
 	await main._finish_stage_guide()
 	main._on_interacted("pc")
 	var play_locked := false
-	for desktop_button in main.modal_box.get_children():
-		if desktop_button is Button and desktop_button.text == "Elegir clase e iniciar partida":
+	for desktop_button in main.desktop_ui.get_children():
+		if desktop_button is Button and desktop_button.text == "Arena 5v5":
 			play_locked = desktop_button.disabled
 	_check(main.modal_kind == "desktop" and GameState.ui_modal == "desktop" and play_locked, "PC abre escritorio con juego bloqueado antes del chat")
 	main._show_menu()
-	main._start_slot(1)
+	main._start_slot(1, false)
 	_check(main.modal_kind == "desktop" and GameState.ui_modal == "desktop", "escritorio se reabre desde guardado")
 	main._open_desktop_chat()
 	_check(main.modal_kind == "dialogue" and GameState.ui_modal.is_empty(), "chat se abre desde escritorio sin guardar dos paneles")
@@ -612,14 +575,14 @@ func _run() -> void:
 	main._resume_pause()
 	_check(main.modal_kind == "dialogue" and main.dialogue_text_label.text == "Ya, ya, paz. Mejor entremos a jugar.", "pausa conserva reacción D0")
 	main._show_menu()
-	main._start_slot(1)
+	main._start_slot(1, false)
 	_check(main.modal_kind == "dialogue" and main.dialogue_choice == "D0_05_A_OPT_B", "recarga conserva opción del chat antes de completar")
 	main._complete_dialogue()
-	_check(main.modal_kind == "desktop" and not main.modal_box.get_child(3).disabled and GameState.flags.get("d0_chat_choice", "") == "D0_05_A_OPT_B", "chat terminado habilita juego en escritorio")
+	_check(main.modal_kind == "desktop" and not main.desktop_ui.get_node("App_Arena 5v5").disabled and GameState.flags.get("d0_chat_choice", "") == "D0_05_A_OPT_B", "chat terminado habilita juego en escritorio")
 	main._show_class()
 	_check(main.modal_kind == "class", "juego del escritorio abre selección de clase")
 	main._show_menu()
-	main._start_slot(1)
+	main._start_slot(1, false)
 	_check(main.modal_kind == "class" and GameState.ui_modal == "class", "recarga reabre selección de clase")
 	_check(GameState.phone_messages.size() == 7 and GameState.phone_messages.back().get("speaker") == "Bruno", "respuesta del compañero persiste en el celular")
 	var flags_before_preview := GameState.flags.duplicate(true)
@@ -646,7 +609,7 @@ func _run() -> void:
 	_check(await main._finish_preview() and GameState.flags.get("preview_reviewed", false) and GameState.preview_scene == "ENDINGS_INDEX" and GameState.preview_step == 1, "recorrido de vista previa cierra y se guarda")
 	var reviewed := GameState.snapshot()
 	main._show_menu()
-	main._start_slot(1)
+	main._start_slot(1, false)
 	_check(main.modal_kind == "preview" and GameState.snapshot() == reviewed, "resumen de vista previa reabre tras cargar ranura")
 	_check(not GameState.flags.has("story_completed") and not GameState.flags.has("ending_assigned"), "cierre de vista previa no declara final canónico")
 	var bad_reviewed := reviewed.duplicate(true)
@@ -672,7 +635,7 @@ func _run() -> void:
 		_check(not interlude_lines.contains("Narrador") and interlude_lines.contains("Sofi vuelve al grupo"), "interludio cuenta la transición de Sofi")
 		var interlude_saved := GameState.snapshot()
 		main._show_menu()
-		main._start_slot(1)
+		main._start_slot(1, false)
 		_check(GameState.snapshot() == interlude_saved and main.modal_kind == "result" and main.conversation_ui.visible, "interludio reanuda desde la ranura")
 		_check(await main._start_playable_draft() and GameState.flags.draft_mode and GameState.preview_scene == "D1_02_A", "borrador inicia y limpia opciones")
 		_check(not GameState.flags.has("d1_interlude_active"), "interludio no reaparece durante el Día 1")
@@ -682,7 +645,7 @@ func _run() -> void:
 		_check(main.modal_kind == "day_intro" and GameState.flags.get("draft_intro_step", -1) == 0, "pausa devuelve a la presentación diaria")
 		var exploring_saved := GameState.snapshot()
 		main._show_menu()
-		main._start_slot(1)
+		main._start_slot(1, false)
 		_check(GameState.snapshot() == exploring_saved and main.modal_kind == "day_intro", "presentación diaria reanuda desde guardado")
 		var invalid_exploration := exploring_saved.duplicate(true)
 		invalid_exploration.preview_step = 3
@@ -702,7 +665,7 @@ func _run() -> void:
 				if scene_id == "D2_03_A":
 					var phone_saved := GameState.snapshot()
 					main._show_menu()
-					main._start_slot(1)
+					main._start_slot(1, false)
 					_check(GameState.snapshot() == phone_saved and main.modal_kind == "phone", "celular contextual se reabre tras cargar")
 				await main._close_modal()
 				main.world.player_pos = Vector2(520, 225)
@@ -738,7 +701,7 @@ func _run() -> void:
 		_check(await main._finish_draft() and GameState.flags.draft_completed and GameState.flags.draft_ending == ("F01" if letter == "A" else ending_scene), "borrador termina con desenlace %s" % letter)
 		var draft_saved := GameState.snapshot()
 		main._show_menu()
-		main._start_slot(1)
+		main._start_slot(1, false)
 		_check(GameState.snapshot() == draft_saved and main.modal_kind == "preview", "resumen del borrador persiste tras recarga")
 		_check(not GameState.flags.has("story_completed") and not GameState.flags.has("ending_assigned"), "borrador no declara final aprobado")
 	var bad_draft := GameState.snapshot()
@@ -754,7 +717,7 @@ func _run() -> void:
 	main._confirm_slot_action(1, true)
 	_check(main.modal_kind == "slot_confirm" and main.modal_box.get_child(0).get_child(1).text.contains("REHACER"), "menú pide confirmación para rehacer")
 	await main._apply_slot_action(1, true)
-	_check(GameState.phase == "bedroom" and GameState.flags.is_empty() and GameState.code != previous_code and main.modal_kind == "prologue", "rehacer inicia una partida desde el prólogo")
+	_check(GameState.phase == "bedroom" and GameState.flags.get("routine", {}).get("stage") == "morning" and GameState.code != previous_code and main.modal_kind == "prologue", "rehacer inicia una partida desde el prólogo")
 	main._show_menu()
 	main._confirm_slot_action(1, false)
 	await main._apply_slot_action(1, false)

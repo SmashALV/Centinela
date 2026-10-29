@@ -1,5 +1,7 @@
 extends Node
 
+const DailyRoutineScript = preload("res://scripts/DailyRoutine.gd")
+
 const SCHEMA_VERSION := 1
 const NARRATIVE_VERSION := "provisional-d0-1"
 const PREVIEW_CONTENT_VERSION := "RECOVERED_PREVIEW_D0_v0.2"
@@ -90,6 +92,7 @@ func restore(data: Dictionary) -> bool:
 		return false
 	if int(data.slot) < 1 or int(data.slot) > 3 or float(data.slot) != float(int(data.slot)) or typeof(data.get("flags")) != TYPE_DICTIONARY:
 		return false
+	if data.flags.has("routine") and not DailyRoutineScript.valid(data.flags.routine): return false
 	if typeof(data.get("phone_messages")) != TYPE_ARRAY or typeof(data.get("code")) != TYPE_STRING:
 		return false
 	if data.code.length() != 10 or not data.code.begins_with("CTN-"):
@@ -210,7 +213,7 @@ func restore(data: Dictionary) -> bool:
 		if typeof(level) not in [TYPE_INT, TYPE_FLOAT] or int(level) not in [0, 25, 50, 75, 100] or float(level) != float(int(level)):
 			return false
 	if (not active_dialogue.is_empty() and not saved_modal.is_empty()) or \
-		(saved_modal in ["class", "desktop"] and data.get("phase") != "computer") or \
+		(saved_modal in ["class", "desktop"] and (data.flags.routine.place not in ["bedroom", "computer"] if data.flags.has("routine") else data.get("phase") != "computer")) or \
 		(saved_modal in ["phone", "objective"] and data.get("phase") not in ["bedroom", "courtyard", "computer", "coral"] and not data.flags.get("draft_exploring", false)):
 		return false
 	if (active_dialogue == "wakeup" and data.get("phase") != "bedroom") or \

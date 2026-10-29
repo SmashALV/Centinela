@@ -1,0 +1,7 @@
+[gd_resource type="AtlasTexture" load_steps=2 format=3]
+
+[ext_resource type="Texture2D" path="res://assets/world/props/sofi_sleep.png" id="1"]
+
+[resource]
+atlas = ExtResource("1")
+region = Rect2(220, 0, 580, 1536)

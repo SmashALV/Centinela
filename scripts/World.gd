@@ -3,6 +3,7 @@ class_name CentinelaWorld
 
 signal interacted(target_id: String)
 signal departure_finished
+signal boundary_reached(edge: String)
 
 const SPEED := 152.0
 const ROOM := Rect2(30, 56, 708, 338)
@@ -28,10 +29,10 @@ const GROUND_TILES := {
 }
 const CHARACTER_SHEETS := {
 	"Sofi": preload("res://assets/characters/sofi_directions.png"),
-	"Mateo": preload("res://assets/characters/mateo_directions.png"),
+	"Mateo": preload("res://assets/characters/mateo_directions_v4.png"),
 	"Bruno": preload("res://assets/characters/bruno_directions.png"),
 	"Camila": preload("res://assets/characters/camila_directions_v3.png"),
-	"Sebas": preload("res://assets/characters/sebas_directions.png")
+	"Sebas": preload("res://assets/characters/sebas_directions_v4.png")
 }
 const OBJECT_SPRITES := {
 	"alarm": preload("res://assets/objects/alarm.png"),
@@ -117,6 +118,14 @@ var player_body: CharacterBody2D
 var story_targets_active := false
 var story_primary_target := ""
 var departures: Dictionary = {}
+var routine_mode := false
+var evening_light := false
+var edge_routes: Dictionary = {}
+var edge_latched := ""
+var hide_player := false
+
+const ROUTINE_BACKGROUNDS := {"living": "res://assets/world/living_room_map.png", "street": "res://assets/world/street_map.png", "classroom": "res://assets/world/classroom_map.png", "school": "res://assets/world/day0_courtyard.png"}
+const ROUTINE_BLOCKS := {"living": [[30, 56, 708, 60], [80, 115, 175, 70], [530, 115, 170, 67], [304, 122, 156, 62]], "street": [[30, 56, 708, 88], [30, 357, 708, 37]], "classroom": [[30, 56, 708, 70], [80, 124, 185, 105], [500, 124, 185, 105], [360, 185, 50, 47], [350, 105, 70, 40]], "school": [[30, 56, 280, 55], [450, 56, 288, 55], [75, 171, 29, 22], [638, 168, 29, 22], [603, 357, 29, 22], [162, 153, 81, 22], [513, 153, 81, 22]]}
 
 func _init() -> void:
 	map_sprite = Sprite2D.new()
@@ -149,6 +158,11 @@ func _ready() -> void:
 	map_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 
 func configure(key: String, position: Vector2) -> void:
+	routine_mode = false
+	evening_light = false
+	edge_routes.clear()
+	edge_latched = ""
+	hide_player = false
 	departures.clear()
 	scene_key = key
 	player_pos = position
@@ -176,11 +190,11 @@ func _configure_layers() -> void:
 	for body in collision_root.get_children():
 		collision_root.remove_child(body)
 		body.free()
-	map_sprite.visible = DRAFT_BACKGROUNDS.has(scene_key) or DAY0_BACKGROUNDS.has(scene_key)
+	map_sprite.visible = DRAFT_BACKGROUNDS.has(scene_key) or DAY0_BACKGROUNDS.has(scene_key) or ROUTINE_BACKGROUNDS.has(scene_key)
 	ground_layer.visible = map_sprite.visible
 	ground_layer.clear()
 	if map_sprite.visible:
-		var texture: Texture2D = DRAFT_BACKGROUNDS[scene_key] if DRAFT_BACKGROUNDS.has(scene_key) else DAY0_BACKGROUNDS[scene_key]
+		var texture: Texture2D = load(ROUTINE_BACKGROUNDS[scene_key]) if ROUTINE_BACKGROUNDS.has(scene_key) else DRAFT_BACKGROUNDS[scene_key] if DRAFT_BACKGROUNDS.has(scene_key) else DAY0_BACKGROUNDS[scene_key]
 		var size: Vector2 = texture.get_size()
 		var crop_height: float = minf(size.y, size.x * ROOM.size.y / ROOM.size.x)
 		map_sprite.texture = texture
@@ -188,7 +202,7 @@ func _configure_layers() -> void:
 		map_sprite.position = ROOM.position
 		map_sprite.scale = Vector2(ROOM.size.x / size.x, ROOM.size.y / crop_height)
 		_configure_ground_tiles()
-		var blocks: Array = DRAFT_BLOCKS[scene_key] if DRAFT_BLOCKS.has(scene_key) else DAY0_BLOCKS[scene_key]
+		var blocks: Array = ROUTINE_BLOCKS[scene_key] if ROUTINE_BLOCKS.has(scene_key) else DRAFT_BLOCKS[scene_key] if DRAFT_BLOCKS.has(scene_key) else DAY0_BLOCKS[scene_key]
 		for dimensions in blocks:
 			_add_obstacle(Rect2(float(dimensions[0]), float(dimensions[1]), float(dimensions[2]), float(dimensions[3])))
 		if DRAFT_BLOCKS.has(scene_key):
@@ -202,6 +216,9 @@ func _configure_layers() -> void:
 	player_body.position = player_pos
 
 func _configure_ground_tiles() -> void:
+	if ROUTINE_BACKGROUNDS.has(scene_key):
+		ground_layer.visible = false
+		return
 	var tile_texture: Texture2D = load(GROUND_TILES[scene_key]) as Texture2D
 	var tiles := TileSet.new()
 	tiles.tile_size = Vector2i(32, 32)
@@ -250,6 +267,7 @@ func _physics_process(delta: float) -> void:
 	player_pos.y = clampf(player_pos.y, playable_top, ROOM.end.y - 16)
 	player_body.position = player_pos
 	GameState.player_position = player_pos
+	if routine_mode: check_boundary(direction)
 	nearby = ""
 	var best := 1.0
 	for key in objects:
@@ -263,6 +281,20 @@ func _physics_process(delta: float) -> void:
 func interact() -> void:
 	if enabled and not nearby.is_empty():
 		interacted.emit(nearby)
+
+func check_boundary(direction: Vector2) -> void:
+	var edge := ""
+	var top: float = 185.0 if scene_key.begins_with("draft_d") else 124.0
+	if player_pos.x <= 49 and direction.x < 0: edge = "left"
+	elif player_pos.x >= 719 and direction.x > 0: edge = "right"
+	elif player_pos.y <= top + 3 and direction.y < 0: edge = "up"
+	elif player_pos.y >= 375 and direction.y > 0: edge = "down"
+	if edge.is_empty():
+		if player_pos.x > 68 and player_pos.x < 700 and player_pos.y > top + 22 and player_pos.y < 355: edge_latched = ""
+		return
+	if edge_routes.has(edge) and edge_latched != edge:
+		edge_latched = edge
+		boundary_reached.emit(edge)
 
 func target_label(key: String) -> String:
 	return str(TARGET_LABELS.get(key, key))
@@ -348,17 +380,28 @@ func _draw() -> void:
 			_draw_character(Vector2(330, 245), "Camila")
 			_draw_character(Vector2(260, 250), "Bruno")
 			_draw_character(Vector2(400, 250), "Sebas")
-	_draw_character(player_pos, "Sofi", player_facing)
+	if not hide_player: _draw_character(player_pos, "Sofi", player_facing)
+	if routine_mode:
+		if scene_key == "school" and objects.has("friends"):
+			for friend in FRIENDS: _draw_character(Vector2(objects.friends) + friend.offset, str(friend.name), "down", true)
+		if scene_key == "school":
+			for person in departures: _draw_character(departures[person].position, person, str(departures[person].facing), true)
+		if evening_light:
+			draw_rect(ROOM, Color(0.94, 0.38, 0.23, 0.20) if scene_key in ["school", "street"] else Color(0.24, 0.12, 0.38, 0.15))
+		for edge in edge_routes:
+			var pos: Vector2 = {"left": Vector2(36, 285), "right": Vector2(663, 285), "up": Vector2(340, 125), "down": Vector2(340, 380)}[edge]
+			var arrow: String = {"left": "< ", "right": "> ", "up": "^ ", "down": "v "}[edge]
+			draw_string(ThemeDB.fallback_font, pos, arrow + str(edge_routes[edge]), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color("fff3df"))
 
 func begin_departures() -> void:
-	if scene_key != "courtyard" or not departures.is_empty(): return
+	if scene_key not in ["courtyard", "school"] or not departures.is_empty(): return
 	objects.erase("friends")
 	var exits: Array = [Vector2(47, 290), Vector2(720, 230), Vector2(180, 389), Vector2(550, 389)]
 	exits.shuffle()
 	for i in FRIENDS.size():
 		var friend: Dictionary = FRIENDS[i]
 		var endpoint: Vector2 = exits[i]
-		departures[str(friend.name)] = {"position": Vector2(374, 175) + friend.offset, "path": [Vector2(314 + i * 40, 260 + i * 8), Vector2(endpoint.x, 285), endpoint], "step": 0, "speed": randf_range(52.0, 72.0), "facing": "down"}
+		departures[str(friend.name)] = {"position": Vector2(374, 245 if routine_mode else 175) + friend.offset, "path": [Vector2(314 + i * 40, 260 + i * 8), Vector2(endpoint.x, 285), endpoint], "step": 0, "speed": randf_range(52.0, 72.0), "facing": "down"}
 	queue_redraw()
 
 func _update_departures(delta: float) -> void:
@@ -420,13 +463,17 @@ func _draw_story_target(key: String, pos: Vector2, active: bool) -> void:
 	var color := Color("f5d479") if active else Color("8ec9c2")
 	if key.capitalize() in CHARACTER_SHEETS:
 		_draw_character(pos, key.capitalize())
+	elif routine_mode and key in ["bed", "photo", "backpack"]:
+		if key != "bed": draw_texture_rect(OBJECT_SPRITES[key], Rect2(pos - Vector2(23, 23), Vector2(46, 46)), false)
+	elif routine_mode and key in ["friends", "meal", "lesson"]:
+		draw_arc(pos, 20, 0, TAU, 24, color, 2)
 	else:
 		draw_rect(Rect2(pos - Vector2(21, 20), Vector2(42, 40)), Color("193448", 0.88), true)
 		draw_rect(Rect2(pos - Vector2(21, 20), Vector2(42, 40)), color, false, 2.0)
 		if key == "lobby" or key == "pc":
 			draw_texture_rect(OBJECT_SPRITES.pc, Rect2(pos - Vector2(17, 17), Vector2(34, 34)), false)
 	draw_rect(Rect2(pos + Vector2(-43, -64), Vector2(86, 19)), Color("10192b", 0.9))
-	var target_name: String = {"lobby": "Lobby", "tutoria": "Tutoría", "pc": "PC", "salida": "Salida"}.get(key, key.capitalize())
+	var target_name: String = {"lobby": "Lobby", "tutoria": "Tutoría", "pc": "PC", "salida": "Salida", "friends": "Grupo", "bed": "Dormir", "meal": "Comer", "lesson": "Clase", "photo": "Foto", "backpack": "Mochila"}.get(key, key.capitalize())
 	draw_string(ThemeDB.fallback_font, pos + Vector2(-42, -49), "F · " + target_name, HORIZONTAL_ALIGNMENT_CENTER, 84, 11, color)
 	if key == story_primary_target:
 		_draw_objective_marker(pos + Vector2(0, 31))

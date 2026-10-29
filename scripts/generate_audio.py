@@ -55,8 +55,23 @@ def effect(start_hz: float, end_hz: float, duration: float, gain: float) -> byte
     return wav_bytes(samples)
 
 
+def school_bell() -> bytes:
+    duration = 1.8
+    samples = []
+    for index in range(round(duration * RATE)):
+        t = index / RATE
+        pulse = t % 0.45
+        envelope = min(1.0, pulse / 0.006) * math.exp(-8 * pulse)
+        fade = min(1.0, (duration - t) / 0.25)
+        metallic = sum(math.sin(math.tau * frequency * t) * gain for frequency, gain in
+                       [(1480, 0.45), (2105, 0.27), (2985, 0.16), (3890, 0.08)])
+        samples.append(metallic * envelope * fade * 0.30)
+    return wav_bytes(samples)
+
+
 def assets() -> dict[str, bytes]:
     return {
+        "school_bell.wav": school_bell(),
         "explore_loop.wav": loop(
             [392, 440, 523.25, 440, 349.23, 392, 440, 0,
              392, 440, 523.25, 587.33, 523.25, 440, 392, 0],

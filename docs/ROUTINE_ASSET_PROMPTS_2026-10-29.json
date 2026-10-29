@@ -1,0 +1,113 @@
+{
+  "version": "0.40.0-preview",
+  "assets": [
+    {
+      "asset": "assets/vn/mateo_v4.png",
+      "mode": "built-in imagegen",
+      "prompt": "Use case: illustration-story. Asset: transparent anime visual-novel character sprite, one Peruvian teen boy Mateo aged 15, head to upper thighs, entire hair and both hands visible with generous transparent margin. Reference image is wardrobe/style only. Redesign his FACE clearly distinct from the reference's generic large-eyed face: longer rectangular face, narrower dark brown eyes, strong straight eyebrows, slightly prominent straight nose, subtle asymmetric smile, short dense curly black hair. Navy blue zip hoodie over white tee and dark trousers. NEW POSE upright frontal shoulders level, one hand gripping backpack strap over shoulder, other arm relaxed straight down. No leaning head, no hands in pockets. Clean detailed anime linework matching school VN. Actual transparent background, no glow, no frame, no text, one person only.",
+      "source": "C:\\Users\\fabri\\.codex\\generated_images\\01a17d37-4c05-7a83-977e-2f7bca0168a2\\exec-56fa5624-9abd-4901-a103-9a91d634ac30.png"
+    },
+    {
+      "asset": "assets/vn/sebas_v4.png",
+      "mode": "built-in imagegen",
+      "prompt": "Use case: illustration-story. Asset: transparent anime visual-novel character sprite, one Peruvian teen boy Sebas aged 15, head to upper thighs, entire hair and both hands visible with generous transparent margin. Reference is wardrobe/style only. Redesign his FACE very different from Mateo and Sofi: wider round face, small almond dark eyes, broad nose, thick low eyebrows, light freckles, short straight dark brown hair with a neat cropped fringe, not fluffy curls. Mustard yellow hoodie over white tee and charcoal trousers. NEW POSE turned three quarters toward viewer left, both arms crossed low comfortably, shoulders squared, chin level, small friendly closed-mouth grin. No leaning head, no hand extended to viewer. Clean detailed anime school-VN artwork. Actual transparent background, no glow no frame no text, one person only.",
+      "source": "C:\\Users\\fabri\\.codex\\generated_images\\01a17d37-4c05-7a83-977e-2f7bca0168a2\\exec-8dec3e2d-09ef-4c25-92fc-45b450be47a6.png"
+    },
+    {
+      "asset": "assets/world/living_room_map.png",
+      "mode": "built-in imagegen",
+      "prompt": "Use case: illustration-story. Asset type: playable 2D overhead RPG room background. One wide rectangular cozy modest Peruvian family living/dining room, near orthographic top-down 3/4 view looking down on the floor, matching the reference game's clean hand-painted tiles. Pale peach and cream walls along top edge only, wooden warm floor. Couch and houseplants clustered against top left wall, small kitchen counter along top right wall, DINING TABLE at x=45 percent y=35 percent with two chairs, breakfast setting. All furnishings ONLY in top half and outer corners. Keep a large EMPTY contiguous walkable floor across lower half and center. Clear room exit openings at center of left edge and center of right edge. No people, no characters, no PC, no text, no UI, no labels, no collage. Widescreen 2:1 composition, floor boundaries visible.",
+      "source": "C:\\Users\\fabri\\.codex\\generated_images\\01a17d37-4c05-7a83-977e-2f7bca0168a2\\exec-d9ec84e5-969e-4fa5-ad12-8c80c0fab712.png"
+    },
+    {
+      "asset": "assets/vn/sofi_v4.png",
+      "mode": "built-in imagegen",
+      "prompt": "Use case: illustration-story. Edit target: Sofi in reference. Preserve her exact face, brown wavy shoulder-length hair, teal hoodie, white tee, jeans, age 15 and clean anime visual-novel style. Change her body pose completely: standing upright three-quarter facing viewer right, chin level, shoulders level, hands gently clasped together in front at waist, attentive small smile. No head tilt, no hands in pockets. Head to upper thighs all hands/hair inside frame with ample margin. One person only. True transparent background with no glow, no text.",
+      "source": "C:\\Users\\fabri\\.codex\\generated_images\\01a17d37-4c05-7a83-977e-2f7bca0168a2\\exec-9f8b4715-908c-47af-895b-0d0f11e4f95c.png"
+    },
+    {
+      "asset": "assets/vn/camila_v4.png",
+      "mode": "built-in imagegen",
+      "prompt": "Use case: illustration-story. Edit target Camila reference. Preserve the exact distinctive round face, dark almond eyes, short dark bob with coral hairclip, freckles, coral hoodie white tee jeans, age 15, anime style. Change body pose completely: three-quarter facing viewer left, straight head and shoulders, left hand on hip and right arm bent outward with open hand at chest height in calm conversational gesture. Head to upper thighs, generous transparent margin, entire hair and hands visible. No hand on jacket strap, no head tilt. One character only, genuinely transparent background, no glow no text.",
+      "source": "C:\\Users\\fabri\\.codex\\generated_images\\01a17d37-4c05-7a83-977e-2f7bca0168a2\\exec-8d7fe404-b575-4485-9f6a-0a14e048b7e7.png"
+    },
+    {
+      "asset": "assets/vn/bruno_v4.png",
+      "mode": "built-in imagegen",
+      "prompt": "Use case: illustration-story. Edit target Bruno reference. Preserve exact longer face and rectangular black glasses, straight black side-part hair, burgundy hoodie white tee dark trousers, teen age15, anime style. Change pose completely: straight frontal head and level shoulders, holding a closed plain blue school notebook across chest in left forearm, right hand resting lightly on notebook's top edge. Thoughtful gentle expression. No head tilt, no hands in pockets. Head to upper thighs with entire hair and hands and generous transparent margin. One person only, genuinely transparent background, no glow no text.",
+      "source": "C:\\Users\\fabri\\.codex\\generated_images\\01a17d37-4c05-7a83-977e-2f7bca0168a2\\exec-785cf8b3-23a7-42d6-9b4d-900a16dabd8c.png"
+    },
+    {
+      "asset": "assets/world/street_map.png",
+      "mode": "built-in imagegen",
+      "prompt": "Use case: illustration-story. Asset: overhead 2D RPG map background wide 2:1. Modest safe Peruvian neighborhood street in daytime, warm hand-painted game art matching reference. Camera high looking down with near orthographic perspective. A completely straight uninterrupted wide horizontal pedestrian sidewalk across the CENTER from left edge to right edge. House fronts and flowering small gardens along uppermost quarter only; a strip of empty road along bottom quarter. LEFT leads home, RIGHT leads school. Keep central horizontal walkable band EMPTY from y35 to y85 percent, no walls or furniture across it. No people no cars on walkway, no lettering no signs no UI no arrows, one coherent map.",
+      "source": "C:\\Users\\fabri\\.codex\\generated_images\\01a17d37-4c05-7a83-977e-2f7bca0168a2\\exec-ece54036-2913-42eb-be69-8e8165bcd771.png"
+    },
+    {
+      "asset": "assets/world/classroom_map.png",
+      "mode": "built-in imagegen",
+      "prompt": "Use case: illustration-story. Asset: overhead 2D RPG school classroom map background wide 2:1. Match reference polished hand-painted RPG art. Cream and muted teal walls upper edge, daylight windows, whiteboard on top wall and teacher desk centered below board. Three rows of modest school desks in the TOP HALF and side edges only, with large clear central aisle down the center and completely empty floor across lower half. One desk near center x50 percent y45 percent for player interaction. Obvious exit at middle of bottom edge with open clear floor leading there. Orthographic high-angle looking down, NO eye-level camera, NO people no text no UI no collage.",
+      "source": "C:\\Users\\fabri\\.codex\\generated_images\\01a17d37-4c05-7a83-977e-2f7bca0168a2\\exec-f8f33756-e411-4634-8542-05cba73f211e.png"
+    },
+    {
+      "asset": "assets/vn/kairo_v4.png",
+      "mode": "built-in imagegen",
+      "prompt": "Use case: illustration-story. Edit target: anonymous hooded person in reference. Preserve anonymous faceless black void inside navy hood, no visible features, no ethnicity/age inference, no eyes no smile, never reveal identity. Change pose: completely upright symmetrical frontal shoulders level, both arms held loosely behind back, torso to upper thighs, generous transparent margin. Dark navy hoodie. Clean anime VN artwork, no menace props, no weapons, no text, no glow, true transparent background. One figure only.",
+      "source": "C:\\Users\\fabri\\.codex\\generated_images\\01a17d37-4c05-7a83-977e-2f7bca0168a2\\exec-23aa9db4-d128-4aa7-ad7a-1e2b93dbdae5.png"
+    },
+    {
+      "asset": "assets/vn/classroom.png",
+      "mode": "built-in imagegen",
+      "prompt": "Use case: illustration-story. Asset: 16:9 eye-level anime visual-novel background of a modest Peruvian school classroom INSIDE, camera standing teenager height. Cream and teal walls like the school computer lab reference, but regular wooden school desks and chairs instead of computers, daylight windows left, whiteboard ahead, notebooks, tidy classroom. Keep foreground lower third open and unobstructed to composite two standing characters and dialogue box. NO people, no UI, no computer screens, no text no lettering no watermark, warm coherent polished painterly anime environment.",
+      "source": "C:\\Users\\fabri\\.codex\\generated_images\\01a17d37-4c05-7a83-977e-2f7bca0168a2\\exec-becb0773-ce17-41ee-ac1f-d046f150505e.png"
+    },
+    {
+      "asset": "assets/vn/living.png",
+      "mode": "built-in imagegen",
+      "prompt": "Use case: illustration-story. Asset: 16:9 eye-level anime visual-novel indoor background of Sofi's modest warm Peruvian family living/dining room. Cream and peach walls, small wooden dining table with two chairs, couch and cushions, plants, kitchen nook at rear, soft natural window light. School lab reference is ART STYLE only, not content. Keep lower foreground open for standing character sprites and dialogue UI. Cozy home, ordinary lived-in details. No people no characters no text no logos no UI. Polished warm anime environment, believable eye-level perspective.",
+      "source": "C:\\Users\\fabri\\.codex\\generated_images\\01a17d37-4c05-7a83-977e-2f7bca0168a2\\exec-7118ee0d-21a6-4f62-8e5d-a027b16429a9.png"
+    },
+    {
+      "asset": "assets/ui/sofi_wallpaper.png",
+      "mode": "built-in imagegen",
+      "prompt": "Use case: illustration-story. Asset: single widescreen 16:9 personal computer wallpaper for a 15-year-old girl who likes videogames. Tasteful dreamy hand-painted anime landscape: pastel lilac and rose mountain silhouettes, soft clouds, tiny constellations and crescent moon in pale twilight sky, distant glowing windows of a small hillside village. Calm cozy spacious composition, left half mostly quiet sky for desktop icons. NO people, no text no letters no logos no UI no desktop icons painted in, no watermark. Soft lilac-pink palette with teal highlights.",
+      "source": "C:\\Users\\fabri\\.codex\\generated_images\\01a17d37-4c05-7a83-977e-2f7bca0168a2\\exec-dd3c0556-60b1-42a2-8a26-b5c40760ca6a.png"
+    },
+    {
+      "asset": "assets/vn/mateo_worried_v4.png",
+      "mode": "built-in imagegen",
+      "prompt": "Use case: identity-preserve. Edit target Mateo v4 reference. Keep EXACT his new longer face, narrow eyes, curly hair, navy hoodie white tee, backpack, upright strap-holding pose, proportions, framing and anime rendering. Change only EXPRESSION to visibly worried: brows drawn together, eyes glancing slightly aside, lips parted tensely. Genuine transparent background, no haze/glow outside silhouette. One sprite, head to upper thighs, no text.",
+      "source": "C:\\Users\\fabri\\.codex\\generated_images\\01a17d37-4c05-7a83-977e-2f7bca0168a2\\exec-c2dc918f-08ea-4736-8fa0-ae6dd36fc508.png"
+    },
+    {
+      "asset": "assets/vn/mateo_alarmed_v4.png",
+      "mode": "built-in imagegen",
+      "prompt": "Use case: identity-preserve. Edit target Mateo v4 reference. Keep EXACT his new longer face, narrow eyes, curly hair, navy hoodie white tee, backpack, upright strap-holding pose, proportions, framing and anime rendering. Change only EXPRESSION to alarmed/uncomfortable: eyes wider, raised contracted eyebrows, small tense open mouth, fearful but no tears. Genuine transparent background, no haze/glow outside silhouette. One sprite, head to upper thighs, no text.",
+      "source": "C:\\Users\\fabri\\.codex\\generated_images\\01a17d37-4c05-7a83-977e-2f7bca0168a2\\exec-0e4eba87-0686-4645-83e1-7b1b5b20409c.png"
+    },
+    {
+      "asset": "assets/vn/sofi_concerned_v4.png",
+      "mode": "built-in imagegen",
+      "prompt": "Use case: identity-preserve. Edit target Sofi v4 reference. Keep EXACT face, wavy dark hair, teal hoodie white tee jeans, upright clasped-hands pose, framing and anime rendering. Change only EXPRESSION to concerned and attentive: slightly furrowed eyebrows, soft serious eyes, closed lips without smile. Genuine transparent background, no haze/glow outside silhouette. One sprite, head to upper thighs, no text.",
+      "source": "C:\\Users\\fabri\\.codex\\generated_images\\01a17d37-4c05-7a83-977e-2f7bca0168a2\\exec-66c421dc-7242-49d9-85b2-9c289d671e95.png"
+    },
+    {
+      "asset": "assets/world/props/sofi_sleep.png",
+      "mode": "built-in imagegen",
+      "prompt": "Use case: illustration-story. Asset: transparent overhead 2D RPG sleeping sprite overlay for Sofi's bed. Reference is Sofi identity only. A small sleeping teenage girl with dark wavy shoulder-length hair and closed eyes, head resting on a white pillow at top, body completely covered from shoulders to feet by a lilac pink blanket, lying straight vertically head at top and feet bottom. View from directly above with slight RPG front-down perspective. Entire narrow pillow-and-blanket silhouette isolated on true transparent background, no bed frame, no furniture no room, no text no haze. Cute calm clean anime game art.",
+      "source": "C:\\Users\\fabri\\.codex\\generated_images\\01a17d37-4c05-7a83-977e-2f7bca0168a2\\exec-1d0496a7-0abc-4444-ab23-e276d688face.png"
+    },
+    {
+      "asset": "assets/characters/mateo_directions_v4.png",
+      "mode": "built-in imagegen",
+      "prompt": "Use case: illustration-story. Asset: transparent 2x2 sprite sheet for top-down RPG with exactly four full-body chibi pixel-art views of SAME Mateo. Image1 is layout/pixel style reference, image2 is NEW identity: longer face, narrow dark eyes, dense curly short black hair, navy hoodie white tee charcoal trousers, backpack. Four EQUAL square cells, TOP LEFT front/down, TOP RIGHT back/up, BOTTOM LEFT left-facing profile, BOTTOM RIGHT right-facing profile. Every sprite centered at same baseline within its cell, standing upright level head, one hand on backpack strap, other arm down. Match four views scale. Keep 15% transparent padding in each cell, no parts cross cell boundaries, no grid lines, no labels no text, true transparent background. Square overall sheet.",
+      "source": "C:\\Users\\fabri\\.codex\\generated_images\\01a17d37-4c05-7a83-977e-2f7bca0168a2\\exec-f0f3b315-6f80-48de-a66a-1a8d1921891a.png"
+    },
+    {
+      "asset": "assets/characters/sebas_directions_v4.png",
+      "mode": "built-in imagegen",
+      "prompt": "Use case: illustration-story. Asset: transparent 2x2 sprite sheet for top-down RPG with exactly four full-body chibi pixel-art views of SAME Sebas. Image1 is layout/pixel style only, image2 is identity: wide round freckled face, smaller dark eyes, short STRAIGHT dark cropped fringe, NOT curly hair, yellow hoodie white tee charcoal trousers. Four EQUAL square cells, TOP LEFT front/down, TOP RIGHT back/up, BOTTOM LEFT left-facing profile, BOTTOM RIGHT right-facing profile. Every sprite centered at same baseline within its cell, upright shoulders, arms loosely crossed. Match four views scale. Keep 15% transparent padding in each cell, no parts cross cell boundaries, no grid lines, no labels no text, true transparent background. Square overall sheet.",
+      "source": "C:\\Users\\fabri\\.codex\\generated_images\\01a17d37-4c05-7a83-977e-2f7bca0168a2\\exec-60d10328-41b4-4c42-b937-57440f879d65.png"
+    }
+  ]
+}

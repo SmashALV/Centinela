@@ -25,7 +25,7 @@ func _run() -> void:
 	await get_tree().process_frame
 	await get_tree().process_frame
 	var story: Node = get_tree().current_scene
-	if story == null or story.modal_kind != "result" or GameState.returning_from_moba:
+	if story == null or story.modal_kind != "routine" or GameState.returning_from_moba:
 		printerr("FAIL MOBA volvió al menú en vez del resultado narrativo")
 		get_tree().quit(1)
 		return
@@ -37,29 +37,22 @@ func _run() -> void:
 		printerr("FAIL resultado no muestra a Camila con avance automático")
 		get_tree().quit(1)
 		return
-	if not await story._show_d1_interlude() or not GameState.flags.get("d1_interlude_active", false):
-		printerr("FAIL resultado no avanza al interludio del narrador")
+	await story.daily.advance_scene()
+	await story.daily.advance_scene()
+	if story.daily.state().stage != "bedtime" or story.daily.state().place != "bedroom":
+		printerr("FAIL resultado no devuelve a la habitación para dormir")
 		get_tree().quit(1)
 		return
-	var interlude_text := ""
-	for label in story.conversation_ui.find_children("*", "Label", true, false):
-		interlude_text += label.text + "\n"
-	if interlude_text.contains("Narrador") or not interlude_text.contains("Sofi vuelve al grupo") or not story.conversation_ui.auto_action.is_valid():
-		printerr("FAIL el interludio no presenta la transición automática de Sofi")
+	await story.daily.go("sleep", "bedroom", Vector2(155, 208))
+	if not await story.daily.finish_sleep() or GameState.phase != "coral" or GameState.coral_state.day != 1 or story.daily.state().stage != "morning":
+		printerr("FAIL dormir no inicia la mañana del Día 1")
 		get_tree().quit(1)
 		return
-	if not await story._start_coral_story() or GameState.phase != "coral" or GameState.coral_state.day != 1 or GameState.flags.has("d1_interlude_active"):
-		printerr("FAIL no se inicia la jornada compartida del Día 1")
+	if story.world.scene_key != "bedroom" or story.modal_kind != "routine":
+		printerr("FAIL Día 1 no comienza en casa con su introducción")
 		get_tree().quit(1)
 		return
-	await story._coral_advance()
-	await story._coral_advance()
-	for person in ["camila", "mateo", "sebas", "bruno"]:
-		if not story.world.objects.has(person) or GameState.coral_state.mode != "explore":
-			printerr("FAIL falta compañero en Día 1: " + person)
-			get_tree().quit(1)
-			return
-	print("PASS MOBA → Camila → narrador con Sofi → Día 1 sin volver al menú")
+	print("PASS MOBA → Camila → habitación → dormir → mañana del Día 1 sin menú")
 	SaveManager.delete_slot(1)
 	SaveManager.storage_prefix = SaveManager.SAVE_PREFIX
 	get_tree().quit(0)

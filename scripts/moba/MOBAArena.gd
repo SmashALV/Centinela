@@ -4,6 +4,7 @@ const DisplayGuardScript = preload("res://scripts/DisplayGuard.gd")
 
 const ARENA := Vector2(1152, 640)
 const LIMIT := 60.0
+const KILL_TARGET := 5
 const HERO_SPEED := 96.0
 const COLORS := [Color("74c9c2"), Color("dc827d")]
 const ALLY_ACCENTS := {
@@ -15,9 +16,6 @@ const HERO_SHEETS := {
 	"Defensor": preload("res://assets/moba/heroes/defender_directions.png"),
 	"Soporte": preload("res://assets/moba/heroes/support_directions.png")
 }
-const TOWER_SPRITE := preload("res://assets/moba/structures/tower.png")
-const BASE_SPRITE := preload("res://assets/moba/structures/base.png")
-const RUIN_SPRITE := preload("res://assets/moba/structures/ruin.png")
 const ARENA_GROUND := preload("res://assets/moba/terrain/arena_ground.png")
 const BARRIER_SPRITE := preload("res://assets/moba/terrain/barrier_2x4.png")
 const PROJECTILE_SPRITE := preload("res://assets/moba/effects/projectile.png")
@@ -40,7 +38,7 @@ const MAP_CELLS := Vector2i(36, 20)
 const STATIC_OBSTACLES := [Rect2i(17, 8, 2, 4)]
 
 var heroes: Array[Dictionary] = []
-var buildings: Array[Dictionary] = []
+var team_kills := [0, 0]
 var shots: Array[Dictionary] = []
 var elapsed := 0.0
 var countdown := 3.0
@@ -54,7 +52,6 @@ var result_snapshot: Dictionary = {}
 var _crypto := Crypto.new()
 var basic_cd := 0.0
 var q_cd := 0.0
-var tower_cd := 1.5
 var player_index := 2
 var ground: Sprite2D
 var camera: Camera2D
@@ -69,7 +66,6 @@ var pause_panel: PanelContainer
 var result_panel: PanelContainer
 var music_button: Button
 var effects_button: Button
-var effective_damage := [0.0, 0.0]
 var navigation: AStarGrid2D
 var window_guard_layer: CanvasLayer
 var window_too_small := false
@@ -133,7 +129,7 @@ func _ready() -> void:
 	objective_label = Label.new()
 	objective_label.position = Vector2(32, 418)
 	objective_label.size = Vector2(728, 26)
-	objective_label.text = "Objetivo: destruir la base rival · WASD mover · clic atacar · Q habilidad · P pausa"
+	objective_label.text = "Primero en lograr 5 bajas · WASD mover · clic atacar · Q habilidad · P pausa"
 	objective_label.add_theme_font_size_override("font_size", _font_size(12))
 	objective_label.add_theme_color_override("font_color", Color("fff3df"))
 	layer.add_child(objective_label)
@@ -278,12 +274,6 @@ func _create_entities() -> void:
 		hero.hero_class = enemy_classes[i]
 		heroes.append(hero)
 	heroes[player_index].hero_class = GameState.moba_class
-	for side in 2:
-		var xs := [300.0, 420.0, 80.0] if side == 0 else [852.0, 732.0, 1072.0]
-		for i in 3:
-			buildings.append({"side": side, "tier": i, "pos": Vector2(xs[i], 320),
-				"hp": 400.0 if i == 2 else 240.0, "max_hp": 400.0 if i == 2 else 240.0,
-				"last_hit": -100.0})
 	_build_navigation()
 
 func _build_navigation() -> void:
@@ -303,44 +293,11 @@ func _mark_solid_cells(cells: Rect2i) -> void:
 		for y in range(maxi(0, cells.position.y), mini(MAP_CELLS.y, cells.end.y)):
 			navigation.set_point_solid(Vector2i(x, y), true)
 
-func _ruin_cells(building: Dictionary) -> Rect2i:
-	return Rect2i(int(building.pos.x / TILE_SIZE), int(building.pos.y / TILE_SIZE) - 1, 2, 2)
-
 func _solid_rects() -> Array[Rect2]:
 	var rects: Array[Rect2] = []
 	for obstacle in STATIC_OBSTACLES:
 		rects.append(Rect2(Vector2(obstacle.position * TILE_SIZE), Vector2(obstacle.size * TILE_SIZE)))
-	for building in buildings:
-		if building.tier < 2 and building.hp <= 0:
-			var cells := _ruin_cells(building)
-			rects.append(Rect2(Vector2(cells.position * TILE_SIZE), Vector2(cells.size * TILE_SIZE)))
 	return rects
-
-func _move_heroes_out_of_ruin(building: Dictionary) -> void:
-	var cells := _ruin_cells(building)
-	var rect := Rect2(Vector2(cells.position * TILE_SIZE), Vector2(cells.size * TILE_SIZE))
-	for i in heroes.size():
-		var hero: Dictionary = heroes[i]
-		if hero.hp <= 0 or not rect.grow(13.0).has_point(hero.pos):
-			continue
-		var candidates := [
-			Vector2(rect.position.x - 14.0, hero.pos.y),
-			Vector2(rect.end.x + 14.0, hero.pos.y),
-			Vector2(hero.pos.x, rect.position.y - 14.0),
-			Vector2(hero.pos.x, rect.end.y + 14.0)
-		]
-		candidates.sort_custom(func(a: Vector2, b: Vector2) -> bool: return hero.pos.distance_squared_to(a) < hero.pos.distance_squared_to(b))
-		for candidate in candidates:
-			var clear := true
-			for solid in _solid_rects():
-				if solid.grow(13.0).has_point(candidate):
-					clear = false
-					break
-			if clear:
-				hero.pos = _clamp_arena(candidate)
-				hero.nav_path = PackedVector2Array()
-				heroes[i] = hero
-				break
 
 func _hero(name: String, side: int, pos: Vector2) -> Dictionary:
 	return {"name": name, "side": side, "pos": pos, "hp": 80.0, "shield": 0.0,
@@ -386,18 +343,13 @@ func _process(delta: float) -> void:
 		elapsed = LIMIT
 	basic_cd = maxf(0.0, basic_cd - delta)
 	q_cd = maxf(0.0, q_cd - delta)
-	tower_cd -= delta
 	_move_player(delta)
 	_update_heroes(delta)
 	_update_camera()
 	_update_shots(delta)
-	_update_buildings(delta)
-	if tower_cd <= 0.0001:
-		_towers_fire()
-		tower_cd += 1.5
 	var remaining := maxi(0, ceili(LIMIT - elapsed))
 	var q_status := "lista" if q_cd <= 0.0 else "%.1fs" % q_cd
-	hud.text = GameState.moba_class
+	hud.text = "%s · %d – %d / %d" % [GameState.moba_class, team_kills[0], team_kills[1], KILL_TARGET]
 	timer_hud.text = "%ds" % remaining
 	health_hud.text = "%d/80" % ceili(heroes[player_index].hp)
 	ability_hud.text = "Q %s" % q_status
@@ -513,9 +465,7 @@ func _update_heroes(delta: float) -> void:
 		if hero.retreating:
 			goal = Vector2(120, 320) if hero.side == 0 else Vector2(1032, 320)
 		else:
-			goal = _next_enemy_building(hero.side).pos
-			if target >= 0 and hero.pos.distance_to(heroes[target].pos) < 192:
-				goal = heroes[target].pos
+			goal = heroes[target].pos if target >= 0 else Vector2(576, 320)
 		var stop_distance := 20.0 if hero.retreating else 100.0
 		if hero.pos.distance_to(goal) > stop_distance or not _has_line_of_sight(hero.pos, goal):
 			hero = _move_ai(hero, goal, delta)
@@ -620,14 +570,6 @@ func _has_line_of_sight(start: Vector2, finish: Vector2) -> bool:
 			return false
 	return true
 
-func _next_enemy_building(side: int) -> Dictionary:
-	var enemy := 1 - side
-	for tier in 3:
-		for building in buildings:
-			if building.side == enemy and building.tier == tier and building.hp > 0:
-				return building
-	return buildings[3 if enemy == 1 else 0]
-
 func _update_shots(delta: float) -> void:
 	for i in range(shots.size() - 1, -1, -1):
 		var shot: Dictionary = shots[i]
@@ -647,11 +589,6 @@ func _update_shots(delta: float) -> void:
 			var hit := _segment_hit_t(start, shot.pos, heroes[j].pos, 17.0)
 			if hit >= 0:
 				contacts.append({"at": hit, "hero": j})
-		var target: Dictionary = _next_enemy_building(shot.side)
-		if target.hp > 0:
-			var hit := _segment_hit_t(start, shot.pos, target.pos, 31.0)
-			if hit >= 0:
-				contacts.append({"at": hit, "building": target})
 		contacts.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return a.at < b.at)
 		for contact in contacts:
 			if contact.has("wall"):
@@ -664,10 +601,6 @@ func _update_shots(delta: float) -> void:
 				if not shot.piercing or shot.hits >= 2:
 					remove = true
 					break
-			else:
-				_damage_building(shot.side, contact.building, 12.0 if shot.piercing else shot.damage)
-				remove = true
-				break
 		if remove:
 			shots.remove_at(i)
 		else:
@@ -703,6 +636,7 @@ func _segment_rect_hit_t(start: Vector2, finish: Vector2, rect: Rect2) -> float:
 	return minimum
 
 func _damage_hero(index: int, damage: float) -> void:
+	if ended or damage <= 0.0 or heroes[index].hp <= 0.0: return
 	var hero: Dictionary = heroes[index]
 	if hero.immune_until > elapsed:
 		return
@@ -721,38 +655,10 @@ func _damage_hero(index: int, damage: float) -> void:
 	if hero.hp <= 0:
 		hero.hp = 0.0
 		hero.dead_until = elapsed + 3.0
+		team_kills[1 - int(hero.side)] += 1
 	heroes[index] = hero
-
-func _damage_building(attacker_side: int, building: Dictionary, damage: float) -> void:
-	var index := buildings.find(building)
-	if index < 0 or buildings[index].hp <= 0 or buildings[index].side == attacker_side:
-		return
-	if _next_enemy_building(attacker_side).tier != buildings[index].tier:
-		return
-	var real_damage: float = minf(buildings[index].hp, damage)
-	buildings[index].hp -= real_damage
-	buildings[index].last_hit = elapsed
-	effective_damage[attacker_side] += real_damage
-	if buildings[index].tier < 2 and buildings[index].hp <= 0:
-		_mark_solid_cells(_ruin_cells(buildings[index]))
-		_move_heroes_out_of_ruin(buildings[index])
-	if buildings[index].tier == 2 and buildings[index].hp <= 0:
-		_finish("victoria" if attacker_side == 0 else "derrota")
-
-func _update_buildings(delta: float) -> void:
-	for i in buildings.size():
-		if buildings[i].tier == 2 and buildings[i].hp > 0:
-			var healing_time := maxf(0.0, elapsed - maxf(elapsed - delta, buildings[i].last_hit + 5.0))
-			if healing_time > 0:
-				buildings[i].hp = minf(400.0, buildings[i].hp + 4.0 * healing_time)
-
-func _towers_fire() -> void:
-	for building in buildings:
-		if building.tier == 2 or building.hp <= 0:
-			continue
-		var target := _nearest_enemy_hero(building.pos, building.side, 224.0, true)
-		if target >= 0:
-			shots.append(_shot(building.pos, (heroes[target].pos - building.pos).normalized(), building.side, 12.0, 384.0, 224.0, false, true))
+	if team_kills[0] >= KILL_TARGET: _finish("victoria")
+	elif team_kills[1] >= KILL_TARGET: _finish("derrota")
 
 func _use_player_q() -> void:
 	if q_cd > 0 or heroes[player_index].hp <= 0:
@@ -784,16 +690,8 @@ func _use_player_q() -> void:
 		AudioManager.play_effect("ability")
 
 func _timeout_result() -> String:
-	var allies := 0
-	var rivals := 0
-	for building in buildings:
-		if building.tier == 2 or building.hp > 0: continue
-		if building.side == 0: rivals += 1
-		else: allies += 1
-	if allies > rivals: return "victoria"
-	if rivals > allies: return "derrota"
-	if effective_damage[0] > effective_damage[1]: return "victoria"
-	if effective_damage[1] > effective_damage[0]: return "derrota"
+	if team_kills[0] > team_kills[1]: return "victoria"
+	if team_kills[1] > team_kills[0]: return "derrota"
 	return "empate"
 
 func _finish(result: String) -> void:
@@ -813,7 +711,7 @@ func _finish(result: String) -> void:
 		result_occurred_at, result_snapshot)
 	if not is_inside_tree():
 		return
-	result_panel.get_node("Content/Title").text = "Resultado: " + result if result_saved else "Error al guardar; reintenta"
+	result_panel.get_node("Content/Title").text = "%s · %d a %d" % [result.capitalize(), team_kills[0], team_kills[1]] if result_saved else "Error al guardar; reintenta"
 	result_panel.visible = true
 	result_panel.get_node("Content/Continue").grab_focus()
 
@@ -831,23 +729,6 @@ func _draw() -> void:
 	for obstacle in STATIC_OBSTACLES:
 		var rect := Rect2(Vector2(obstacle.position * TILE_SIZE), Vector2(obstacle.size * TILE_SIZE))
 		draw_texture_rect_region(BARRIER_SPRITE, rect, Rect2(245, 100, 410, 1450))
-	for building in buildings:
-		if building.tier < 2 and building.hp <= 0:
-			var ruin := _ruin_cells(building)
-			draw_texture_rect(RUIN_SPRITE, Rect2(Vector2(ruin.position * TILE_SIZE), Vector2(ruin.size * TILE_SIZE)), false)
-			continue
-		var width := 32 if building.tier == 2 else 24
-		var structure_texture: Texture2D = BASE_SPRITE if building.tier == 2 else TOWER_SPRITE
-		if building.hp <= 0:
-			structure_texture = RUIN_SPRITE
-		draw_texture_rect(structure_texture, Rect2(building.pos - Vector2(width, width), Vector2(width * 2, width * 2)), false)
-		draw_arc(building.pos, float(width), 0, TAU, 24, COLORS[building.side], 3.0)
-		var structure_name := "BASE" if building.tier == 2 else "T%d" % (building.tier + 1)
-		draw_string(ThemeDB.fallback_font, building.pos + Vector2(-width, width + 11), structure_name,
-			HORIZONTAL_ALIGNMENT_CENTER, width * 2, 12, Color("fff3df"))
-		if building.hp > 0:
-			draw_rect(Rect2(building.pos + Vector2(-25, -width - 12), Vector2(50, 5)), Color("182a38"))
-			draw_rect(Rect2(building.pos + Vector2(-25, -width - 12), Vector2(50 * building.hp / building.max_hp, 5)), Color("d6e99f"))
 	for hero in heroes:
 		if hero.hp <= 0: continue
 		if hero.buff_until > elapsed:
