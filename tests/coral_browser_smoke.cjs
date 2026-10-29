@@ -53,7 +53,10 @@ async function main() {
       const until = Date.now() + 20000;
       while (Date.now() < until) {
         const state = await readSave();
-        if (predicate(state)) return state;
+        if (predicate(state)) {
+          await page.waitForTimeout(250);
+          return state;
+        }
         await page.waitForTimeout(120);
       }
       throw new Error("Timed out waiting for coral state");

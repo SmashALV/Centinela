@@ -1,8 +1,8 @@
 extends RefCounted
 class_name CoralStoryFlow
 
-const VERSION := "CORAL_STORY_v0.1"
-const PATH := "res://data/narrative/coral_story_v0_1.json"
+const VERSION := "CORAL_STORY_v0.2"
+const PATH := "res://data/narrative/coral_story_v0_2.json"
 const ROUTES := ["A", "B", "C"]
 const D2_FACTS := {"A": "camila_request_shared", "B": "mateo_secret_shared", "C": "sebas_fatigue_observed"}
 
@@ -62,7 +62,7 @@ func load_story() -> Array[String]:
 
 func new_state() -> Dictionary:
 	return {"version": VERSION, "day": 1, "mode": "intro", "node": "", "step": 0,
-		"route": "", "branch": "", "choices": {}, "companion_states": {}, "actions": [], "observed": [],
+		"route": "", "branch": "", "focus": "", "choices": {}, "companion_states": {}, "actions": [], "observed": [],
 		"seen_narrator": [], "hint_requests": {}, "adult_support_started": false,
 		"limit_completed": false, "chapter_scene_done": false, "ending": ""}
 
@@ -81,14 +81,14 @@ func scene(scene_id: String, recovered: Object, draft: Object, state: Dictionary
 			lines.append({"speaker": interaction.get("speaker", "Narrador"), "text": text_line})
 		return {"day": int(state.get("day", 1)), "title": "Pedir apoyo" if key == "TUTOR" else "Marcar un límite", "presentation": "vn", "lines": lines, "choices": []}
 	if scene_id == "N_D2":
-		return {"day": 2, "title": "Lo que Sofi observó", "presentation": "vn", "lines": [{"speaker": "Narrador", "text": content.get("narrator_after_d2", {}).get(state.get("route", ""), "")}], "choices": []}
+		return {"day": 2, "title": "Lo que Sofi observó", "presentation": "vn", "lines": [{"speaker": "Narrador", "text": content.get("narrator_after_d2", {}).get(state.get("focus", "A"), "")}], "choices": []}
 	if scene_id.begins_with("F0"):
 		var ending_lines: Array = content.get("ending_lines", {}).get(scene_id, []).duplicate(true)
-		ending_lines.append_array(content.get("epilogue_by_route", {}).get(state.get("route", ""), []))
-		var branch_epilogue: Dictionary = content.get("epilogue_by_branch", {}).get(state.get("branch", ""), {})
-		if not branch_epilogue.is_empty(): ending_lines.append(branch_epilogue)
-		if str(state.get("branch", "")).ends_with("2"):
-			ending_lines.append(content.get("repair_epilogue", {}))
+		for companion in ["A", "B", "C"]:
+			var branch: String = companion + ("1" if state.get("choices", {}).get("D2_" + companion, "A") == "A" else "2")
+			var epilogue: Dictionary = content.get("epilogue_by_branch", {}).get(branch, {})
+			if not epilogue.is_empty(): ending_lines.append(epilogue)
+		ending_lines.append({"speaker": "Bruno", "text": "Seguiré invitándolos sin exigir explicaciones. Podemos cuidar nuestra amistad y respetar el espacio de cada uno."})
 		return {"day": 4, "title": "Epílogo " + scene_id, "presentation": "vn", "lines": ending_lines, "choices": []}
 	var authored: Dictionary = content.get("scenes", {}).get(scene_id, {}).duplicate(true)
 	var lines: Array = []
@@ -99,52 +99,58 @@ func scene(scene_id: String, recovered: Object, draft: Object, state: Dictionary
 	authored.lines = lines
 	return authored
 
-func route_target(state: Dictionary) -> String:
+func companion_scene(state: Dictionary, person: String) -> String:
+	var day: int = int(state.get("day", 1))
+	var choices: Dictionary = state.get("choices", {})
+	if day == 1: return "I_D1_" + person.to_upper()
+	if day == 2: return {"camila": "D2_A", "mateo": "D2_B", "sebas": "D2_C", "bruno": "I_D2_BRUNO"}.get(person, "")
+	var a: String = "1" if choices.get("D2_A", "A") == "A" else "2"
+	var b: String = "1" if choices.get("D2_B", "A") == "A" else "2"
+	var c: String = "1" if choices.get("D2_C", "A") == "A" else "2"
+	if day == 3:
+		return {"camila": "D3_A" + a, "mateo": "D3_B" + b, "sebas": "D3_C1" if c == "1" else "I_D3_SEBAS", "bruno": "I_D3_BRUNO" if c == "1" else "D3_C2"}.get(person, "")
+	return {"camila": "D4_A" + a, "mateo": "D4_B" + b, "sebas": "D4_C1", "bruno": "I_D4_BRUNO" if c == "1" else "D4_C2"}.get(person, "")
+
+func talked_today(state: Dictionary, person: String) -> bool:
 	if int(state.get("day", 1)) == 1:
-		return "lobby"
-	var route: String = str(state.get("route", ""))
-	if route == "A": return "camila"
-	if route == "B": return "mateo"
-	return "sebas" if str(state.get("branch", "")) != "C2" or int(state.get("day", 1)) == 2 else "bruno"
+		return state.get("actions", []).has("D1_TALK_" + person.to_upper())
+	return state.get("actions", []).has("DONE_" + companion_scene(state, person))
+
+func everyone_heard(state: Dictionary) -> bool:
+	for person in ["camila", "mateo", "sebas", "bruno"]:
+		if not talked_today(state, person): return false
+	return true
+
+func route_target(state: Dictionary) -> String:
+	for person in ["camila", "mateo", "sebas", "bruno"]:
+		if not talked_today(state, person): return person
+	if int(state.get("day", 1)) == 1 and not state.get("actions", []).has("D1_LOBBY_DONE"): return "lobby"
+	return "salida"
 
 func world_key(state: Dictionary) -> String:
-	var day: int = int(state.get("day", 1))
-	if day == 1: return "draft_d1"
-	if day == 2: return "draft_d2"
-	if day == 4 and state.get("chapter_scene_done", false): return "draft_d4"
-	var scene_id: String = "D%d_%s" % [day, str(state.get("branch", ""))]
-	var place: String = str(content.get("scenes", {}).get(scene_id, {}).get("place", "patio"))
-	if place == "habitación": return "bedroom"
-	if place == "pasillo": return "draft_d3"
-	if place in ["árbol", "banco", "exterior"]: return "draft_d2"
-	return "draft_d4"
+	return {1: "draft_d1", 2: "draft_d2", 3: "draft_d3", 4: "draft_d4"}.get(int(state.get("day", 1)), "draft_d4")
 
 func objective(state: Dictionary) -> String:
-	var day: int = int(state.get("day", 1))
 	if state.get("mode") == "intro": return "Escucha al narrador"
 	if state.get("mode") == "summary": return "Historia concluida"
 	if state.get("mode") in ["scene", "reaction", "ending"]: return "Continúa la conversación"
-	if day == 1:
-		var talks: int = 0
-		for action in state.get("actions", []):
-			if str(action).begins_with("D1_TALK_"): talks += 1
-		return "Habla con dos compañeros (%d/2); después usa el lobby" % mini(talks, 2)
-	if day == 4 and state.get("chapter_scene_done", false):
-		return "Inicia apoyo en tutoría, completa un límite en la PC o ve a la salida"
-	return "Busca a %s y escucha su conversación" % route_target(state).capitalize()
+	var total: int = 0
+	for person in ["camila", "mateo", "sebas", "bruno"]:
+		if talked_today(state, person): total += 1
+	if total < 4: return "Conversa con tus compañeros (%d/4)" % total
+	if int(state.get("day", 1)) == 1 and not state.get("actions", []).has("D1_LOBBY_DONE"): return "Entra al lobby para preparar la partida"
+	if int(state.get("day", 1)) == 4: return "Concreta apoyo en tutoría o un límite en la PC; después ve a la salida"
+	return "Ve a la salida para cerrar la jornada"
 
 func navigation_hint(state: Dictionary) -> String:
-	var day: int = int(state.get("day", 1))
-	if day == 1: return "Habla con dos amigos marcados. Después usa el lobby a la derecha del patio."
-	if day == 4 and state.get("chapter_scene_done", false): return "Tutoría está a la izquierda, la PC a la derecha y la salida abajo."
-	return "Acércate a %s y pulsa F. Tutoría está disponible a la izquierda." % route_target(state).capitalize()
+	return "Los cuatro compañeros están en el escenario. Puedes hablarles en cualquier orden. La salida cierra la jornada cuando termines; tutoría está a la izquierda."
 
 func educational_hint(state: Dictionary, level: int) -> String:
 	var day: int = int(state.get("day", 1))
 	if day == 1:
 		return "¿Mateo puede escoger cuándo jugar y con quién hablar sin sentirse obligado?" if level == 1 else "La atención o los halagos no crean una obligación. Observa si se respeta un no y el contacto con otras amistades."
 	if day == 2:
-		var route: String = str(state.get("route", ""))
+		var route: String = str(state.get("focus", ""))
 		if not state.get("observed", []).has(D2_FACTS.get(route, "")):
 			return "¿Qué ha observado Sofi realmente? Escucha primero sin suponer qué mensajes recibió cada compañero." if level == 1 else "Un regalo o el cansancio aislados no demuestran abuso. Puedes ofrecer apoyo sin investigar ni pedir pruebas."
 		if route == "A": return "¿Qué eligió contar Camila y qué pidió que no se compartiera?" if level == 1 else "Escuchar una confidencia no da permiso para publicarla ni compartir horarios de otras personas."

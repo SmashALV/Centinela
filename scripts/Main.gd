@@ -9,10 +9,11 @@ const DisplayGuardScript = preload("res://scripts/DisplayGuard.gd")
 const ConversationUIScript = preload("res://scripts/ConversationUI.gd")
 const DAY_0_PREVIEW := "res://data/narrative/day_0_RECOVERED_PREVIEW.json"
 const PROLOGUE_LINES := [
-	"Esta es Sofi. Tiene 15 años y le encanta jugar con Mateo, Camila, Bruno y Sebas. Hoy acompañarás a su grupo dentro y fuera de la pantalla.",
-	"El grooming ocurre cuando una persona adulta se gana la confianza de un menor por internet para manipularlo con fines de abuso sexual. Puede fingir otra edad, ofrecer regalos o pedir secretos.",
-	"Para cuidarte: no compartas datos ni imágenes íntimas, no aceptes encuentros a solas y habla con un adulto de confianza si algo te incomoda. Guarda los mensajes. La culpa nunca es de quien recibe la presión."
+	"Esta es Sofi. Tiene 15 años y le encanta jugar con Mateo, Camila, Bruno y Sebas. Entre el colegio, las bromas y las partidas, siempre encuentran algo de qué hablar.",
+	"Hoy empieza como cualquier otro día. Hay una mochila por preparar, amigos por encontrar y una partida pendiente. Cada uno llega con sus propias ganas y preocupaciones.",
+	"Acompaña a Sofi, explora y escucha lo que sus amigos quieran contar. Tú decidirás cómo responder; las pequeñas conversaciones pueden cambiar lo que sucede después."
 ]
+
 const PORTRAITS := {
 	"Sofi": "res://assets/portraits/sofi_neutral.png",
 	"Mateo": "res://assets/portraits/mateo_neutral.png",
@@ -1324,31 +1325,15 @@ func _start_coral_story() -> bool:
 	return await _save_coral(previous)
 
 func _coral_targets() -> Dictionary:
-	var state: Dictionary = GameState.coral_state
-	var day: int = int(state.get("day", 1))
-	if day == 1:
-		return {"camila": Vector2(310, 240), "bruno": Vector2(230, 250),
-			"sebas": Vector2(420, 250), "mateo": Vector2(525, 235),
-			"lobby": Vector2(650, 318), "tutoria": Vector2(165, 310)}
-	if day == 4 and state.get("chapter_scene_done", false):
-		return {"tutoria": Vector2(150, 310), "pc": Vector2(635, 303), "salida": Vector2(385, 333)}
-	var target: String = coral_flow.route_target(state)
-	return {target: Vector2(520, 235), "tutoria": Vector2(165, 310)}
+	var targets := {"camila": Vector2(310, 240), "bruno": Vector2(230, 250),
+		"sebas": Vector2(420, 250), "mateo": Vector2(525, 235),
+		"tutoria": Vector2(165, 310), "salida": Vector2(385, 345)}
+	if int(GameState.coral_state.get("day", 1)) == 1: targets.lobby = Vector2(650, 318)
+	if int(GameState.coral_state.get("day", 1)) == 4: targets.pc = Vector2(650, 318)
+	return targets
 
 func _coral_primary_target() -> String:
-	var state: Dictionary = GameState.coral_state
-	if int(state.get("day", 1)) == 1:
-		var talks: int = 0
-		for action in state.get("actions", []):
-			if str(action).begins_with("D1_TALK_"): talks += 1
-		if talks < 2:
-			for person in ["camila", "bruno", "sebas", "mateo"]:
-				if not state.get("actions", []).has("D1_TALK_" + person.to_upper()):
-					return person
-		return "lobby"
-	if int(state.get("day", 1)) == 4 and state.get("chapter_scene_done", false):
-		return "tutoria" if str(state.get("choices", {}).get("D4_" + str(state.get("branch", "")), "")) == "A" else "pc"
-	return coral_flow.route_target(state)
+	return coral_flow.route_target(GameState.coral_state)
 
 func _save_coral(previous: Dictionary) -> bool:
 	if save_in_progress:
@@ -1376,35 +1361,38 @@ func _coral_interact(target: String) -> void:
 	var state: Dictionary = GameState.coral_state
 	if state.get("mode") != "explore" or save_in_progress: return
 	var day: int = int(state.get("day", 1))
-	if target == "tutoria":
-		if state.get("adult_support_started", false):
-			_toast("Ya iniciaron una conversación de apoyo. Puedes retomarla cuando quieras.")
-		else:
-			_coral_begin_scene("I_TUTOR")
-		return
-	if day == 1:
-		if target in ["camila", "bruno", "sebas", "mateo"]:
-			if state.get("actions", []).has("D1_TALK_" + target.to_upper()):
-				_toast("Ya hablaste con " + target.capitalize())
-			else:
-				_coral_begin_scene("I_D1_" + target.to_upper())
-		elif target == "lobby":
-			var talks: int = 0
-			for action in state.get("actions", []):
-				if str(action).begins_with("D1_TALK_"): talks += 1
-			if talks >= 2: _coral_begin_scene("D1_GATE")
-			else: _toast("Habla con dos compañeros antes de entrar al lobby")
-		return
-	if day == 4 and state.get("chapter_scene_done", false):
-		if target == "pc":
-			if state.get("limit_completed", false): _toast("El límite digital ya está registrado")
-			else: _coral_begin_scene("I_LIMIT")
-		elif target == "salida":
-			_coral_finish_day()
-		return
-	if target == coral_flow.route_target(state):
-		var scene_id: String = "D2_" + str(state.route) if day == 2 else "D3_" + str(state.branch) if day == 3 else "D4_" + str(state.branch)
-		_coral_begin_scene(scene_id)
+	if target in ["camila", "mateo", "sebas", "bruno"]:
+		if coral_flow.talked_today(state, target):
+			_toast("Ya conversaste con " + target.capitalize() + " hoy. Puedes acercarte a los demás antes de salir.")
+		else: _coral_begin_scene(coral_flow.companion_scene(state, target))
+	elif target == "tutoria":
+		_coral_begin_scene("I_TUTOR")
+	elif target == "lobby" and day == 1:
+		if state.get("actions", []).has("D1_LOBBY_DONE"):
+			_toast("La partida ya está preparada. Puedes seguir conversando antes de salir.")
+		else: _coral_begin_scene("D1_GATE")
+	elif target == "pc" and day == 4:
+		_coral_begin_scene("I_LIMIT")
+	elif target == "salida":
+		if not coral_flow.everyone_heard(state):
+			_toast("Todavía puedes conversar con los compañeros que faltan")
+		elif day == 1 and not state.get("actions", []).has("D1_LOBBY_DONE"):
+			_toast("Prepara la partida en el lobby antes de salir")
+		elif day == 4: _coral_finish_day()
+		else: _coral_next_day()
+
+func _coral_next_day() -> bool:
+	if save_in_progress or GameState.phase != "coral" or not coral_flow.everyone_heard(GameState.coral_state): return false
+	if int(GameState.coral_state.day) >= 4: return false
+	if int(GameState.coral_state.day) == 1 and not GameState.coral_state.actions.has("D1_LOBBY_DONE"): return false
+	var previous: Dictionary = GameState.snapshot()
+	GameState.coral_state.day = int(GameState.coral_state.day) + 1
+	GameState.coral_state.mode = "intro"
+	GameState.coral_state.node = ""
+	GameState.coral_state.step = 0
+	GameState.coral_state.chapter_scene_done = false
+	GameState.player_position = Vector2(180, 315)
+	return await _save_coral(previous)
 
 func _coral_advance() -> bool:
 	if save_in_progress or GameState.phase != "coral": return false
@@ -1438,14 +1426,13 @@ func _coral_choose(key: String) -> bool:
 	if not valid: return false
 	var previous: Dictionary = GameState.snapshot()
 	state.choices[scene_id] = key
-	if scene_id == "D1_GATE":
-		state.route = key
-	elif scene_id.begins_with("D2_"):
-		state.branch = str(state.route) + ("1" if key == "A" else "2")
-		state.companion_states[state.route] = {"trusted": key == "A", "repair_needed": key == "B"}
-		var fact: String = str(CoralFlowScript.D2_FACTS.get(state.route, ""))
+	if scene_id.begins_with("D2_"):
+		var companion: String = scene_id.trim_prefix("D2_")
+		state.focus = companion
+		state.companion_states[companion] = {"trusted": key == "A", "repair_needed": key == "B"}
+		var fact: String = str(CoralFlowScript.D2_FACTS.get(companion, ""))
 		if not state.observed.has(fact): state.observed.append(fact)
-	elif scene_id.begins_with("D4_") and key == "A" and str(state.branch).ends_with("2"):
+	elif scene_id.begins_with("D4_") and key == "A" and scene_id.ends_with("2"):
 		if not state.actions.has("REPAIR_OFFERED"): state.actions.append("REPAIR_OFFERED")
 	state.mode = "reaction"
 	state.step = 0
@@ -1469,32 +1456,24 @@ func _coral_finish_scene(previous: Dictionary = {}) -> bool:
 		state.limit_completed = true
 		if not state.actions.has("DIGITAL_LIMIT_COMPLETED"): state.actions.append("DIGITAL_LIMIT_COMPLETED")
 	elif scene_id == "D1_GATE":
-		state.node = "D1_%s_FOLLOW" % state.route
+		state.node = "D1_%s_FOLLOW" % str(state.choices.get("D1_GATE", "B"))
 		state.mode = "scene"
 	elif scene_id.begins_with("D1_") and scene_id.ends_with("_FOLLOW"):
-		state.day = 2
-		state.mode = "intro"
-		state.chapter_scene_done = false
-		GameState.player_position = Vector2(180, 315)
+		if scene_id != "D1_B_FOLLOW":
+			state.node = "D1_B_FOLLOW"
+			state.mode = "scene"
+		elif not state.actions.has("D1_LOBBY_DONE"): state.actions.append("D1_LOBBY_DONE")
 	elif scene_id.begins_with("D2_"):
+		if not state.actions.has("DONE_" + scene_id): state.actions.append("DONE_" + scene_id)
+		state.focus = scene_id.trim_prefix("D2_")
 		state.node = "N_D2"
 		state.mode = "scene"
 	elif scene_id == "N_D2":
-		state.day = 3
-		state.mode = "intro"
-		state.chapter_scene_done = false
-		if not state.seen_narrator.has("D2_ROUTE_" + str(state.route)):
-			state.seen_narrator.append("D2_ROUTE_" + str(state.route))
-		GameState.player_position = Vector2(180, 315)
-	elif scene_id.begins_with("D3_"):
-		if str(state.branch).ends_with("2"):
-			state.companion_states[state.route].repair_offered = true
-		state.day = 4
-		state.mode = "intro"
-		state.chapter_scene_done = false
-		GameState.player_position = Vector2(180, 315)
-	elif scene_id.begins_with("D4_"):
-		state.chapter_scene_done = true
+		var narrator_id: String = "D2_OBSERVED_" + str(state.get("focus", ""))
+		if not state.seen_narrator.has(narrator_id): state.seen_narrator.append(narrator_id)
+	elif scene_id.begins_with("D3_") or scene_id.begins_with("D4_") or scene_id.begins_with("I_D2_") or scene_id.begins_with("I_D3_") or scene_id.begins_with("I_D4_"):
+		if not state.actions.has("DONE_" + scene_id): state.actions.append("DONE_" + scene_id)
+		state.chapter_scene_done = int(state.day) == 4 and coral_flow.everyone_heard(state)
 	elif scene_id.begins_with("F0"):
 		state.mode = "summary"
 	return await _save_coral(rollback)
@@ -1585,7 +1564,7 @@ func _render_coral_summary() -> void:
 	var ending: String = str(GameState.coral_state.get("ending", "F03"))
 	var description: String = {"F01": "Se inició una conversación de apoyo con una persona adulta.", "F02": "Se completó un límite digital con permiso.", "F03": "Hay pasos de protección pendientes; aún se puede pedir ayuda."}.get(ending, "")
 	_preview_text(body, "%s · %s" % [ending, description], 20)
-	_preview_text(body, "Las decisiones anteriores cambiaron qué supo Sofi, cómo reaccionaron sus amigos y qué apoyo pudo ofrecerles.", 16)
+	_preview_text(body, "Sofi pudo escuchar a todo el grupo. Sus respuestas cambiaron la confianza de cada compañero y las acciones que concretaron juntos.", 16)
 	_preview_button(body, "Volver al menú", _return_to_menu)
 
 func _start_playable_draft() -> bool:

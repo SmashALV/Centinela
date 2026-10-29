@@ -115,7 +115,7 @@
       throw failure("INVALID_REQUEST", "Indicadores inválidos");
     const coral = snapshot.coral_state ?? {};
     if (!coral || typeof coral !== "object" || Array.isArray(coral) ||
-        (snapshot.phase === "coral" && (coral.version !== "CORAL_STORY_v0.1" ||
+        (snapshot.phase === "coral" && (!["CORAL_STORY_v0.1", "CORAL_STORY_v0.2"].includes(coral.version) ||
           ![1, 2, 3, 4].includes(coral.day) ||
           !["intro", "explore", "scene", "reaction", "ending", "summary"].includes(coral.mode) ||
           !["", "A", "B", "C"].includes(coral.route) ||
@@ -131,7 +131,7 @@
       throw failure("INVALID_REQUEST", "Estado narrativo inválido");
     if (snapshot.phase === "coral") {
       const decisions = ["D1_GATE", "D2_A", "D2_B", "D2_C", "D4_A1", "D4_A2", "D4_B1", "D4_B2", "D4_C1", "D4_C2"];
-      const nodes = ["I_D1_CAMILA", "I_D1_BRUNO", "I_D1_SEBAS", "I_D1_MATEO", "I_TUTOR", "I_LIMIT",
+      const nodes = ["I_D2_BRUNO", "I_D3_SEBAS", "I_D3_BRUNO", "I_D4_BRUNO", "I_D1_CAMILA", "I_D1_BRUNO", "I_D1_SEBAS", "I_D1_MATEO", "I_TUTOR", "I_LIMIT",
         "D1_GATE", "D1_A_FOLLOW", "D1_B_FOLLOW", "D1_C_FOLLOW", "D2_A", "D2_B", "D2_C", "N_D2",
         "D3_A1", "D3_A2", "D3_B1", "D3_B2", "D3_C1", "D3_C2",
         "D4_A1", "D4_A2", "D4_B1", "D4_B2", "D4_C1", "D4_C2", "F01", "F02", "F03"];

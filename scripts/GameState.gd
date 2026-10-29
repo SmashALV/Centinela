@@ -5,9 +5,9 @@ const NARRATIVE_VERSION := "provisional-d0-1"
 const PREVIEW_CONTENT_VERSION := "RECOVERED_PREVIEW_D0_v0.2"
 const PREVIEW_PACK_VERSION := "RECOVERED_PREVIEW_D0_D4_v0.2"
 const DRAFT_CONTENT_VERSION := "PLAYABLE_DRAFT_v0.3"
-const CORAL_CONTENT_VERSION := "CORAL_STORY_v0.1"
+const CORAL_CONTENT_VERSION := "CORAL_STORY_v0.2"
 const CORAL_DECISIONS := ["D1_GATE", "D2_A", "D2_B", "D2_C", "D4_A1", "D4_A2", "D4_B1", "D4_B2", "D4_C1", "D4_C2"]
-const CORAL_NODES := ["I_D1_CAMILA", "I_D1_BRUNO", "I_D1_SEBAS", "I_D1_MATEO", "I_TUTOR", "I_LIMIT", "D1_GATE", "D1_A_FOLLOW", "D1_B_FOLLOW", "D1_C_FOLLOW", "D2_A", "D2_B", "D2_C", "N_D2", "D3_A1", "D3_A2", "D3_B1", "D3_B2", "D3_C1", "D3_C2", "D4_A1", "D4_A2", "D4_B1", "D4_B2", "D4_C1", "D4_C2", "F01", "F02", "F03"]
+const CORAL_NODES := ["I_D2_BRUNO", "I_D3_SEBAS", "I_D3_BRUNO", "I_D4_BRUNO", "I_D1_CAMILA", "I_D1_BRUNO", "I_D1_SEBAS", "I_D1_MATEO", "I_TUTOR", "I_LIMIT", "D1_GATE", "D1_A_FOLLOW", "D1_B_FOLLOW", "D1_C_FOLLOW", "D2_A", "D2_B", "D2_C", "N_D2", "D3_A1", "D3_A2", "D3_B1", "D3_B2", "D3_C1", "D3_C2", "D4_A1", "D4_A2", "D4_B1", "D4_B2", "D4_C1", "D4_C2", "F01", "F02", "F03"]
 const PREVIEW_SCENES := ["D1_02_A", "D1_03_A", "D2_03_A", "D2_04_A", "D3_01_A", "D4_01_A", "D4_02_A", "D4_03_A", "ENDINGS_INDEX", "F01_A", "F01_B", "F02", "F03"]
 
 var slot: int = 1
@@ -133,7 +133,7 @@ func restore(data: Dictionary) -> bool:
 	if typeof(coral) != TYPE_DICTIONARY:
 		return false
 	if data.get("phase") == "coral":
-		if coral.get("version") != CORAL_CONTENT_VERSION or int(coral.get("day", 0)) not in [1, 2, 3, 4] or coral.get("mode") not in ["intro", "explore", "scene", "reaction", "ending", "summary"] or typeof(coral.get("node", "")) != TYPE_STRING or typeof(coral.get("step", 0)) not in [TYPE_INT, TYPE_FLOAT] or int(coral.get("step", 0)) < 0 or int(coral.get("step", 0)) > 100 or coral.get("route", "") not in ["", "A", "B", "C"]:
+		if coral.get("version") not in [CORAL_CONTENT_VERSION, "CORAL_STORY_v0.1"] or int(coral.get("day", 0)) not in [1, 2, 3, 4] or coral.get("mode") not in ["intro", "explore", "scene", "reaction", "ending", "summary"] or typeof(coral.get("node", "")) != TYPE_STRING or typeof(coral.get("step", 0)) not in [TYPE_INT, TYPE_FLOAT] or int(coral.get("step", 0)) < 0 or int(coral.get("step", 0)) > 100 or coral.get("route", "") not in ["", "A", "B", "C"]:
 			return false
 		for field in ["choices", "hint_requests", "companion_states"]:
 			if typeof(coral.get(field)) != TYPE_DICTIONARY:
@@ -257,6 +257,20 @@ func restore(data: Dictionary) -> bool:
 	music_volume = int(saved_music)
 	effects_volume = int(saved_effects)
 	coral_state = coral.duplicate(true)
+	if phase == "coral" and coral_state.get("version") == "CORAL_STORY_v0.1":
+		coral_state.version = CORAL_CONTENT_VERSION
+		coral_state.focus = str(coral_state.get("route", ""))
+		for decision_id in coral_state.get("choices", {}):
+			if str(decision_id).begins_with("D2_") and not coral_state.actions.has("DONE_" + str(decision_id)):
+				coral_state.actions.append("DONE_" + str(decision_id))
+		if coral_state.mode not in ["ending", "summary"]:
+			coral_state.day = mini(int(coral_state.day), 2)
+			coral_state.mode = "intro"
+			coral_state.node = ""
+			coral_state.step = 0
+			coral_state.chapter_scene_done = false
+			if int(coral_state.day) == 2 and not coral_state.actions.has("D1_LOBBY_DONE"):
+				coral_state.actions.append("D1_LOBBY_DONE")
 	if coral_state.has("step"):
 		coral_state.step = int(coral_state.step)
 	if coral_state.has("day"):

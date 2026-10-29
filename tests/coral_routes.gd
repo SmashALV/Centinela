@@ -2,12 +2,9 @@ extends Node
 
 const MainScene = preload("res://scenes/Main.tscn")
 const CASES := [
-	{"route": "A", "d2": "A", "d4": "A", "action": "early_support", "ending": "F01"},
-	{"route": "A", "d2": "B", "d4": "B", "action": "limit", "ending": "F02"},
-	{"route": "B", "d2": "A", "d4": "B", "action": "none", "ending": "F03"},
-	{"route": "B", "d2": "B", "d4": "A", "action": "support", "ending": "F01"},
-	{"route": "C", "d2": "A", "d4": "B", "action": "limit", "ending": "F02"},
-	{"route": "C", "d2": "B", "d4": "B", "action": "none", "ending": "F03"}
+	{"answers": ["A", "A", "A"], "action": "support", "ending": "F01", "order": ["camila", "mateo", "sebas", "bruno"]},
+	{"answers": ["B", "B", "B"], "action": "limit", "ending": "F02", "order": ["bruno", "sebas", "mateo", "camila"]},
+	{"answers": ["B", "A", "B"], "action": "none", "ending": "F03", "order": ["mateo", "camila", "bruno", "sebas"]}
 ]
 
 func _ready() -> void:
@@ -56,102 +53,93 @@ func _run() -> void:
 	if story.coral_flow.content.is_empty():
 		_fail("contenido no cargado")
 		return
-	for case_data in CASES:
-		var label: String = "%s%s" % [case_data.route, case_data.d2]
-		SaveManager.storage_prefix = "user://centinela_CORAL_%s_%d_" % [label, Time.get_ticks_usec()]
+	for text_line in story.PROLOGUE_LINES:
+		if "grooming" in str(text_line).to_lower():
+			_fail("prólogo anticipa el concepto")
+			return
+	for plan in CASES:
+		SaveManager.storage_prefix = "user://centinela_ENSEMBLE_%d_" % Time.get_ticks_usec()
 		GameState.new_game(1)
 		GameState.phase = "result"
 		GameState.moba_class = "Defensor"
 		GameState.moba_result = "victoria"
 		if not SaveManager.save_slot() or not await story._start_coral_story():
-			_fail("inicio " + label)
+			_fail("inicio coral")
 			return
-		if not await _advance_intro(story):
-			_fail("introducción D1 " + label)
-			return
-		for actor in ["camila", "mateo"]:
-			if not await _play_scene(story, "I_D1_" + actor.to_upper()):
-				_fail("charla D1 " + label)
-				return
-		if not await _play_scene(story, "D1_GATE", case_data.route):
-			_fail("decisión D1 " + label)
-			return
-		if GameState.coral_state.node != "D1_%s_FOLLOW" % case_data.route:
-			_fail("consecuencia inmediata D1 " + label)
-			return
-		if case_data.route == "B" and story.conversation_ui.find_child("DirectSidebar", true, false) == null:
-			_fail("privado de Mateo D1 " + label)
-			return
-		var follow: Dictionary = story.coral_flow.scene("D1_%s_FOLLOW" % case_data.route, story.preview_catalog, story.draft_flow, GameState.coral_state)
-		for ignored in range(follow.lines.size()):
-			if not await story._coral_advance():
-				_fail("escena inmediata D1 " + label)
-				return
-		if GameState.coral_state.route != case_data.route or GameState.coral_state.day != 2:
-			_fail("ruta D1 no persistió " + label)
-			return
-		if case_data.action == "early_support":
-			if not await _advance_intro(story) or not await _play_scene(story, "I_TUTOR"):
-				_fail("apoyo temprano " + label)
-				return
-		else:
+		for day in [1, 2, 3, 4]:
 			if not await _advance_intro(story):
-				_fail("introducción D2 " + label)
+				_fail("introducción día " + str(day))
 				return
-		if not story.coral_flow.educational_hint(GameState.coral_state, 2).contains("aislado"):
-			_fail("pista prematura revela información " + label)
-			return
-		if not await _play_scene(story, "D2_" + case_data.route, case_data.d2):
-			_fail("decisión D2 " + label)
-			return
-		if case_data.route == "B" and story.conversation_ui.find_child("DirectSidebar", true, false) == null:
-			# La escena siguiente ya reemplazó el chat: comprobar por su tipo declarado.
-			if story.coral_flow.scene("D2_B", story.preview_catalog, story.draft_flow, GameState.coral_state).presentation != "dm":
-				_fail("chat privado de Mateo " + label)
+			if await story._coral_next_day():
+				_fail("salida prematura")
 				return
-		var branch: String = case_data.route + ("1" if case_data.d2 == "A" else "2")
-		if GameState.coral_state.branch != branch or GameState.coral_state.observed.is_empty():
-			_fail("consecuencia D2 " + label)
+			for person in plan.order:
+				for available in ["camila", "mateo", "sebas", "bruno"]:
+					if not story.world.objects.has(available):
+						_fail("compañero excluido: " + available)
+						return
+				var id: String = story.coral_flow.companion_scene(GameState.coral_state, person)
+				var option: String = ""
+				if day == 2 and id.begins_with("D2_"):
+					option = str(plan.answers[["A", "B", "C"].find(id.trim_prefix("D2_"))])
+				elif day == 4 and id.begins_with("D4_"): option = "A"
+				if not await _play_scene(story, id, option):
+					_fail("conversación " + id)
+					return
+				if GameState.coral_state.node == "N_D2":
+					if not await story._coral_advance():
+						_fail("narrador después de observar")
+						return
+				if not story.coral_flow.talked_today(GameState.coral_state, person) or GameState.coral_state.day != day:
+					_fail("avance automático o charla sin registrar")
+					return
+				var saved: Dictionary = GameState.snapshot()
+				GameState.new_game(1)
+				if not SaveManager.load_slot(1) or GameState.snapshot() != saved:
+					_fail("reanudación entre compañeros")
+					return
+				story._load_phase()
+			if day == 1:
+				if not await _play_scene(story, "D1_GATE", "A"):
+					_fail("lobby")
+					return
+				for follow_id in ["D1_A_FOLLOW", "D1_B_FOLLOW"]:
+					var follow: Dictionary = story.coral_flow.scene(follow_id, story.preview_catalog, story.draft_flow, GameState.coral_state)
+					for ignored in range(follow.lines.size()):
+						if not await story._coral_advance():
+							_fail("continuidad lobby y privado")
+							return
+			if day < 4:
+				if not await story._coral_next_day():
+					_fail("cierre de jornada")
+					return
+		if GameState.coral_state.observed.size() != 3:
+			_fail("faltan situaciones conocidas del grupo")
 			return
-		if not await _play_scene(story, "N_D2") or GameState.coral_state.day != 3:
-			_fail("narrador de ruta " + label)
+		if plan.action == "support": await _play_scene(story, "I_TUTOR")
+		if plan.action == "limit": await _play_scene(story, "I_LIMIT")
+		if not await story._coral_finish_day() or GameState.coral_state.ending != plan.ending:
+			_fail("final por acciones")
 			return
-		var saved: Dictionary = GameState.snapshot()
-		GameState.new_game(1)
-		if not SaveManager.load_slot(1) or GameState.snapshot() != saved:
-			_fail("reanudar D3 " + label)
-			return
-		story._load_phase()
-		if not await _advance_intro(story) or not await _play_scene(story, "D3_" + branch):
-			_fail("escena D3 " + label)
-			return
-		if GameState.coral_state.day != 4 or not await _advance_intro(story):
-			_fail("introducción D4 " + label)
-			return
-		if not await _play_scene(story, "D4_" + branch, case_data.d4):
-			_fail("decisión D4 " + label)
-			return
-		if case_data.action == "support" and not await _play_scene(story, "I_TUTOR"):
-			_fail("apoyo final " + label)
-			return
-		if case_data.action == "limit" and not await _play_scene(story, "I_LIMIT"):
-			_fail("límite digital " + label)
-			return
-		if not await story._coral_finish_day() or GameState.coral_state.ending != case_data.ending:
-			_fail("final por acciones " + label)
-			return
-		var ending_scene: Dictionary = story.coral_flow.scene(case_data.ending, story.preview_catalog, story.draft_flow, GameState.coral_state)
-		if ending_scene.lines.size() < 4:
-			_fail("epílogo de compañeros " + label)
-			return
-		for ignored in range(ending_scene.lines.size()):
-			if not await story._coral_advance():
-				_fail("avance epílogo " + label)
+		var ending_scene: Dictionary = story.coral_flow.scene(plan.ending, story.preview_catalog, story.draft_flow, GameState.coral_state)
+		var voices: Array = []
+		for line in ending_scene.lines: voices.append(line.speaker)
+		for person in ["Camila", "Mateo", "Sebas", "Bruno"]:
+			if person not in voices:
+				_fail("falta voz en epílogo: " + person)
 				return
-		if GameState.coral_state.mode != "summary":
-			_fail("cierre " + label)
-			return
-		print("PASS ruta coral %s → %s con guardado, pistas y epílogo" % [label, case_data.ending])
+		for ignored in range(ending_scene.lines.size()): await story._coral_advance()
+		print("PASS jornada compartida D1–D4, cuatro compañeros, orden %s, final %s y reanudación" % [str(plan.order), plan.ending])
 		SaveManager.delete_slot(1)
+	var old_save: Dictionary = GameState.snapshot()
+	old_save.phase = "coral"
+	old_save.coral_state.version = "CORAL_STORY_v0.1"
+	old_save.coral_state.mode = "explore"
+	old_save.coral_state.node = ""
+	old_save.coral_state.day = 3
+	if not GameState.restore(old_save) or GameState.coral_state.version != "CORAL_STORY_v0.2" or GameState.coral_state.day != 2:
+		_fail("migración de partida con compañero exclusivo")
+		return
+	print("PASS migración a jornada compartida y prólogo sin definición anticipada")
 	SaveManager.storage_prefix = SaveManager.SAVE_PREFIX
 	get_tree().quit(0)
