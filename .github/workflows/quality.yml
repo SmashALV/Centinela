@@ -57,6 +57,8 @@ jobs:
         run: |
           godot --headless --editor --import --path . --quit
           godot --headless --path . --scene res://tests/RunTests.tscn
+          godot --headless --path . --scene res://tests/MobaReturnTests.tscn
+          godot --headless --path . --scene res://tests/StoryRoutesTests.tscn
           mkdir -p build/web
           godot --headless --path . --export-debug 'Web Development' build/web/index.html
       - name: Test exported Web in browser

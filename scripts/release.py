@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import argparse
+import base64
+import binascii
 import hashlib
 import json
 import re
@@ -58,9 +60,39 @@ def metadata() -> dict:
     }
 
 
+def client_source_files() -> list[Path]:
+    files = [ROOT / "project.godot"]
+    for folder, patterns in (("scripts", ("*.gd",)), ("scenes", ("*.tscn",)),
+                             ("web", ("*.js", "*.mjs", "*.json", "*.html", "*.css")),
+                             ("dashboard", ("*.js", "*.mjs", "*.json", "*.html", "*.css")),
+                             ("data/narrative", ("*.json",))):
+        for pattern in patterns:
+            files.extend((ROOT / folder).rglob(pattern))
+    return files
+
+
+def client_secret_findings() -> list[str]:
+    findings = []
+    jwt_pattern = re.compile(r"eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+")
+    for path in client_source_files():
+        source = path.read_text(encoding="utf-8")
+        forbidden = bool(re.search(r"sb_secret_[A-Za-z0-9_-]{8,}", source))
+        forbidden |= bool(re.search(r"(?i)(?:service_role_key|recovery_hmac_key)\s*[:=]\s*['\"][^'\"]{8,}['\"]", source))
+        for token in jwt_pattern.findall(source):
+            try:
+                payload = token.split(".")[1]
+                decoded = base64.urlsafe_b64decode(payload + "=" * (-len(payload) % 4))
+                forbidden |= json.loads(decoded).get("role") == "service_role"
+            except (ValueError, UnicodeDecodeError, AttributeError, binascii.Error):
+                continue
+        if forbidden:
+            findings.append(f"credencial privada en cliente: {path.relative_to(ROOT).as_posix()}")
+    return findings
+
+
 def release_guard(channel: str) -> dict:
     info = metadata()
-    errors = []
+    errors = client_secret_findings()
     if channel in ("staging", "production"):
         if "preview" in info["game_version"].lower():
             errors.append("la versión del juego sigue marcada como preview")

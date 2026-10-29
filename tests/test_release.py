@@ -2,6 +2,7 @@
 
 import json
 import os
+import base64
 import tempfile
 import unittest
 from pathlib import Path
@@ -11,6 +12,21 @@ from scripts import release
 
 
 class ReleaseTests(unittest.TestCase):
+    def test_private_credentials_are_rejected_even_in_preview(self):
+        with tempfile.TemporaryDirectory(dir=release.ROOT / "build") as temporary:
+            source = Path(temporary) / "client.js"
+            for value in ("sb_secret_SYNTHETIC_TEST_KEY_123456",
+                          "SUPABASE_SERVICE_ROLE_KEY = 'synthetic-value-123456'"):
+                source.write_text(value, encoding="utf-8")
+                with patch.object(release, "client_source_files", return_value=[source]):
+                    with self.assertRaisesRegex(ValueError, "credencial privada en cliente"):
+                        release.release_guard("preview")
+            payload = base64.urlsafe_b64encode(b'{"role":"service_role"}').rstrip(b"=").decode()
+            source.write_text("eyJhbGciOiJIUzI1NiJ9." + payload + ".synthetic_signature", encoding="utf-8")
+            with patch.object(release, "client_source_files", return_value=[source]):
+                with self.assertRaisesRegex(ValueError, "credencial privada en cliente"):
+                    release.release_guard("preview")
+
     def test_portraits_are_tracked_as_export_inputs(self):
         expected = {f"assets/portraits/{name}_neutral.png{suffix}" for name in
                     ("sofi", "mateo", "bruno", "camila", "sebas")

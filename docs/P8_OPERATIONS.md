@@ -18,6 +18,8 @@ npm run test:research-sql
 npm run test:dashboard-export
 npm run test:dashboard-browser
 godot --headless --path . --scene res://tests/RunTests.tscn
+godot --headless --path . --scene res://tests/MobaReturnTests.tscn
+godot --headless --path . --scene res://tests/StoryRoutesTests.tscn
 godot --headless --path . --export-debug 'Web Development' build/web/index.html
 npm run test:browser
 python scripts/release.py package --channel preview --output build/release-preview
@@ -25,6 +27,8 @@ python scripts/release.py verify build/release-preview
 ```
 
 El destino del paquete debe ser una carpeta nueva dentro de `build/`. Incluye `game/`, `dashboard/` y `manifest.json`. Solo copia archivos `index.*` de la exportación Web: las capturas de QA no se distribuyen. El empaquetador rechaza una exportación anterior al código fuente. El manifiesto contiene SHA-256 y tamaño de cada archivo distribuido, además de hashes de fuentes narrativas, migraciones, funciones y código del juego; identifica versión del juego, esquema de guardado, narrativa, rúbrica y commit si hay Git. No contiene credenciales privadas. El hash prueba integridad del paquete; no demuestra por sí solo equivalencia binaria entre sistemas operativos.
+
+La guardia de cualquier canal, incluida vista previa, examina fuentes del cliente y detiene el paquete si encuentra una clave privada `sb_secret_`, una asignación de clave `service_role`/HMAC o un JWT con rol `service_role`. La prueba de regresión usa exclusivamente valores sintéticos.
 
 **Evidencia local del 27-10-2026:** `tests/test_release.py` pasó 4/4 casos (bloqueo de promoción, detección de alteración, exportación caducada y comparación de rollback); Godot 4.7.2 exportó Web; `npm run test:browser` pasó en Chrome sin errores; el paquete `build/release-p8-20261027/` se generó y verificó. La suite Godot, Edge y pruebas de backend/dashboard de P7 constan en [P7_QA_2026-10-27.md](P7_QA_2026-10-27.md). El workflow de GitHub aún no se ha ejecutado.
 
