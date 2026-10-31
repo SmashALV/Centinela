@@ -48,7 +48,7 @@ func _run() -> void:
 		printerr("FAIL dormir no inicia la mañana del Día 1")
 		get_tree().quit(1)
 		return
-	if story.world.scene_key != "bedroom" or story.modal_kind != "routine":
+	if story.daily.state().place != "bedroom" or not str(story.world.scene_key).begins_with("sofi_room") or story.modal_kind != "routine":
 		printerr("FAIL Día 1 no comienza en casa con su introducción")
 		get_tree().quit(1)
 		return

@@ -143,7 +143,11 @@ func _run() -> void:
 			check(main.daily.state().stage == "bedtime" and not main.daily.can_play(), "una partida devuelve a casa y al descanso")
 			await main.daily.go("sleep", "bedroom", Vector2(155, 208))
 			check(main.modal_kind == "sleep", "animación al dormir")
-			check(Rect2(79, 112, 104, 113).encloses(main.daily.sleep_overlay.get_node("SleepingSofi").get_rect()), "sprite dormida queda dentro de la cama")
+			# La cama del mapa está acostada (cabecera a la izquierda): se mide la caja ya girada.
+			var sleeper: TextureRect = main.daily.sleep_overlay.get_node("SleepingSofi")
+			var sleeper_center: Vector2 = sleeper.position + sleeper.pivot_offset
+			var turned := Rect2(sleeper_center - Vector2(sleeper.size.y, sleeper.size.x) * 0.5, Vector2(sleeper.size.y, sleeper.size.x))
+			check(is_equal_approx(absf(sleeper.rotation), PI / 2) and CentinelaWorld.SOFI_BED_RECT.encloses(turned), "sprite dormida queda dentro de la cama")
 			check(GameState.restore(GameState.snapshot()), "guardado válido durante el descanso")
 			check(await main.daily.finish_sleep(), "noche completada")
 		check(GameState.coral_state.node == ending and main.daily.state().matches.size() == 5, "cinco jornadas completas conducen a " + ending)

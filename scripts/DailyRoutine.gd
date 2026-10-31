@@ -42,7 +42,9 @@ func initialize(day := 0) -> void:
 	GameState.flags.d0_guide_computer_seen = true
 
 func map_key() -> String:
-	return {"bedroom": "bedroom", "living": "living", "street": "street", "school": "school", "classroom": "classroom", "computer": "computer", "tutor": "draft_d3"}.get(str(state().get("place", "bedroom")), "bedroom")
+	if str(state().get("place", "bedroom")) == "bedroom":
+		return "sofi_room_night" if is_evening() else "sofi_room"
+	return {"bedroom": "bedroom", "living": "living", "street": "street", "school": "school", "classroom": "classroom", "computer": "computer", "tutor": "tutor_office"}.get(str(state().get("place", "bedroom")), "bedroom")
 
 func is_evening() -> bool:
 	return state().get("stage") in ["farewell", "homeward", "dinner", "evening", "bedtime", "sleep", "finished"]
@@ -86,13 +88,15 @@ func objective() -> String:
 func targets() -> Dictionary:
 	match str(state().place):
 		"bedroom":
-			var result := {"pc": Vector2(278, 173), "bed": Vector2(179, 228), "photo": Vector2(494, 140)}
-			if state().stage == "morning" and not backpack_ready(): result.backpack = Vector2(605, 294)
+			# Posiciones según el mapa del cuarto: escritorio arriba a la derecha, fotos sobre él y cama a la izquierda.
+			var result := {"pc": Vector2(552, 200), "bed": Vector2(175, 240), "photo": Vector2(466, 165)}
+			if state().stage == "morning" and not backpack_ready(): result.backpack = Vector2(640, 232)
 			return result
 		"living": return {"meal": Vector2(370, 230)} if state().stage in ["breakfast", "dinner"] else {}
 		"classroom": return {"lesson": Vector2(385, 263)} if state().stage == "class" else {}
 		"computer": return {"pc": Vector2(382, 220)}
-		"tutor": return {"tutoria": Vector2(380, 250)}
+		# El tutor espera delante de su escritorio en la oficina de tutoría.
+		"tutor": return {"tutoria": Vector2(310, 228)}
 		"school":
 			if state().stage == "farewell": return {} if GameState.flags.get("farewell_done", false) else {"friends": Vector2(374, 245)}
 			if int(state().day) == 0: return {"friends": Vector2(374, 245)}
@@ -341,13 +345,13 @@ func _render_sleep() -> void:
 	face.name = "SleepingSofi"
 	face.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	face.texture = load("res://assets/world/props/sofi_sleep.tres")
-	face.position = Vector2(81, 115)
-	face.size = Vector2(102, 110)
-	face.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	face.stretch_mode = TextureRect.STRETCH_SCALE
-	face.size = Vector2(102, 110)
 	sleep_overlay.add_child(face)
-	face.size = Vector2(102, 110)
+	# La cama del mapa está con la cabecera a la izquierda: Sofi se acuesta girada.
+	face.size = Vector2(84, 132)
+	face.pivot_offset = face.size * 0.5
+	face.position = Vector2(172, 168) - face.size * 0.5
+	face.rotation = -PI / 2
 	sleep_overlay.move_child(shade, sleep_overlay.get_child_count() - 1)
 	var caption := Label.new()
 	caption.name = "Caption"

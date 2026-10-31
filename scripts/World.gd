@@ -130,8 +130,10 @@ var anim_time := 0.0
 # Posición visible de cada personaje: camina hacia su objetivo en vez de aparecer de golpe.
 var actor_display: Dictionary = {}
 
-const ROUTINE_BACKGROUNDS := {"living": "res://assets/world/living_room_map.png", "street": "res://assets/world/street_map.png", "classroom": "res://assets/world/classroom_map.png", "school": "res://assets/world/day0_courtyard.png"}
-const ROUTINE_BLOCKS := {"living": [[30, 56, 708, 60], [80, 115, 175, 70], [530, 115, 170, 67], [304, 122, 156, 62]], "street": [[30, 56, 708, 88], [30, 357, 708, 37]], "classroom": [[30, 56, 708, 70], [80, 124, 185, 105], [500, 124, 185, 105], [360, 185, 50, 47], [350, 105, 70, 40]], "school": [[30, 56, 280, 55], [450, 56, 288, 55], [75, 171, 29, 22], [638, 168, 29, 22], [603, 357, 29, 22], [162, 153, 81, 22], [513, 153, 81, 22]]}
+const ROUTINE_BACKGROUNDS := {"living": "res://assets/world/living_room_map.png", "street": "res://assets/world/street_map.png", "classroom": "res://assets/world/classroom_map.png", "school": "res://assets/world/day0_courtyard.png", "tutor_office": "res://assets/world/tutor_office_map.png", "sofi_room": "res://assets/world/bedroom_map.png", "sofi_room_night": "res://assets/world/bedroom_map_night.png"}
+const ROUTINE_BLOCKS := {"living": [[30, 56, 708, 60], [80, 115, 175, 70], [530, 115, 170, 67], [304, 122, 156, 62]], "street": [[30, 56, 708, 88], [30, 357, 708, 37]], "classroom": [[30, 56, 708, 70], [80, 124, 185, 105], [500, 124, 185, 105], [360, 185, 50, 47], [350, 105, 70, 40]], "school": [[30, 56, 280, 55], [450, 56, 288, 55], [75, 171, 29, 22], [638, 168, 29, 22], [603, 357, 29, 22], [162, 153, 81, 22], [513, 153, 81, 22]], "tutor_office": [[30, 56, 708, 85], [89, 56, 112, 106], [240, 130, 138, 72], [440, 110, 176, 75], [608, 56, 55, 106], [57, 110, 32, 60], [30, 306, 49, 76], [690, 289, 48, 68]], "sofi_room": [[30, 56, 708, 83], [30, 140, 28, 165], [62, 100, 186, 123], [343, 110, 74, 46], [453, 110, 26, 42], [483, 110, 131, 52], [530, 150, 44, 34], [614, 56, 57, 110], [671, 56, 58, 98], [30, 305, 47, 78], [692, 290, 46, 70]], "sofi_room_night": [[30, 56, 708, 83], [30, 140, 28, 165], [62, 100, 186, 123], [343, 110, 74, 46], [453, 110, 26, 42], [483, 110, 131, 52], [530, 150, 44, 34], [614, 56, 57, 110], [671, 56, 58, 98], [30, 305, 47, 78], [692, 290, 46, 70]]}
+# Cama del cuarto de Sofi en el mapa nuevo: se resalta completa a la hora de dormir.
+const SOFI_BED_RECT := Rect2(62, 100, 186, 123)
 
 func _init() -> void:
 	map_sprite = Sprite2D.new()
@@ -398,7 +400,8 @@ func _draw() -> void:
 				_draw_character(idle_pos, str(friend.name), _idle_facing(str(friend.name), idle_pos), true, true)
 		if scene_key == "school":
 			for person in departures: _draw_character(departures[person].position, person, str(departures[person].facing), true, true, true)
-		if evening_light:
+		# El mapa nocturno del cuarto ya trae su propia luz: no se tiñe.
+		if evening_light and scene_key != "sofi_room_night":
 			draw_rect(ROOM, Color(0.94, 0.38, 0.23, 0.20) if scene_key in ["school", "street"] else Color(0.24, 0.12, 0.38, 0.15))
 		for edge in edge_routes:
 			var pos: Vector2 = {"left": Vector2(36, 285), "right": Vector2(663, 285), "up": Vector2(340, 125), "down": Vector2(340, 380)}[edge]
@@ -486,8 +489,10 @@ func _draw_story_target(key: String, pos: Vector2, active: bool) -> void:
 		_draw_character(pos, key.capitalize(), _walk_facing(pos, target_pos) if walking else _idle_facing(key, pos), false, true, walking)
 	elif key == "tutoria":
 		# El tutor espera junto a la puerta de tutoría.
-		draw_texture_rect(OBJECT_SPRITES.tutoria, Rect2(pos + Vector2(-62, -40), Vector2(48, 54)), false)
+		if scene_key != "tutor_office": draw_texture_rect(OBJECT_SPRITES.tutoria, Rect2(pos + Vector2(-62, -40), Vector2(48, 54)), false)
 		_draw_character(pos, "Tutor", _idle_facing("tutor", pos), false, true)
+	elif routine_mode and scene_key.begins_with("sofi_room") and key in ["bed", "pc", "photo"]:
+		pass  # Cama, escritorio y fotos ya están pintados en el mapa.
 	elif routine_mode and key in ["bed", "photo", "backpack"]:
 		if key != "bed": draw_texture_rect(OBJECT_SPRITES[key], Rect2(pos - Vector2(23, 23), Vector2(46, 46)), false)
 	elif routine_mode and key in ["friends", "meal", "lesson"]:
@@ -501,7 +506,8 @@ func _draw_story_target(key: String, pos: Vector2, active: bool) -> void:
 	var target_name: String = {"lobby": "Lobby", "tutoria": "Tutor", "pc": "PC", "salida": "Salida", "friends": "Grupo", "bed": "Dormir", "meal": "Comer", "lesson": "Clase", "photo": "Foto", "backpack": "Mochila"}.get(key, key.capitalize())
 	draw_string(ThemeDB.fallback_font, pos + Vector2(-42, -49), "F · " + target_name, HORIZONTAL_ALIGNMENT_CENTER, 84, 11, color)
 	if key == story_primary_target:
-		_draw_objective_marker(Vector2(131, 104) if key == "bed" else pos + Vector2(0, -70))
+		var bed_marker: Vector2 = Vector2(155, 92) if scene_key.begins_with("sofi_room") else Vector2(131, 104)
+		_draw_objective_marker(bed_marker if key == "bed" else pos + Vector2(0, -70))
 	if active:
 		_draw_press_prompt(pos + Vector2(0, 30))
 
@@ -526,7 +532,7 @@ func _draw_target_glow(pos: Vector2, key: String) -> void:
 	var pulse: float = 0.5 + 0.5 * sin(anim_time * 3.2)
 	if key == "bed":
 		# La cama es grande: se resalta todo el mueble y no solo un punto.
-		var bed_rect := Rect2(79, 112, 104, 113).grow(4.0 + pulse * 3.0)
+		var bed_rect := (SOFI_BED_RECT if scene_key.begins_with("sofi_room") else Rect2(79, 112, 104, 113)).grow(4.0 + pulse * 3.0)
 		draw_rect(bed_rect, Color(1.0, 0.85, 0.3, 0.12 + 0.1 * pulse))
 		draw_rect(bed_rect, Color("ffd84d"), false, 3.0)
 		return

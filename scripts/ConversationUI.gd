@@ -3,11 +3,17 @@ extends Control
 const BACKGROUNDS := {
 	"living": "res://assets/vn/living.png",
 	"classroom": "res://assets/vn/classroom.png",
-	"street": "res://assets/vn/courtyard.png",
+	"street": "res://assets/vn/street.png",
 	"computer_lab": "res://assets/vn/computer_lab.png",
 	"bedroom": "res://assets/vn/bedroom.png",
 	"courtyard": "res://assets/vn/courtyard.png",
-	"corridor": "res://assets/vn/corridor.png"
+	"corridor": "res://assets/vn/corridor.png",
+	"tutor_office": "res://assets/vn/tutor_office.png",
+	# Variantes de la tarde y la noche para el regreso a casa.
+	"courtyard_sunset": "res://assets/vn/courtyard_sunset.png",
+	"street_sunset": "res://assets/vn/street_sunset.png",
+	"living_night": "res://assets/vn/living_night.png",
+	"bedroom_night": "res://assets/vn/bedroom_night.png"
 }
 const SPRITES := {
 	"Sofi": "res://assets/vn/sofi_v4.png",
@@ -127,6 +133,7 @@ func arm_auto(action: Callable, text_value: String) -> void:
 	hint.add_theme_font_size_override("font_size", 11)
 	hint.add_theme_color_override("font_color", Color("8a6496"))
 	add_child(hint)
+	hint.size = Vector2(284, 18)
 
 func _process(delta: float) -> void:
 	if not visible or not auto_action.is_valid(): return

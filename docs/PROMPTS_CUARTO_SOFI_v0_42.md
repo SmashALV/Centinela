@@ -1,169 +1,82 @@
-# Prompts de los assets del cuarto de Sofi · v0.42
+# Cuarto de Sofi y fondos del recorrido · revisión y prompts v0.42
 
-El cuarto es el lugar donde empieza y termina cada día: la alarma, la mochila, la PC con Discord y la cama. Hoy combina arte generado con varios muebles **dibujados por código como formas planas**. Este documento da un prompt por cada asset que falta o que conviene rehacer.
+> **Estado al 31-10-2026: cuarto completo.** Ya están integrados el mapa de día (`assets/world/bedroom_map.png`) y el de noche (`assets/world/bedroom_map_night.png`), que coinciden borde a borde y solo cambian la ventana y la luz, y el fondo de diálogo de día definitivo (`assets/vn/bedroom.png`, la versión cuya composición sigue al cuarto de noche). El juego usa claves de mapa propias (`sofi_room` y `sofi_room_night`) con colisiones nuevas, cama resaltada completa, PC junto al escritorio, fotos sobre él, mochila en el suelo y Sofi dormida girada sobre la cama. Los muebles dibujados por código ya no aparecen en la rutina; el cuarto antiguo del Día 0 se conserva solo para partidas anteriores a la rutina.
 
-Los prompts siguen el formato de `docs/ROUTINE_ASSET_PROMPTS_2026-10-29.json`: en inglés, una imagen por llamada y referencias solo de estilo o identidad. Los props del mapa llevan **fondo transparente real** o, si la herramienta no lo permite, **verde puro #00FF00** para recortarlo.
+## Revisión de la entrega del 31-10-2026
 
-**Leyenda:** 🟢 se reemplaza sin tocar código · 🟡 requiere un cambio pequeño de código (lo hago cuando estén las imágenes).
+Criterios del juego que se usaron para revisar:
 
-## Qué tiene hoy el cuarto
+- **Mapas:** vista RPG desde arriba en 3/4, estilo pintado y piso central libre.
+- **Fondos de diálogo:** 1672×941, tercio inferior despejado y coherentes con la versión de día y de noche del mismo lugar.
+- **Props:** transparencia real, la misma perspectiva desde arriba del mapa y el mismo acabado pintado.
+- **En todos:** ningún texto legible.
 
-| Elemento | Hoy | Archivo actual |
-|---|---|---|
-| Fondo del mapa | Arte generado | `assets/world/day0_bedroom.png` (1774×887) |
-| Cama, armario, librero, plantas | Props generados | `assets/world/props/*.png` |
-| Alarma, mochila, foto, puerta | Objetos generados | `assets/objects/*.png` |
-| Sofi durmiendo | Prop generado | `assets/world/props/sofi_sleep.png` |
-| **Alfombra, guirnalda de luces, tres cuadros, tocador con espejo, zapatero, TV** | **Formas dibujadas por código** | `World._draw_bedroom_decor()` |
-| **PC** | **Recuadro con icono pequeño** | `World._draw_story_target()` |
-| Cuarto de noche | Solo un tinte violeta; la ventana sigue mostrando el atardecer | — |
-| Fondo de diálogo | Arte generado, **con una mochila en el suelo** | `assets/vn/bedroom.png` (1672×941) |
-
-### Coherencia de paleta
-
-El mapa usa lila y rosa (cama rosa, alfombra lila), que es la identidad pedida para la interfaz. El fondo de diálogo tiene cama turquesa y alfombra andina. Los prompts de abajo unifican el cuarto en **lila, rosa pálido, crema y madera clara, con acentos turquesa** (la chaqueta de Sofi), y conservan los detalles peruanos (alfombra y manta tejidas, fotos de montañas).
-
-## Resumen
-
-| # | Asset | Archivo | Integración |
+| # | Imagen | Veredicto | Motivo |
 |---|---|---|---|
-| 1 | Alfombra tejida | `assets/world/props/rug.png` | 🟡 |
-| 2 | Guirnalda de luces | `assets/world/props/string_lights.png` | 🟡 |
-| 3 | Tres cuadros de pared | `assets/world/props/wall_frames.png` | 🟡 |
-| 4 | Tocador con espejo | `assets/world/props/vanity.png` | 🟡 |
-| 5 | Zapatero | `assets/world/props/shoe_rack.png` | 🟡 |
-| 6 | Mueble con TV | `assets/world/props/tv_stand.png` | 🟡 |
-| 7 | Escritorio con PC | `assets/world/props/desk_pc.png` | 🟡 |
-| 8 | Cama lila (opcional) | `assets/world/props/bed.png` | 🟢 |
-| 9 | Fondo del mapa de noche | `assets/world/day0_bedroom_night.png` | 🟡 |
-| 10 | Fondo de diálogo de día sin mochila | `assets/vn/bedroom.png` | 🟢 |
-| 11 | Fondo de diálogo de noche | `assets/vn/bedroom_night.png` | 🟡 |
+| 16 | Mapa del cuarto (noche) | ✅ **Procede** · pendiente su versión de día | Excelente: misma vista y estilo que el mapa de tutoría, ya trae cama, escritorio, armarios, alfombras, polaroids y luces pintados. Guardado en `assets/world/bedroom_map_night.png`. No se activa hasta tener la versión de día con la misma composición; si no, el cuarto cambiaría de muebles entre la mañana y la noche |
+| 17 | Mapa de tutoría | ✅ **Integrado** | Coherente con la oficina de diálogo v2. Se ajustaron colisiones, puerta de salida a la derecha y el tutor delante de su escritorio |
+| 18 | Diálogo · cuarto de noche v2 | ✅ **Integrado** (reemplaza a la v1) | Coincide con el mapa 16 (silla rosa, cojín de flor, repisa bajo la ventana) y ya no tiene bolsa en el suelo |
+| 22 | Diálogo · tutoría v2 | ✅ **Integrado** (reemplaza a la v1) | Mismos sillones, mesa redonda y escritorio que el mapa 17 |
+| 20 + 23 | Diálogo · calle de día y al atardecer v2 | ✅ **Integradas** (reemplazan a las v1) | Ahora son la misma calle a dos horas distintas. Resuelve la incoherencia anterior |
+| 19 | Diálogo · sala de noche v2 | ⚪ **No hace falta** | La v1 integrada conserva la alfombra y el camino de mesa andinos de la sala de día y del mapa. La v2 pierde esa identidad y tiene una planta tapando la esquina inferior izquierda |
+| 21 | Diálogo · patio al atardecer v2 | ⚪ **No hace falta** | La v1 integrada se parece más al patio de día (corredor con columnas turquesa). La v2 es válida, pero es otro patio |
+| 9 | Escritorio con PC | ⚪ No hace falta · ❌ si se usara, rehacer | Buen acabado y transparencia, pero vista frontal, no desde arriba. El mapa 16 ya lo incluye |
+| 10 | Mueble con TV | ⚪ No hace falta · ❌ si se usara, rehacer | Vista frontal. El mapa 16 no tiene TV y no la necesita |
+| 11 | Puf | ❌ Rehacer o descartar | Sin transparencia (fondo crema) y estilo de render 3D fotorrealista |
+| 12 | Tocador | ❌ Rehacer o descartar | Sin transparencia, vista frontal y estilo de ilustración vectorial plana, distinto del juego |
+| 13 | Polaroids | ⚪ No hace falta | Buen estilo, pero con la pared pintada detrás (sin transparencia). El mapa 16 ya tiene polaroids |
+| 14 | Guirnalda de luces | ❌ Rehacer o descartar | La transparencia es falsa: trae una mancha de pared borrosa pixelada alrededor |
+| — | Diálogo · cuarto de día (`Dormitorio pastel bañado por el sol2`) | ✅ **Integrado** como `assets/vn/bedroom.png` | Misma paleta e identidad que el cuarto de noche v2, luz de mañana, sin mochila y con el tercio inferior despejado |
+| 24 | Mapa del cuarto de día (`Dormitorio pastel bañado por el sol.png`) | ❌ **Rehacer** | Buen estilo, pero: (1) mide 1536×1024 (3:2) y el área de mapa del juego es 2,09:1, así que se perdería el 28 % inferior con el puf y la TV; (2) no coincide con el mapa de noche 16 (cama individual frente a doble, puerta a media pared frente a arriba, tocador, puf y TV que de noche no existen). Día y noche deben ser el mismo cuarto porque comparten colisiones |
+| 15 | Alfombra | ⚪ No hace falta · ❌ si se usara, rehacer | Fondo blanco sin transparencia y textura fotorrealista. El mapa 16 ya trae dos alfombras |
+
+**Conclusión:** con el mapa 16, el cuarto ya no necesita props sueltos. Los muebles que el código dibuja como formas planas desaparecerán al activar el mapa nuevo. El fondo de diálogo de día ya está integrado. **Solo falta una imagen: el mapa del cuarto de día**, con el formato y la composición del mapa de noche.
 
 ---
 
-## Props del mapa (vista RPG desde arriba en 3/4)
+## Lo que falta
 
-**Referencias para todos:** imagen 1 `assets/world/day0_bedroom.png` (perspectiva, luz y estilo pintado); imagen 2 `assets/world/props/bed.png` (acabado de prop aislado).
+**Leyenda:** 🟢 se reemplaza sin tocar código · 🟡 requiere un ajuste de código que hago al recibir la imagen.
 
-El tamaño en pantalla es el área que ocupa hoy en el mapa de 768×448. Conviene generar al menos a 6× y conservar la proporción. Al terminar se recorta el borde transparente sobrante.
+### 1. Mapa del cuarto de día 🟡 · prioridad alta
 
-Prompt base. Se completa con el bloque `[SUBJECT]` de cada asset:
-
-```text
-Use case: illustration-story. Asset: one isolated prop for a playable 2D overhead RPG bedroom, near orthographic top-down 3/4 view looking down, matching the reference room's warm clean hand-painted game art, lighting and outline. [SUBJECT] Palette: lilac, pale pink, cream and light wood with small teal accents, cozy teenage girl's room in a modest Peruvian home. Entire object visible, centered, small transparent padding, true transparent background, no floor, no walls, no shadow outside the object, no people, no text no lettering no logos, one object only.
-```
-
-### 1. Alfombra tejida 🟡
-
-- **En pantalla:** 300×131 px, centro del cuarto. Generar a 1800×786 px.
+- **Archivo:** `assets/world/bedroom_map.png`, **1672×941 (16:9)**, igual que el de noche. Un formato más alto (por ejemplo, 3:2) pierde la parte inferior en el juego.
+- **Referencia:** `assets/world/bedroom_map_night.png`. Adjuntarla como **imagen de entrada para editar** (cambio de iluminación) y no solo como referencia de estilo: así la herramienta conserva la distribución.
+- **Comprobación rápida:** superponer el resultado sobre el de noche; cama, escritorio, armarios, puerta y plantas deben caer en el mismo lugar.
+- **Al recibirlo:** activo los dos mapas (día y noche), rehago las colisiones de los muebles nuevos, recoloco la cama, la PC, la foto y la mochila en sus lugares y quito los muebles dibujados por código.
 
 ```text
-[SUBJECT] A large soft oval woven rug lying flat on the floor, seen from above, lilac and pale pink with a cream Andean-inspired geometric border pattern and short cream fringe on the two short ends, flat, slightly textured.
+Use case: illustration-story. Asset: playable 2D overhead RPG room background. Recreate the attached teenage girl's bedroom map with EXACTLY the same camera, room outline, walls, window, door on the right, and every piece of furniture in the same position and size (bed with lilac blanket and flower cushion on the left, bedside table and lamp, fairy lights and polaroid photos on the wall, white cabinets and bookshelf, low bookshelf under the window with lilac curtains, white desk with monitor and pink office chair on a round rug at the top right, tall white wardrobe, potted plants in the corners, empty wooden floor), but in the MORNING: bright soft daylight and blue sky through the window and the left side windows, warm sunlight patches on the floor, fairy lights and lamps off, monitor dark. Only change the lighting and time of day: do not add, remove, move or resize any furniture, and keep the same 16:9 framing. Keep the large central floor EMPTY and walkable. No people, no lettering no signs no UI no arrows, one coherent map.
 ```
 
-### 2. Guirnalda de luces 🟡
+### 2. Fondo de diálogo del cuarto de día ✅ · integrado el 31-10-2026
 
-- **En pantalla:** franja de unos 436×20 px, en la pared superior. Generar a 2616×120 px.
-
-```text
-[SUBJECT] A long horizontal fairy-light garland hanging along a wall in a gentle wave, thin dark wire with evenly spaced small warm glowing bulbs, a few tiny pastel paper stars between bulbs, soft glow halo around each bulb.
-```
-
-### 3. Tres cuadros de pared 🟡
-
-- **En pantalla:** 82×27 px sobre la pared, entre el escritorio y el armario. Generar a 984×324 px.
-
-```text
-[SUBJECT] Three small framed pictures hanging side by side on a wall, seen almost frontally: light pink frames; inside, simple paintings of Andean mountains at sunset, a llama, and a group of five teenage friends as tiny silhouettes, no faces, no text.
-```
-
-### 4. Tocador con espejo 🟡
-
-- **En pantalla:** 60×81 px, pegado a la pared izquierda bajo la cama. Generar a 600×810 px.
-
-```text
-[SUBJECT] A small vanity table with a tall rectangular mirror on top, light lilac painted wood, one small drawer with a round knob, on the table a hairbrush, a small plant and two little pastel bottles; mirror shows only a soft light-blue reflection with a diagonal shine, nothing recognizable.
-```
-
-### 5. Zapatero 🟡
-
-- **En pantalla:** 64×32 px, abajo a la izquierda. Generar a 768×384 px.
-
-```text
-[SUBJECT] A low two-shelf shoe rack in light pink wood seen from above, holding three pairs of shoes: white sneakers, teal sneakers and small brown school shoes, neatly arranged.
-```
-
-### 6. Mueble con TV 🟡
-
-- **En pantalla:** 76×60 px, abajo a la derecha. Generar a 760×600 px.
-
-```text
-[SUBJECT] A low light-wood TV console with a small flat-screen TV on top; the screen is off and dark with a soft lilac reflection; a game controller and a small plant on the console.
-```
-
-### 7. Escritorio con PC 🟡
-
-- **En pantalla:** unos 90×80 px, en la pared superior junto a la cama. Sustituye al recuadro con icono. Generar a 900×800 px. **Referencia adicional:** `assets/objects/pc.png`, para el monitor y la torre.
-
-```text
-[SUBJECT] A teenage gamer's study desk against the wall: light wood desk with one computer monitor showing a soft lilac wallpaper glow (no readable content), keyboard with subtle teal backlight, mouse, headset resting on the desk, a small PC tower beside it, a pastel desk lamp, and a teal swivel chair pushed in front of the desk.
-```
-
-### 8. Cama lila (opcional) 🟢
-
-- **Archivo:** reemplaza `assets/world/props/bed.png` (1024×1536). Debe coincidir con la manta lila de `sofi_sleep.png`, que se dibuja encima al dormir.
-- **Referencia adicional:** `assets/world/props/sofi_sleep.png`, para el color de la manta y el tamaño de la almohada.
-
-```text
-[SUBJECT] A single bed seen from above with the headboard at the top: light wood frame, white pillow at the top, smooth lilac blanket with a pale pink woven Andean-pattern throw folded across the foot of the bed, neatly made and EMPTY, no person.
-```
-
----
-
-## Fondos
-
-### 9. Fondo del mapa de noche 🟡
-
-- **Archivo:** `assets/world/day0_bedroom_night.png`, 1774×887.
-- **Se ve en:** las etapas `evening`, `bedtime` y `sleep`. Hoy se usa el fondo de día con un tinte.
-- **Referencia:** `assets/world/day0_bedroom.png`, con la misma composición exacta para que las colisiones sigan valiendo.
-
-```text
-Use case: illustration-story. Asset: playable 2D overhead RPG room background. Recreate the attached bedroom map with EXACTLY the same composition, walls, window, furniture footprint and empty walkable floor, but at night: deep blue night sky and a few stars through the top window, warm wall sconces and fairy lights on, soft lilac and warm amber light pools on the floor, cozy calm bedtime mood. Keep every object in the same position and size. No people, no lettering no signs no UI no arrows, one coherent map.
-```
-
-### 10. Fondo de diálogo de día, sin mochila 🟢
+> Se usó `Dormitorio pastel bañado por el sol2`. El prompt se conserva como referencia.
 
 - **Archivo:** reemplaza `assets/vn/bedroom.png`, 1672×941.
-- **Motivo:** el fondo actual muestra una mochila en el suelo, pero la mochila ahora desaparece del cuarto cuando Sofi la guarda en el inventario.
-- **Referencia:** el `assets/vn/bedroom.png` actual.
+- **Motivo:** el actual es otro cuarto (cama turquesa, alfombra andina) y tiene una mochila en el suelo.
+- **Referencia:** `assets/vn/bedroom_night.png` (la v2 ya integrada).
 
 ```text
-Use case: illustration-story. Asset: 16:9 eye-level anime visual-novel background. Recreate the attached teenage girl's bedroom with the same camera, window with mountain city view, desk with monitor and swivel chair, shelves, framed mountain photos and woven rug, but REMOVE the backpack from the floor (empty floor there) and change the bedding to a lilac blanket with a pale pink woven Andean throw so it matches the game map. Warm morning light. Keep foreground lower third open and unobstructed to composite two standing characters and dialogue box. NO people, no UI, no readable screen content, no text no lettering no watermark, warm coherent polished painterly anime environment.
+Use case: illustration-story. Asset: 16:9 eye-level anime visual-novel background. Recreate the attached teenage girl's bedroom with EXACTLY the same camera, composition, furniture and decor (bed with cream and lilac bedding, flower-shaped cushion and lilac fringed throw, white nightstand and lamp, polaroid photo wall with fairy lights, hanging plants, lilac curtains, low bookshelf under the window, white bookcase, white desk with drawers, monitor and pink office chair, white wardrobe, white shaggy rug, pink floor cushion, potted plant in the foreground corner), but in the MORNING: bright soft daylight and blue sky with a few clouds over the city and mountains through the window, curtains open, fairy lights and lamps off, warm sunlight patches on the floor and rug, monitor showing only a soft pastel wallpaper with no readable content. No backpack or bag anywhere. Keep foreground lower third open and unobstructed to composite two standing characters and dialogue box. NO people, no UI, no text no lettering no watermark, warm coherent polished painterly anime environment.
 ```
 
-### 11. Fondo de diálogo de noche 🟡
+### 3. Sala de día igual a la de noche 🟢 · prioridad media
 
-- **Archivo:** `assets/vn/bedroom_night.png`, 1672×941.
-- **Se ve en:** el chat de la noche, la reacción tras la partida y la hora de dormir.
-- **Referencia:** el nuevo `assets/vn/bedroom.png` (asset 10).
-
-```text
-Use case: illustration-story. Asset: 16:9 eye-level anime visual-novel background. Recreate the attached bedroom with the SAME composition and furniture, no backpack on the floor, but at night: deep blue sky, moon and city lights through the window, curtains half closed, warm bedside lamp and fairy lights on, soft lilac glow from the computer monitor (no readable content), calm bedtime mood. Keep foreground lower third open and unobstructed to composite two standing characters and dialogue box. NO people, no UI, no text no lettering no watermark, warm coherent polished painterly anime environment.
-```
+Sigue pendiente, como se indica en [PROMPTS_ASSETS_RECORRIDO_v0_42.md](PROMPTS_ASSETS_RECORRIDO_v0_42.md), sección 7b. La referencia es la sala de noche v1 integrada (`assets/vn/living_night.png`).
 
 ---
 
-## Integración de código prevista (🟡)
+## Si más adelante se quieren props sueltos
 
-- **Assets 1–6:** sustituir en `World._draw_bedroom_decor()` cada forma plana por `draw_texture_rect` del prop, en el mismo rectángulo. Las colisiones de `DAY0_BLOCKS.bedroom` ya cubren esos muebles.
-- **Asset 7:** dibujar `desk_pc.png` para el objetivo `pc` del cuarto en lugar del recuadro con icono; el aro y la flecha del objetivo se mantienen.
-- **Asset 9:** elegir `day0_bedroom_night.png` cuando `DailyRoutine.is_evening()` sea verdadero y el lugar sea el cuarto, y quitar el tinte en ese caso.
-- **Asset 11:** añadir `bedroom_night` a `ConversationUI.BACKGROUNDS` y usarlo en `Main._conversation_background()` de noche.
+No hacen falta con el mapa nuevo. Si alguno se pidiera, debe cumplir:
 
-## Criterios de aceptación
+- **Vista desde arriba en 3/4**, como los muebles del mapa, y no vista frontal.
+- **Transparencia real** (canal alfa), sin pared ni fondo pintado detrás y sin halos ni bordes borrosos.
+- **Acabado pintado** como el de los mapas: ni render 3D fotorrealista ni ilustración vectorial plana.
 
-- Props con transparencia real o verde puro uniforme, sin sombras fuera del objeto y con la misma perspectiva desde arriba que el fondo del mapa.
-- Ningún texto legible en pantallas, cuadros ni envases.
-- La versión de noche del mapa conserva exactamente la posición de muebles, puerta y ventana.
-- Paleta lila, rosa, crema y madera en todo el cuarto, en el mapa y en los diálogos.
+Prompt base para cualquiera de ellos, usando el mapa del cuarto como referencia:
+
+```text
+Use case: illustration-story. Asset: one isolated prop for a playable 2D overhead RPG bedroom, near orthographic top-down 3/4 view looking down exactly like the furniture in the attached room map, same warm hand-painted game art, lighting and outline. [DESCRIBE THE OBJECT]. Entire object visible, centered, small padding, TRUE transparent background (alpha channel), no wall or floor behind it, no shadow outside the object, no glow halo, no people, no text, one object only.
+```

@@ -2206,5 +2206,8 @@ func _render_unplaced_preview() -> void:
 
 func _conversation_background() -> String:
 	if daily.active():
-		return {"bedroom": "bedroom", "living": "living", "street": "street", "school": "courtyard", "classroom": "classroom", "computer": "computer_lab", "tutor": "corridor"}.get(str(daily.state().place), "courtyard")
+		var place: String = str(daily.state().place)
+		if daily.is_evening() and place in ["bedroom", "living", "street", "school"]:
+			return {"bedroom": "bedroom_night", "living": "living_night", "street": "street_sunset", "school": "courtyard_sunset"}[place]
+		return {"bedroom": "bedroom", "living": "living", "street": "street", "school": "courtyard", "classroom": "classroom", "computer": "computer_lab", "tutor": "tutor_office"}.get(place, "courtyard")
 	return ConversationUIScript.background_for_world(str(world.scene_key))

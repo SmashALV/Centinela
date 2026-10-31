@@ -4,20 +4,23 @@ Inventario de lo que el recorrido diario (casa → calle → colegio → tutorí
 
 Los prompts siguen el formato de `docs/ROUTINE_ASSET_PROMPTS_2026-10-29.json`: en inglés, una imagen por llamada, con referencias **solo de estilo o identidad**. Los fondos van sin transparencia; los sprites y personajes, con **fondo transparente real** o, si la herramienta no lo permite, con **verde puro #00FF00** para recortarlo después.
 
-**Leyenda:** 🟢 se reemplaza sin tocar código (mismo nombre y tamaño) · 🟡 requiere un cambio pequeño de código para usarlo.
+**Leyenda:** 🟢 se reemplaza sin tocar código (mismo nombre y tamaño) · 🟡 requiere un cambio pequeño de código para usarlo · ✅ entregado e integrado.
+
+Los fondos de diálogo entregados el 31-10-2026 (calle, tutoría, patio al atardecer, calle al atardecer, sala y cuarto de noche) ya se usan: el juego elige la versión de atardecer o de noche al volver del colegio. Las calles de día y de atardecer todavía no aparecen en ninguna escena, porque en la calle no hay diálogos; quedan listas para cuando se agreguen.
 
 ## Resumen
 
 | # | Asset | Archivo | Estado actual | Integración |
 |---|---|---|---|---|
 | 1 | Profesor tutor · hoja de mapa | `assets/characters/tutor_directions.png` | **Entregado e integrado** | ✅ |
-| 2 | Fondo VN · calle de día | `assets/vn/street.png` | Reutiliza el patio | 🟡 |
-| 3 | Fondo VN · oficina de tutoría | `assets/vn/tutor_office.png` | Reutiliza el pasillo | 🟡 |
-| 4 | Mapa · oficina de tutoría | `assets/world/tutor_office_map.png` | Reutiliza el pasillo D3 | 🟡 |
-| 5 | Fondo VN · patio al atardecer | `assets/vn/courtyard_sunset.png` | Patio de día | 🟡 |
-| 6 | Fondo VN · calle al atardecer | `assets/vn/street_sunset.png` | Patio de día | 🟡 |
-| 7 | Fondo VN · sala de noche | `assets/vn/living_night.png` | Sala de día | 🟡 |
-| 8 | Fondo VN · cuarto de noche | `assets/vn/bedroom_night.png` | Cuarto de día · ver [prompts del cuarto](PROMPTS_CUARTO_SOFI_v0_42.md) | 🟡 |
+| 2 | Fondo VN · calle de día | `assets/vn/street.png` | **Entregado e integrado** | ✅ |
+| 3 | Fondo VN · oficina de tutoría | `assets/vn/tutor_office.png` | **Entregado e integrado** | ✅ |
+| 4 | Mapa · oficina de tutoría | `assets/world/tutor_office_map.png` | **Entregado e integrado** (colisiones y tutor ajustados) | ✅ |
+| 5 | Fondo VN · patio al atardecer | `assets/vn/courtyard_sunset.png` | **Entregado e integrado** | ✅ |
+| 6 | Fondo VN · calle al atardecer | `assets/vn/street_sunset.png` | **Entregado e integrado** (v2, misma calle que la de día) | ✅ |
+| 7 | Fondo VN · sala de noche | `assets/vn/living_night.png` | **Entregado e integrado** | ✅ |
+| 7b | Fondo VN · sala de día igual a la de noche | `assets/vn/living.png` | El de día es otra sala | 🟢 |
+| 8 | Fondo VN · cuarto de noche | `assets/vn/bedroom_night.png` | **Entregado e integrado** · el de día está en [prompts del cuarto](PROMPTS_CUARTO_SOFI_v0_42.md) | ✅ |
 | 9–11 | Expresiones de Camila, Bruno y Sebas | `assets/vn/*_worried_v4.png`, `sebas_tired_v4.png` | Solo cara neutra | 🟡 |
 | 12 | Ciclos de caminata (6 personajes) | `assets/characters/*_walk.png` | Movimiento simulado | 🟡 |
 
@@ -129,7 +132,25 @@ Use case: illustration-story. Asset: 16:9 eye-level anime visual-novel backgroun
 Use case: illustration-story. Asset: 16:9 eye-level anime visual-novel background. Recreate the attached teenage girl's bedroom with the SAME composition, lilac and pink decor and furniture, but at night: deep blue sky and moon through the window, warm fairy lights and desk lamp on, soft glow from the computer monitor, calm bedtime mood. Keep foreground lower third open and unobstructed to composite two standing characters and dialogue box. NO people, no UI, no readable screen content, no text no lettering no watermark, warm coherent polished painterly anime environment.
 ```
 
-**Código para los fondos 2–8:** añadir las claves a `ConversationUI.BACKGROUNDS` (`street` → `street.png`, `tutor_office`, `courtyard_sunset`, `street_sunset`, `living_night`, `bedroom_night`). En `Main._conversation_background` hay que usar `tutor_office` cuando el lugar es `tutor` y, si `daily.is_evening()`, la variante de atardecer o de noche del lugar.
+### 6b. Calle al atardecer, igual a la de día ✅
+
+> Resuelto el 31-10-2026: se entregaron la calle de día y la de atardecer v2 con la misma composición, y ambas están integradas.
+
+El atardecer entregado muestra otra calle (moderna, con pistas anchas) que la de día (casas coloniales de colores). Para que el regreso se lea como el mismo camino, conviene regenerarlo a partir de la de día. **Referencia:** `assets/vn/street.png`.
+
+```text
+Use case: illustration-story. Asset: 16:9 eye-level anime visual-novel background. Recreate the attached colonial Peruvian neighborhood street with EXACTLY the same camera, colorful houses, balconies, potted plants, trees, bicycle and mountains, but at sunset on the way home from school: orange, pink and violet sky, warm wall lamps just turning on, long soft shadows on the sidewalk, cozy lit windows. Keep foreground lower third open and unobstructed to composite two standing characters and dialogue box. NO people, no cars in foreground, no UI, no text no lettering no signs no watermark, warm coherent polished painterly anime environment.
+```
+
+### 7b. Sala de día igual a la de noche 🟢
+
+La sala de noche entregada es otra habitación (sala abierta con comedor amplio) que la de día (sala pequeña con cocina al fondo). Como el desayuno y la cena ocurren en el mismo lugar, conviene regenerar la de día a partir de la de noche. **Referencia:** `assets/vn/living_night.png`. **Archivo:** reemplaza `assets/vn/living.png`.
+
+```text
+Use case: illustration-story. Asset: 16:9 eye-level anime visual-novel background. Recreate the attached Peruvian family living and dining room with EXACTLY the same camera, sofa, armchair, coffee table with woven runner, Andean rug, plants, framed pictures, dining table and chairs, but in the MORNING at breakfast time: bright daylight and blue sky with mountains through the balcony door, lamps off, breakfast on the table (bread, cups of tea, fruit, a small jug), warm sunlight patches on the tiled floor. Keep foreground lower third open and unobstructed to composite two standing characters and dialogue box. NO people, no UI, no text no lettering no watermark, warm coherent polished painterly anime environment.
+```
+
+**Código para los fondos 2–8 (ya aplicado el 31-10-2026):** añadir las claves a `ConversationUI.BACKGROUNDS` (`street` → `street.png`, `tutor_office`, `courtyard_sunset`, `street_sunset`, `living_night`, `bedroom_night`). En `Main._conversation_background` hay que usar `tutor_office` cuando el lugar es `tutor` y, si `daily.is_evening()`, la variante de atardecer o de noche del lugar.
 
 ---
 
