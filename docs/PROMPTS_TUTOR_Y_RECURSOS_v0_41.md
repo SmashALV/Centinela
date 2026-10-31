@@ -2,7 +2,7 @@
 
 El **profesor tutor** ya tiene ilustración definitiva entregada por el equipo: `assets/vn/tutor_v2.png` (1024×1536, fondo transparente). Es el mismo docente que dicta la clase (`Profesor`) y atiende la tutoría (`Tutor`). Su avatar `assets/portraits/tutor_v2.tres` es un recorte de esa ilustración (`Rect2(262, 40, 500, 500)`).
 
-La hoja de mapa actual (`assets/characters/tutor_directions.png`) es pixel art generado por `scripts/generate_tutor_assets.py` con la paleta de la ilustración. Para que su acabado iguale al de los compañeros, se puede regenerar con **imagegen** usando el prompt de la sección 1.
+La hoja de mapa (`assets/characters/tutor_directions.png`) también fue entregada por el equipo e integrada. El prompt de la sección 1 se conserva como referencia.
 
 El estilo del juego tiene dos niveles:
 
@@ -27,7 +27,7 @@ Use case: game sprite sheet. Create a transparent pixel-art full-body sprite she
 **Después de generar:**
 - Comprobar que cada vista esté centrada en su cuadrante y que los cuatro cuadrantes midan lo mismo. `World.gd` divide la imagen en cuatro partes iguales.
 - Si la figura queda más grande que la de Bruno, reducirla dentro de su celda hasta igualar su altura relativa.
-- Guardar con el mismo nombre. Si después se vuelve a ejecutar `scripts/generate_tutor_assets.py`, la hoja se sobrescribe: en ese caso conviene quitar la línea que guarda `tutor_directions.png`.
+- Guardar con el mismo nombre. `scripts/generate_tutor_assets.py` ya no modifica la hoja.
 
 ## 2. Opcional · retrato independiente
 
