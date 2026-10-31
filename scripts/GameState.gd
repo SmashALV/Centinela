@@ -10,6 +10,7 @@ const DRAFT_CONTENT_VERSION := "PLAYABLE_DRAFT_v0.3"
 const CORAL_CONTENT_VERSION := "CORAL_STORY_v0.2"
 const CORAL_DECISIONS := ["D1_GATE", "D2_A", "D2_B", "D2_C", "D4_A1", "D4_A2", "D4_B1", "D4_B2", "D4_C1", "D4_C2"]
 const CORAL_NODES := ["I_D2_BRUNO", "I_D3_SEBAS", "I_D3_BRUNO", "I_D4_BRUNO", "I_D1_CAMILA", "I_D1_BRUNO", "I_D1_SEBAS", "I_D1_MATEO", "I_TUTOR", "I_LIMIT", "D1_GATE", "D1_A_FOLLOW", "D1_B_FOLLOW", "D1_C_FOLLOW", "D2_A", "D2_B", "D2_C", "N_D2", "D3_A1", "D3_A2", "D3_B1", "D3_B2", "D3_C1", "D3_C2", "D4_A1", "D4_A2", "D4_B1", "D4_B2", "D4_C1", "D4_C2", "F01", "F02", "F03"]
+const INVENTORY_ITEMS := ["mochila"]
 const PREVIEW_SCENES := ["D1_02_A", "D1_03_A", "D2_03_A", "D2_04_A", "D3_01_A", "D4_01_A", "D4_02_A", "D4_03_A", "ENDINGS_INDEX", "F01_A", "F01_B", "F02", "F03"]
 
 var slot: int = 1
@@ -61,6 +62,30 @@ func new_game(chosen_slot: int) -> void:
 	effects_volume = 75
 	coral_state = {}
 
+func has_item(item: String) -> bool:
+	return flags.get("inventory", []).has(item)
+
+func add_item(item: String) -> bool:
+	if item not in INVENTORY_ITEMS or has_item(item): return false
+	var items: Array = flags.get("inventory", []).duplicate()
+	items.append(item)
+	flags.inventory = items
+	return true
+
+func remove_item(item: String) -> void:
+	if not has_item(item): return
+	var items: Array = flags.inventory.duplicate()
+	items.erase(item)
+	flags.inventory = items
+
+static func valid_inventory(value: Variant) -> bool:
+	if typeof(value) != TYPE_ARRAY or value.size() > INVENTORY_ITEMS.size(): return false
+	var seen: Array = []
+	for item in value:
+		if typeof(item) != TYPE_STRING or item not in INVENTORY_ITEMS or seen.has(item): return false
+		seen.append(item)
+	return true
+
 func snapshot() -> Dictionary:
 	return {"schema_version": SCHEMA_VERSION, "narrative_version": NARRATIVE_VERSION,
 		"preview_content_version": PREVIEW_CONTENT_VERSION,
@@ -93,6 +118,7 @@ func restore(data: Dictionary) -> bool:
 	if int(data.slot) < 1 or int(data.slot) > 3 or float(data.slot) != float(int(data.slot)) or typeof(data.get("flags")) != TYPE_DICTIONARY:
 		return false
 	if data.flags.has("routine") and not DailyRoutineScript.valid(data.flags.routine): return false
+	if data.flags.has("inventory") and not valid_inventory(data.flags.inventory): return false
 	if typeof(data.get("phone_messages")) != TYPE_ARRAY or typeof(data.get("code")) != TYPE_STRING:
 		return false
 	if data.code.length() != 10 or not data.code.begins_with("CTN-"):

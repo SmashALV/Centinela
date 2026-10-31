@@ -75,6 +75,10 @@ func _run() -> void:
 			await main._close_modal()
 			main.daily.interact("backpack")
 			await settle()
+			check(GameState.has_item("mochila") and not main.world.objects.has("backpack"), "la mochila pasa al inventario y desaparece del cuarto")
+			main.daily.interact("backpack")
+			await settle()
+			check(GameState.flags.inventory.size() == 1 and GameState.restore(GameState.snapshot()), "la mochila no se recoge dos veces y el inventario se guarda")
 			await edge("right", "living", "breakfast")
 			await edge("right", "living", "breakfast")
 			check(not main.daily.can_use_pc() and not main.world.objects.has("pc"), "sala sin computadora")
@@ -90,7 +94,7 @@ func _run() -> void:
 			else:
 				for companion in ["mateo", "bruno", "camila", "sebas"]:
 					check(main.world.objects.has(companion), "compañero disponible " + companion)
-					await coral_scene(main.coral_flow.companion_scene(GameState.coral_state, companion), "A" if ending == "F01" else "B")
+					await coral_scene(main.coral_flow.companion_scene(GameState.coral_state, companion), "B" if ending == "F03" else "A")
 				check(not await main._coral_next_day(), "la salida no cambia el día")
 			if day == 4 and ending == "F01":
 				await edge("left", "tutor", "arrival")

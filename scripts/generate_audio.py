@@ -56,16 +56,46 @@ def effect(start_hz: float, end_hz: float, duration: float, gain: float) -> byte
 
 
 def school_bell() -> bytes:
-    duration = 1.8
+    """Timbre escolar eléctrico: parciales metálicos con badajo rápido (~18 Hz)."""
+    duration = 2.6
     samples = []
     for index in range(round(duration * RATE)):
         t = index / RATE
-        pulse = t % 0.45
-        envelope = min(1.0, pulse / 0.006) * math.exp(-8 * pulse)
-        fade = min(1.0, (duration - t) / 0.25)
+        clapper = 0.55 + 0.45 * math.sin(math.tau * 18 * t) ** 2
+        attack = min(1.0, t / 0.02)
+        fade = min(1.0, (duration - t) / 0.45)
         metallic = sum(math.sin(math.tau * frequency * t) * gain for frequency, gain in
                        [(1480, 0.45), (2105, 0.27), (2985, 0.16), (3890, 0.08)])
-        samples.append(metallic * envelope * fade * 0.30)
+        samples.append(metallic * clapper * attack * fade * 0.28)
+    return wav_bytes(samples)
+
+
+def tones(notes: list[tuple[float, float, float]], duration: float, gain: float, decay: float) -> bytes:
+    """Notas (inicio, frecuencia, peso) con caída exponencial suave."""
+    samples = []
+    for index in range(round(duration * RATE)):
+        t = index / RATE
+        value = 0.0
+        for start, frequency, weight in notes:
+            local = t - start
+            if local < 0:
+                continue
+            envelope = min(1.0, local / 0.006) * math.exp(-decay * local)
+            value += note(frequency, local) * envelope * weight
+        fade = min(1.0, (duration - t) / 0.05)
+        samples.append(value * gain * fade)
+    return wav_bytes(samples)
+
+
+def door() -> bytes:
+    """Puerta: golpe grave corto seguido de un leve chirrido."""
+    duration = 0.42
+    samples = []
+    for index in range(round(duration * RATE)):
+        t = index / RATE
+        thump = math.sin(math.tau * (95 - 40 * t) * t) * math.exp(-18 * t)
+        creak = math.sin(math.tau * (620 + 260 * t) * t) * max(0.0, 1 - abs(t - 0.2) / 0.12) * 0.25
+        samples.append((thump + creak) * 0.42)
     return wav_bytes(samples)
 
 
@@ -84,6 +114,10 @@ def assets() -> dict[str, bytes]:
         "interact.wav": effect(340, 530, 0.16, 0.27),
         "ability.wav": effect(280, 690, 0.24, 0.30),
         "result.wav": effect(520, 320, 0.34, 0.26),
+        "pickup.wav": tones([(0.0, 523.25, 1.0), (0.07, 659.25, 0.9), (0.14, 783.99, 0.8)], 0.42, 0.22, 9.0),
+        "door.wav": door(),
+        "notification.wav": tones([(0.0, 880, 1.0), (0.12, 1318.5, 0.85)], 0.5, 0.2, 8.0),
+        "sleep.wav": tones([(0.0, 783.99, 0.8), (0.35, 659.25, 0.7), (0.7, 523.25, 0.7), (1.05, 392, 0.8)], 2.4, 0.16, 2.2),
     }
 
 

@@ -9,7 +9,11 @@ const EFFECTS := {
 	"confirm": "res://assets/audio/confirm.wav",
 	"interact": "res://assets/audio/interact.wav",
 	"ability": "res://assets/audio/ability.wav",
-	"result": "res://assets/audio/result.wav"
+	"result": "res://assets/audio/result.wav",
+	"pickup": "res://assets/audio/pickup.wav",
+	"door": "res://assets/audio/door.wav",
+	"notification": "res://assets/audio/notification.wav",
+	"sleep": "res://assets/audio/sleep.wav"
 }
 const LEVELS := [0, 25, 50, 75, 100]
 

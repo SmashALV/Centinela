@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "workflow",
+  "quality": "showcase",
+  "specification": {
+    "path": "E:\\GODOT\\grooming-2\\.archify\\workflow-jugabilidad-centinela-20261030-234434\\candidate.json",
+    "sha256": "d2d1e230aa006d0ac2c40f43b77a3d34634669a90754e7194554133a55d9ce06",
+    "bytes": 5739
+  },
+  "artifact": {
+    "path": "E:\\GODOT\\grooming-2\\.archify\\workflow-jugabilidad-centinela-20261030-234434\\centinela-flujo-jugabilidad.html",
+    "sha256": "6cc65b30b8428d220b2dcf6671c7a735f85c0455a0ac3ce220f0ff25f478820f",
+    "bytes": 863008
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "E:\\GODOT\\grooming-2\\.archify\\workflow-jugabilidad-centinela-20261030-234434\\centinela-flujo-jugabilidad.finalize.json",
+    "summaryReceipt": "E:\\GODOT\\grooming-2\\.archify\\workflow-jugabilidad-centinela-20261030-234434\\centinela-flujo-jugabilidad.finalize-summary.json",
+    "browserCheckReceipt": "E:\\GODOT\\grooming-2\\.archify\\workflow-jugabilidad-centinela-20261030-234434\\centinela-flujo-jugabilidad.browser-check.json"
+  },
+  "update": {
+    "status": "current",
+    "installedVersion": "3.2.0",
+    "availableVersion": "3.2.0",
+    "releaseNotes": null,
+    "checkedAt": "2026-10-31T04:49:11.972Z",
+    "source": "cache",
+    "noticeRequired": false,
+    "noticeText": null
+  },
+  "visualReview": "not-requested",
+  "durationMs": 4584,
+  "browserCheck": {
+    "requested": true,
+    "ran": true
+  }
+}

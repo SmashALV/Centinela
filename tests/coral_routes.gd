@@ -4,7 +4,9 @@ const MainScene = preload("res://scenes/Main.tscn")
 const CASES := [
 	{"answers": ["A", "A", "A"], "action": "support", "ending": "F01", "order": ["camila", "mateo", "sebas", "bruno"]},
 	{"answers": ["B", "B", "B"], "action": "limit", "ending": "F02", "order": ["bruno", "sebas", "mateo", "camila"]},
-	{"answers": ["B", "A", "B"], "action": "none", "ending": "F03", "order": ["mateo", "camila", "bruno", "sebas"]}
+	{"answers": ["B", "A", "B"], "action": "none", "ending": "F03", "order": ["mateo", "camila", "bruno", "sebas"]},
+	# Recreo con respuestas de riesgo sin reparar en D4: el límite no sostiene al grupo.
+	{"answers": ["B", "B", "B"], "action": "limit", "ending": "F03", "d4": "B", "order": ["camila", "bruno", "mateo", "sebas"]}
 ]
 
 func _ready() -> void:
@@ -82,7 +84,7 @@ func _run() -> void:
 				var option: String = ""
 				if day == 2 and id.begins_with("D2_"):
 					option = str(plan.answers[["A", "B", "C"].find(id.trim_prefix("D2_"))])
-				elif day == 4 and id.begins_with("D4_"): option = "A"
+				elif day == 4 and id.begins_with("D4_"): option = str(plan.get("d4", "A"))
 				if not await _play_scene(story, id, option):
 					_fail("conversación " + id)
 					return
@@ -120,6 +122,18 @@ func _run() -> void:
 		if plan.action == "limit": await _play_scene(story, "I_LIMIT")
 		if not await story._coral_finish_day() or GameState.coral_state.ending != plan.ending:
 			_fail("final por acciones")
+			return
+		var profile: Dictionary = story.coral_flow.behavior_profile(GameState.coral_state)
+		if profile.total < 7 or GameState.coral_state.get("behavior", "") != profile.label or (plan.answers == ["A", "A", "A"] and profile.label != "Protectora"):
+			_fail("clasificación del comportamiento no actualizada")
+			return
+		for decision_id in GameState.CORAL_DECISIONS:
+			if story.coral_flow.decision_advice(decision_id).is_empty():
+				_fail("falta consejo del tutor: " + decision_id)
+				return
+		story.conversation_ui.show_advice("Tutor", story.coral_flow.decision_advice("D2_A"))
+		if story.conversation_ui.get_node_or_null("AdvicePanel") == null:
+			_fail("panel de consejo del tutor")
 			return
 		var ending_scene: Dictionary = story.coral_flow.scene(plan.ending, story.preview_catalog, story.draft_flow, GameState.coral_state)
 		var voices: Array = []

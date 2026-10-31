@@ -168,6 +168,9 @@
       if (name in flags && typeof flags[name] !== "boolean")
         throw failure("INVALID_REQUEST", "Indicador inválido");
     }
+    if ("inventory" in flags && (!Array.isArray(flags.inventory) || flags.inventory.length > 1 ||
+        !flags.inventory.every((item) => item === "mochila") || new Set(flags.inventory).size !== flags.inventory.length))
+      throw failure("INVALID_REQUEST", "Inventario inválido");
     if ((flags.draft_mode && !["PLAYABLE_DRAFT_v0.1", "PLAYABLE_DRAFT_v0.2", "PLAYABLE_DRAFT_v0.3"].includes(snapshot.draft_content_version)) ||
         ("draft_ending" in flags && !["", "F01", "F02", "F03"].includes(flags.draft_ending)))
       throw failure("INVALID_REQUEST", "Borrador inválido");

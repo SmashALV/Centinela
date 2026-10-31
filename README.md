@@ -91,6 +91,8 @@ El [procedimiento de construcción, staging y operación](docs/P8_OPERATIONS.md)
 
 ## Estado actual
 
+Las [mejoras v0.41 del juego serio](docs/MEJORAS_JUEGO_SERIO_2026-10-30.md) añaden el inventario de la mochila, una flecha de objetivo más visible, escenas más pausadas, el tutor con consejos en cada decisión, la clasificación del comportamiento, el peso del recreo en el desenlace, amigos animados que caminan y nuevos efectos de sonido. El [guion de exposición](docs/GUION_EXPOSICION_JUGABILIDAD_2026-10-30.md) explica la jugabilidad.
+
 La [rutina completa v0.40](docs/DAILY_ROUTINE_2026-10-29.md) conecta D0–D4 desde el despertar hasta dormir, añade sala, calle, clase y atardecer, cambia mapas por sus bordes y ubica las PC en dormitorio y cómputo. El escritorio tiene fondo personal y accesos a Discord y Arena 5v5. El combate termina con 5 bajas o al minuto. Se integran nuevas posturas, rostros de Mateo y Sebas, variantes emocionales y avatares coherentes.
 
 La [revisión de diálogos y chat v0.39](docs/DIALOGUE_CHAT_2026-10-29.md) incorpora avance con clic, pausa que conserva los segundos de lectura, avatares cuadrados con mensajes largos y un fondo interior para la sala de cómputo. Ese bloque continúa integrado en la versión actual.

@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Arquitectura actual · Centinela 2.0 (v0.41 con mejoras)",
+    "locale": "es",
+    "output": ".archify/architecture-centinela-mejoras-20261030-234434/centinela-arquitectura-v041.html",
+    "quality_profile": "showcase"
+  },
+  "components": [
+    { "id": "jugadora", "type": "external", "label": "Jugador/a", "sublabel": "WASD · F · E · clic", "icon": "person", "pos": [40, 48], "size": [150, 64] },
+    { "id": "main", "type": "frontend", "label": "Main.gd", "sublabel": "menú · HUD · inventario · fases", "pos": [270, 40], "size": [230, 80] },
+    { "id": "rutina", "type": "backend", "label": "DailyRoutine.gd", "sublabel": "casa → colegio → casa · D0–D4", "pos": [580, 40], "size": [220, 80] },
+    { "id": "mundo", "type": "frontend", "label": "World.gd · mapas", "sublabel": "flecha · NPC animados · tutor", "pos": [940, 40], "size": [240, 80] },
+    { "id": "ui", "type": "frontend", "label": "ConversationUI · DesktopUI", "sublabel": "novela visual · Discord · consejo", "pos": [40, 250], "size": [200, 80] },
+    { "id": "estado", "type": "backend", "label": "GameState", "sublabel": "flags · inventario · coral_state", "pos": [330, 250], "size": [200, 80] },
+    { "id": "coral", "type": "backend", "label": "CoralStoryFlow.gd", "sublabel": "escenas · clasificación · finales", "pos": [940, 250], "size": [240, 80] },
+    { "id": "arena", "type": "frontend", "label": "MOBAArena", "sublabel": "Arena 5v5 · 5 bajas o 60 s", "pos": [40, 460], "size": [200, 80] },
+    { "id": "guardado", "type": "backend", "label": "SaveManager", "sublabel": "3 ranuras · rollback si falla", "pos": [330, 460], "size": [200, 80] },
+    { "id": "audio", "type": "backend", "label": "AudioManager", "sublabel": "campana · puerta · mochila · sueño", "pos": [600, 460], "size": [220, 80] },
+    { "id": "contenido", "type": "database", "label": "coral_story_v0_2.json", "sublabel": "guion provisional D1–D4", "pos": [940, 460], "size": [240, 80] },
+    { "id": "local", "type": "database", "label": "Archivos user://", "sublabel": "snapshot JSON + .bak", "pos": [40, 670], "size": [200, 80] },
+    { "id": "webbridge", "type": "backend", "label": "WebBridge.gd", "sublabel": "puente hacia JavaScript", "pos": [330, 670], "size": [200, 80] },
+    { "id": "indexeddb", "type": "database", "label": "IndexedDB", "sublabel": "ranuras · locks · validación", "pos": [640, 670], "size": [200, 80] }
+  ],
+  "connections": [
+    { "id": "entrada", "from": "jugadora", "to": "main", "label": "juega", "variant": "emphasis" },
+    { "id": "main-rutina", "from": "main", "to": "rutina", "label": "etapa y lugar", "variant": "emphasis" },
+    { "id": "rutina-mundo", "from": "rutina", "to": "mundo", "label": "mapa y objetivos", "variant": "emphasis" },
+    { "id": "main-ui", "from": "main", "to": "ui", "label": "escenas" },
+    { "id": "main-estado", "from": "main", "to": "estado", "label": "decisiones" },
+    { "id": "rutina-coral", "from": "rutina", "to": "coral", "label": "charlas del recreo" },
+    { "id": "coral-contenido", "from": "coral", "to": "contenido", "label": "lee escenas" },
+    { "id": "ui-arena", "from": "ui", "to": "arena", "label": "clase elegida" },
+    { "id": "estado-guardado", "from": "estado", "to": "guardado", "label": "snapshot" },
+    { "id": "arena-guardado", "from": "arena", "to": "guardado", "label": "resultado" },
+    { "id": "rutina-audio", "from": "rutina", "to": "audio", "label": "efectos por evento" },
+    { "id": "guardado-local", "from": "guardado", "to": "local", "label": "escritorio" },
+    { "id": "guardado-web", "from": "guardado", "to": "webbridge", "label": "navegador" },
+    { "id": "web-idb", "from": "webbridge", "to": "indexeddb", "label": "transacción" }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Mejoras de esta versión",
+      "items": [
+        "Mochila: al recogerla pasa a GameState.flags.inventory, desaparece del cuarto y no puede recogerse dos veces. El HUD muestra el inventario.",
+        "World.gd dibuja una flecha amarilla grande que rebota, un halo pulsante y el aviso «Pulsa F». La cama se resalta completa a la hora de dormir. World avisa a la rutina cuando se pulsa F o se alcanza un borde.",
+        "Los amigos respiran, saltan y cambian de postura. Tras conversar caminan a otro punto del patio y en la despedida se van caminando.",
+        "El tutor aparece en el mapa de tutoría y en la novela visual. En cada decisión se puede pedir su consejo, que orienta sin elegir."
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Decisiones y desenlace",
+      "items": [
+        "Cada respuesta se clasifica como protectora, protectora con límite o de riesgo. La etiqueta global se guarda en coral_state.behavior y se muestra al final.",
+        "Las respuestas de riesgo del recreo (D2) que no se reparan en D4 pesan en el final: con dos o más, un límite digital ya no alcanza para F02 y el final es F03.",
+        "Pedir apoyo adulto en tutoría siempre lleva a F01, sin importar respuestas anteriores."
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Audio y persistencia",
+      "items": [
+        "Efectos generados por scripts/generate_audio.py: campana al llegar al colegio y al terminar la clase, puerta al cambiar de lugar, mochila, notificación y sueño.",
+        "SaveManager guarda antes de confirmar cada paso; si falla, se restaura el estado anterior. SyncManager existe pero está desactivado (enabled=false)."
+      ]
+    }
+  ]
+}

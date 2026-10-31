@@ -56,10 +56,15 @@ func can_play() -> bool:
 	if int(state().day) == 1: return GameState.coral_state.get("actions", []).has("D1_LOBBY_DONE")
 	return state().chat_seen
 
+func backpack_ready() -> bool:
+	return GameState.flags.get("backpack", false) and GameState.has_item("mochila")
+
 func objective() -> String:
 	if not str(state().get("scene", "")).is_empty(): return "Escucha la conversación"
 	match str(state().stage):
-		"morning": return "Revisa mensajes y prepara la mochila. Sal por la derecha"
+		"morning":
+			if not backpack_ready(): return "Revisa mensajes y guarda la mochila en tu inventario"
+			return "Mochila en el inventario. Sal por la derecha"
 		"breakfast": return "Desayuna en la mesa antes de salir por la derecha"
 		"outbound": return "Camina hacia la derecha para llegar al colegio"
 		"arrival":
@@ -82,7 +87,7 @@ func targets() -> Dictionary:
 	match str(state().place):
 		"bedroom":
 			var result := {"pc": Vector2(278, 173), "bed": Vector2(179, 228), "photo": Vector2(494, 140)}
-			if state().stage == "morning": result.backpack = Vector2(605, 294)
+			if state().stage == "morning" and not backpack_ready(): result.backpack = Vector2(605, 294)
 			return result
 		"living": return {"meal": Vector2(370, 230)} if state().stage in ["breakfast", "dinner"] else {}
 		"classroom": return {"lesson": Vector2(385, 263)} if state().stage == "class" else {}
@@ -91,7 +96,11 @@ func targets() -> Dictionary:
 		"school":
 			if state().stage == "farewell": return {} if GameState.flags.get("farewell_done", false) else {"friends": Vector2(374, 245)}
 			if int(state().day) == 0: return {"friends": Vector2(374, 245)}
-			return {"camila": Vector2(300, 242), "bruno": Vector2(210, 255), "sebas": Vector2(420, 255), "mateo": Vector2(535, 240)}
+			# Quien ya conversó con Sofi camina hacia otro punto del patio.
+			var spots := {"camila": [Vector2(300, 242), Vector2(255, 330)], "bruno": [Vector2(210, 255), Vector2(110, 300)], "sebas": [Vector2(420, 255), Vector2(500, 330)], "mateo": [Vector2(535, 240), Vector2(640, 300)]}
+			var result := {}
+			for person in spots: result[person] = spots[person][1 if main.coral_flow.talked_today(GameState.coral_state, person) else 0]
+			return result
 	return {}
 
 func load_view() -> void:
@@ -124,7 +133,7 @@ func load_view() -> void:
 
 func _primary_target() -> String:
 	match str(state().stage):
-		"morning": return "backpack"
+		"morning": return "" if backpack_ready() else "backpack"
 		"breakfast", "dinner": return "meal"
 		"class": return "lesson"
 		"farewell": return "friends"
@@ -167,6 +176,7 @@ func _phase_for_place() -> void:
 func go(stage: String, place: String, position: Vector2, scene := "") -> bool:
 	if main.save_in_progress: return false
 	var previous: Dictionary = GameState.snapshot()
+	var from_place: String = str(state().place)
 	state().stage = stage
 	state().place = place
 	state().scene = scene
@@ -174,7 +184,10 @@ func go(stage: String, place: String, position: Vector2, scene := "") -> bool:
 	GameState.ui_modal = ""
 	GameState.player_position = position
 	_phase_for_place()
-	return await _commit(previous)
+	var saved: bool = await _commit(previous)
+	if saved and from_place != place:
+		AudioManager.play_effect("school_bell" if place == "school" and stage == "arrival" and from_place == "street" else "door")
+	return saved
 
 func boundary(edge: String) -> void:
 	if main.modal_kind != "" or main.save_in_progress: return
@@ -184,7 +197,7 @@ func boundary(edge: String) -> void:
 		"bedroom":
 			if edge == "right" and r.stage == "morning":
 				if not r.messages_checked: main._toast("Puedes revisar tus mensajes con E antes de salir"); return
-				if not GameState.flags.get("backpack", false): main._toast("Recoge tu mochila antes de salir"); return
+				if not backpack_ready(): main._toast("Recoge tu mochila antes de salir"); return
 				go("breakfast", "living", Vector2(80, 285))
 		"living":
 			if edge == "left":
@@ -218,7 +231,7 @@ func _school_ready() -> bool:
 func interact(target: String) -> void:
 	if main.save_in_progress: return
 	match target:
-		"backpack": main._commit_flag("backpack", "Mochila lista")
+		"backpack": main._pick_up_item("mochila", "backpack", "Mochila guardada en el inventario")
 		"photo": main._inspect_d0("photo")
 		"pc":
 			if can_use_pc(): main._show_desktop()
@@ -251,12 +264,12 @@ func begin_scene(key: String) -> bool:
 func _lines() -> Array:
 	var day: int = int(state().day)
 	match str(state().scene):
-		"wake": return [{"speaker": "Narrador", "text": ["", "La alarma vuelve a sonar. Sofi se levanta pensando en la partida de ayer y en lo que sus amigos tendrán para contar.", "Sofi se despereza. Antes de salir, quiere ver si alguien dejó un mensaje durante la noche.", "Es una nueva mañana. Sofi recuerda las conversaciones de ayer y decide acercarse a sus amigos sin apurarlos.", "Sofi abre las cortinas. Hoy quiere escuchar a sus amigos y dar un paso concreto junto a ellos."][day]}]
-		"breakfast": return [{"speaker": "Narrador", "text": "Sofi toma su desayuno en la sala. Por la ventana entra la luz de la mañana. Ya tiene la mochila lista para salir."}, {"speaker": "Sofi", "text": ["A ver si hoy llego antes que Mateo.", "Luego les pregunto cómo estuvo la noche. Primero, al colegio.", "Les voy a preguntar cómo están, sin insistir si no quieren contarme.", "Si alguien quiere hablar, puedo hacerle un espacio en el recreo.", "No tengo que resolverlo todo yo sola. Podemos buscar compañía."][day]}]
+		"wake": return [{"speaker": "Narrador", "text": ["", "La alarma vuelve a sonar. Sofi se levanta pensando en la partida de ayer y en lo que sus amigos tendrán para contar.", "Sofi se despereza. Antes de salir, quiere ver si alguien dejó un mensaje durante la noche.", "Es una nueva mañana. Sofi recuerda las conversaciones de ayer y decide acercarse a sus amigos sin apurarlos.", "Sofi abre las cortinas. Hoy quiere escuchar a sus amigos y dar un paso concreto junto a ellos."][day]}, {"speaker": "Sofi", "text": ["", "Primero el celular y la mochila. Después, a desayunar.", "No quiero llegar tarde. Reviso mis mensajes y guardo la mochila.", "Hoy voy a preguntar con calma. Pero antes, la mochila.", "Último día de la semana. Mochila, desayuno y al colegio."][day]}]
+		"breakfast": return [{"speaker": "Narrador", "text": "Sofi toma su desayuno en la sala. Por la ventana entra la luz de la mañana. Ya tiene la mochila lista para salir."}, {"speaker": "Sofi", "text": ["A ver si hoy llego antes que Mateo.", "Luego les pregunto cómo estuvo la noche. Primero, al colegio.", "Les voy a preguntar cómo están, sin insistir si no quieren contarme.", "Si alguien quiere hablar, puedo hacerle un espacio en el recreo.", "No tengo que resolverlo todo yo sola. Podemos buscar compañía."][day]}, {"speaker": "Narrador", "text": "Sofi termina el desayuno, lleva su taza al lavadero y revisa que no le falte nada. La calle hacia el colegio está a la derecha."}]
 		"lesson":
-			return [{"speaker": "Narrador", "text": "Sofi deja la mochila junto a su pupitre. El profesor comienza la clase y el grupo baja la voz."}, {"speaker": "Mateo", "text": ["¿Anotaste la tarea? Esta vez prometo no dejarla para el último minuto.", "Después te cuento cómo me fue jugando. Ahorita mejor copiamos esto.", "Me distraje un poco. ¿Me prestas tus apuntes cuando terminemos?", "Gracias por escucharme ayer. Luego seguimos hablando con calma.", "Al salir quiero conversar un momento. Me ayuda saber que estás cerca."][day]}, {"speaker": "Camila", "text": "Yo tengo los apuntes. Los revisamos juntos cuando termine la explicación."}, {"speaker": "Narrador", "text": "Entre ejercicios y comentarios en voz baja, la mañana pasa. Suena la campana y todos empiezan a guardar sus cosas."}]
+			return [{"speaker": "Narrador", "text": "Sofi deja la mochila junto a su pupitre. El profesor comienza la clase y el grupo baja la voz."}, {"speaker": "Profesor", "text": ["Hoy repasamos cómo organizar el tiempo entre tareas, descanso y juegos. Anoten una idea que puedan aplicar esta semana.", "Vamos a hablar de privacidad: qué datos compartimos en internet y con quién. Piensen en un ejemplo propio.", "Un buen amigo escucha sin presionar. Hoy trabajaremos en parejas cómo pedir y ofrecer ayuda.", "Si algo en línea los incomoda, pueden bloquear, guardar silencio y contarlo a un adulto de confianza.", "Para cerrar la semana: ¿a quién acudirían si necesitan apoyo? Escríbanlo, no tienen que mostrarlo."][day]}, {"speaker": "Mateo", "text": ["¿Anotaste la tarea? Esta vez prometo no dejarla para el último minuto.", "Después te cuento cómo me fue jugando. Ahorita mejor copiamos esto.", "Me distraje un poco. ¿Me prestas tus apuntes cuando terminemos?", "Gracias por escucharme ayer. Luego seguimos hablando con calma.", "Al salir quiero conversar un momento. Me ayuda saber que estás cerca."][day]}, {"speaker": "Camila", "text": "Yo tengo los apuntes. Los revisamos juntos cuando termine la explicación."}, {"speaker": "Sofi", "text": "Anoto la idea principal. Quiero recordarla cuando hablemos en el grupo."}, {"speaker": "Narrador", "text": "Entre ejercicios y comentarios en voz baja, la mañana pasa. Suena la campana y todos empiezan a guardar sus cosas."}]
 		"goodbye": return [{"speaker": "Bruno", "text": ["¡Nos vemos al rato! Dejen la tarea lista antes de jugar.", "Ya saben, entramos cuando cada uno pueda. Nadie tiene que quedarse esperando.", "Voy a estar conectado más tarde. Si no quieren jugar, igual podemos conversar.", "Hoy puedo acompañarlos un rato. Me avisan si necesitan algo.", "Nos escribimos al llegar a casa. Lo que acordamos hoy sigue en pie."][day]}, {"speaker": "Sebas", "text": "Yo me voy por aquí. Gracias por hacerme un lugar hoy."}, {"speaker": "Camila", "text": "Lleguen con cuidado. Nos hablamos luego."}, {"speaker": "Mateo", "text": "Chau, Sofi. Después reviso el grupo."}, {"speaker": "Narrador", "text": "Los amigos toman caminos distintos. El cielo se vuelve naranja mientras Sofi emprende el regreso a casa."}]
-		"dinner": return [{"speaker": "Narrador", "text": "De vuelta en casa, Sofi deja sus cosas y se sienta a cenar. Tiene un momento tranquilo para recordar lo que pasó en el colegio."}, {"speaker": "Sofi", "text": ["Ahora sí, voy a ver si ya se conectaron.", "Voy a revisar el grupo. Mateo dijo que tenía a alguien para presentarnos.", "Quiero saber cómo siguen todos después de lo que hablamos.", "Puedo compartir una partida sin dejar pendiente lo que nos preocupa.", "Voy a revisar nuestros mensajes y respetar lo que cada uno decidió contar."][day]}]
+		"dinner": return [{"speaker": "Narrador", "text": "De vuelta en casa, Sofi deja sus cosas y se sienta a cenar. Tiene un momento tranquilo para recordar lo que pasó en el colegio."}, {"speaker": "Sofi", "text": ["Ahora sí, voy a ver si ya se conectaron.", "Voy a revisar el grupo. Mateo dijo que tenía a alguien para presentarnos.", "Quiero saber cómo siguen todos después de lo que hablamos.", "Puedo compartir una partida sin dejar pendiente lo que nos preocupa.", "Voy a revisar nuestros mensajes y respetar lo que cada uno decidió contar."][day]}, {"speaker": "Narrador", "text": "Su familia le pregunta cómo le fue. Sofi cuenta lo que aprendió en clase y ayuda a levantar la mesa antes de subir a su cuarto."}]
 		"evening_chat": return [{"speaker": "Camila", "text": ["", "", "Ya llegué. Gracias por escucharme hoy, Sofi.", "¿Cómo están? Si quieren conversar antes de jugar, aquí estoy.", "Ya estoy en casa. Podemos seguir con el plan que acordamos hoy."][day]}, {"speaker": "Bruno", "text": "Podemos jugar una corta. Si alguien quiere parar, lo dice y listo."}, {"speaker": "Mateo", "text": "Gracias. Me gusta poder entrar sin sentir que debo quedarme toda la noche."}, {"speaker": "Sofi", "text": "Una partida y a descansar. Mañana seguimos hablando."}]
 		"match_reply": return [{"speaker": "Camila", "text": main.draft_flow.camila_reaction(GameState.moba_result, GameState.moba_class)}, {"speaker": "Sofi", "text": "Gracias por jugar. Por hoy voy a apagar y descansar. Nos hablamos mañana."}]
 	return []
@@ -268,6 +281,8 @@ func _render_scene() -> void:
 	main._begin_conversation_presentation()
 	var index: int = mini(int(state().step), lines.size() - 1)
 	var line: Dictionary = lines[index]
+	# La campana suena justo cuando el narrador la menciona, no después.
+	if "campana" in str(line.text).to_lower(): AudioManager.play_effect("school_bell")
 	if state().scene in ["evening_chat", "match_reply"]:
 		main.conversation_ui.show_chat("los-chicos", lines.slice(0, index + 1), [], advance_scene, "", Callable(), main._scaled_text_size(18))
 	else:
@@ -285,7 +300,6 @@ func advance_scene() -> bool:
 	match finished:
 		"breakfast": state().stage = "outbound"
 		"lesson":
-			AudioManager.play_effect("school_bell")
 			state().stage = "class_exit"
 			GameState.flags.farewell_done = false
 		"goodbye": GameState.flags.farewell_done = true
@@ -293,6 +307,7 @@ func advance_scene() -> bool:
 		"evening_chat":
 			state().chat_seen = true
 			GameState.phone_messages.append_array(_lines_for_chat())
+			AudioManager.play_effect("notification")
 		"match_reply":
 			state().matches.append(GameState.moba_result)
 			state().stage = "bedtime"
@@ -312,6 +327,7 @@ func _render_sleep() -> void:
 	main.modal_kind = "sleep"
 	main._begin_conversation_presentation()
 	sleep_elapsed = 0.0
+	AudioManager.play_effect("sleep")
 	sleep_overlay = Control.new()
 	sleep_overlay.name = "SleepTransition"
 	main.conversation_ui.add_child(sleep_overlay)
@@ -368,8 +384,10 @@ func finish_sleep() -> bool:
 		state().matches = matches
 		state().scene = "wake"
 		GameState.flags.backpack = false
+		GameState.remove_item("mochila")
 		GameState.flags.farewell_done = false
 		GameState.phone_messages.append({"speaker": "Camila", "text": "Buen día, Sofi. Nos vemos en el colegio. Podemos hablar cuando llegues."})
+		AudioManager.play_effect("notification")
 		GameState.coral_state = main.coral_flow.new_state() if day == 0 else GameState.coral_state
 		GameState.coral_state.day = day + 1
 		GameState.coral_state.mode = "explore"

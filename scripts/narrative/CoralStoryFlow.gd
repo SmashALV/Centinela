@@ -5,6 +5,26 @@ const VERSION := "CORAL_STORY_v0.2"
 const PATH := "res://data/narrative/coral_story_v0_2.json"
 const ROUTES := ["A", "B", "C"]
 const D2_FACTS := {"A": "camila_request_shared", "B": "mateo_secret_shared", "C": "sebas_fatigue_observed"}
+# Clasificación descriptiva de cada respuesta (sin puntaje): protectora, límite o de riesgo.
+const CHOICE_BEHAVIOR := {
+	"D1_GATE": {"A": "protectora", "B": "protectora", "C": "riesgo"},
+	"D2_A": {"A": "protectora", "B": "riesgo"}, "D2_B": {"A": "protectora", "B": "riesgo"}, "D2_C": {"A": "protectora", "B": "riesgo"},
+	"D4_A1": {"A": "protectora", "B": "limite"}, "D4_B1": {"A": "protectora", "B": "limite"}, "D4_C1": {"A": "protectora", "B": "limite"},
+	"D4_A2": {"A": "protectora", "B": "riesgo"}, "D4_B2": {"A": "protectora", "B": "riesgo"}, "D4_C2": {"A": "protectora", "B": "riesgo"}}
+const BEHAVIOR_LABELS := {"protectora": "Protectora", "limite": "Protectora con límite", "riesgo": "De riesgo"}
+const DECISION_NAMES := {"D1_GATE": "D1 · El nuevo jugador", "D2_A": "Recreo D2 · Confidencia de Camila", "D2_B": "Recreo D2 · Regalo de Mateo", "D2_C": "Recreo D2 · Cansancio de Sebas",
+	"D4_A1": "D4 · Plan con Camila", "D4_A2": "D4 · Reparar con Camila", "D4_B1": "D4 · Presión sobre Mateo", "D4_B2": "D4 · Retomar con Mateo", "D4_C1": "D4 · Apoyo para Sebas", "D4_C2": "D4 · Rectificar con Bruno"}
+const DECISION_ADVICE := {
+	"D1_GATE": "Piensa si tu respuesta deja que Mateo elija cuándo jugar y con quién hablar. Escuchar o acordar límites con el grupo protege; restar importancia puede dejarlo solo.",
+	"D2_A": "Camila te contó algo en confianza. Pregúntate si ella decidió qué compartir y con quién. Una confidencia no se difunde sin permiso.",
+	"D2_B": "Un regalo que llega con una petición de secreto merece atención. Puedes escuchar a Mateo sin exigir pruebas ni minimizar lo que siente.",
+	"D2_C": "El cansancio de Sebas puede tener muchas causas. Una burla corta la conversación; escuchar sin acusar le da espacio para contar lo que quiera.",
+	"D4_A1": "Ambas opciones protegen: pedir apoyo a un adulto de confianza o ajustar privacidad con permiso. Elige el paso que Mateo pueda dar hoy.",
+	"D4_B1": "Mateo decide qué contar. Acompañarlo a tutoría o revisar bloqueo y privacidad con su permiso son pasos de protección.",
+	"D4_C1": "Pedir apoyo adulto y acordar un límite de contacto ayudan. Ninguna opción exige reunir pruebas.",
+	"D4_A2": "Reconocer un error y ofrecer acompañamiento ayuda a reparar. Esperar sin hacer nada deja el problema abierto.",
+	"D4_B2": "Todavía puedes cambiar tu respuesta: retomar la conversación con Mateo y buscar apoyo es mejor que dejarlo para después.",
+	"D4_C2": "Una disculpa sin exigir perdón y la invitación a buscar apoyo pueden reparar al grupo. Esperar a que se arregle solo rara vez funciona."}
 
 var content: Dictionary = {}
 
@@ -75,7 +95,7 @@ func scene(scene_id: String, recovered: Object, draft: Object, state: Dictionary
 		return {"day": 1, "title": "Conocer al grupo", "presentation": "vn", "lines": lines, "choices": []}
 	if scene_id == "I_TUTOR" or scene_id == "I_LIMIT":
 		if scene_id == "I_TUTOR" and state.get("observed", []).is_empty():
-			return {"day": int(state.get("day", 1)), "title": "Conocer tutoría", "presentation": "vn", "lines": [{"speaker": "Tutor", "text": "Este espacio está abierto si quieren conversar sobre algo del colegio, del grupo o de internet. Pueden volver cuando necesiten hablar."}], "choices": []}
+			return {"day": int(state.get("day", 1)), "title": "Conocer tutoría", "presentation": "vn", "actor": "Tutor", "lines": [{"speaker": "Tutor", "text": "Este espacio está abierto si quieren conversar sobre algo del colegio, del grupo o de internet. Pueden volver cuando necesiten hablar."}, {"speaker": "Tutor", "text": tutor_tip(state)}], "choices": []}
 		var key: String = "TUTOR" if scene_id == "I_TUTOR" else "LIMIT"
 		var interaction: Dictionary = content.get("interactions", {}).get(key, {})
 		var lines: Array = []
@@ -87,7 +107,8 @@ func scene(scene_id: String, recovered: Object, draft: Object, state: Dictionary
 			lines.append({"speaker": "Sofi", "text": reason})
 		for text_line in interaction.get("lines", []):
 			lines.append({"speaker": interaction.get("speaker", "Narrador"), "text": text_line})
-		return {"day": int(state.get("day", 1)), "title": "Pedir apoyo" if key == "TUTOR" else "Marcar un límite", "presentation": "vn", "lines": lines, "choices": []}
+		if scene_id == "I_TUTOR": lines.append({"speaker": "Tutor", "text": tutor_tip(state)})
+		return {"day": int(state.get("day", 1)), "title": "Pedir apoyo" if key == "TUTOR" else "Marcar un límite", "presentation": "vn", "actor": "Tutor" if key == "TUTOR" else "", "lines": lines, "choices": []}
 	if scene_id == "N_D2":
 		return {"day": 2, "title": "Lo que Sofi observó", "presentation": "vn", "lines": [{"speaker": "Narrador", "text": content.get("narrator_after_d2", {}).get(state.get("focus", "A"), "")}], "choices": []}
 	if scene_id.begins_with("F0"):
@@ -161,7 +182,10 @@ func objective(state: Dictionary) -> String:
 		if talked_today(state, person): total += 1
 	if total < 4: return "Conversa con tus compañeros (%d/4)" % total
 	if int(state.get("day", 1)) == 1 and not state.get("actions", []).has("D1_LOBBY_DONE"): return "Entra al lobby para preparar la partida"
-	if int(state.get("day", 1)) == 4: return "Busca apoyo o revisa bloqueo y privacidad en la PC; después ve a la salida"
+	if int(state.get("day", 1)) == 4:
+		if state.get("actions", []).has("SUPPORT_PLANNED") and not state.get("adult_support_started", false): return "Acordaron pedir apoyo: ve a tutoría y habla con el tutor"
+		if state.get("actions", []).has("LIMIT_PLANNED") and not state.get("limit_completed", false): return "Acordaron un límite: revisa bloqueo y privacidad en la PC"
+		return "Busca apoyo o revisa bloqueo y privacidad en la PC; después ve a la salida"
 	return "Ve a la salida para cerrar la jornada"
 
 func navigation_hint(state: Dictionary) -> String:
@@ -182,7 +206,39 @@ func educational_hint(state: Dictionary, level: int) -> String:
 		return "¿Qué teme perder tu compañero si dice que no?" if level == 1 else "Pedir apoyo no traiciona una amistad. No necesitas reunir pruebas ni exigir un relato completo."
 	return "¿Qué paso concreto pueden iniciar hoy sin ir al encuentro?" if level == 1 else "La presión también puede ocurrir en línea. No hay que responder, pagar ni demostrar nada para pedir apoyo."
 
+func decision_advice(scene_id: String) -> String:
+	return str(DECISION_ADVICE.get(scene_id, "Piensa qué respuesta respeta lo que tu compañero decide contar y abre la puerta a pedir apoyo."))
+
+func tutor_tip(state: Dictionary) -> String:
+	# Consejo del día para quien no sabe qué hacer; no decide por el jugador.
+	return "Un consejo: " + educational_hint(state, 2)
+
+func behavior_profile(state: Dictionary) -> Dictionary:
+	var counts := {"protectora": 0, "limite": 0, "riesgo": 0}
+	var details: Array = []
+	var choices: Dictionary = state.get("choices", {})
+	for decision_id in CHOICE_BEHAVIOR:
+		if not choices.has(decision_id): continue
+		var kind: String = str(CHOICE_BEHAVIOR[decision_id].get(str(choices[decision_id]), ""))
+		if kind.is_empty(): continue
+		counts[kind] += 1
+		details.append({"decision": decision_id, "name": DECISION_NAMES.get(decision_id, decision_id), "kind": kind, "label": BEHAVIOR_LABELS[kind]})
+	var total: int = counts.protectora + counts.limite + counts.riesgo
+	var protective: float = float(counts.protectora + counts.limite) / float(maxi(total, 1))
+	var label: String = "Sin decisiones aún" if total == 0 else "Protectora" if protective >= 0.75 else "En aprendizaje" if protective >= 0.4 else "De riesgo"
+	return {"label": label, "counts": counts, "total": total, "details": details, "unrepaired_recess": unrepaired_recess(state)}
+
+func unrepaired_recess(state: Dictionary) -> int:
+	# Respuestas de riesgo en el recreo (D2) que no se repararon en D4.
+	var choices: Dictionary = state.get("choices", {})
+	var total: int = 0
+	for companion in ROUTES:
+		if choices.get("D2_" + companion, "") == "B" and choices.get("D4_%s2" % companion, "") != "A": total += 1
+	return total
+
 func ending_for(state: Dictionary) -> String:
+	# Pedir apoyo adulto nunca se bloquea por respuestas anteriores.
 	if state.get("adult_support_started", false): return "F01"
-	if state.get("limit_completed", false): return "F02"
+	# Un límite solo sostiene al grupo si la confianza del recreo no quedó rota.
+	if state.get("limit_completed", false) and unrepaired_recess(state) < 2: return "F02"
 	return "F03"

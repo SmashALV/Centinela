@@ -57,6 +57,8 @@ var canvas: CanvasLayer
 var menu_background: TextureRect
 var hud: Label
 var hud_icon: TextureRect
+var inventory_panel: PanelContainer
+var inventory_label: Label
 var prompt: Label
 var prompt_icon: TextureRect
 var modal: PanelContainer
@@ -125,6 +127,7 @@ func _ready() -> void:
 	canvas.add_child(menu_background)
 	hud_icon = _screen_icon("objective", Vector2(5, 12), 22)
 	hud = _label(Vector2(30, 10), Vector2(718, 42), 16)
+	_build_inventory_panel()
 	prompt_icon = _screen_icon("interact", Vector2(5, 402), 24)
 	prompt = _label(Vector2(30, 402), Vector2(718, 34), 17)
 	toast = _label(Vector2(140, 354), Vector2(488, 40), 15)
@@ -647,7 +650,70 @@ func _draft_world_key() -> String:
 		"D3_01_A": return "draft_d3"
 		_: return "draft_d4"
 
+func _build_inventory_panel() -> void:
+	# Hijo del HUD: se oculta junto con él en menús y conversaciones.
+	inventory_panel = PanelContainer.new()
+	inventory_panel.name = "InventoryPanel"
+	inventory_panel.position = Vector2(560, 352)
+	inventory_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color("10192bd9")
+	style.border_color = Color("f5d479")
+	style.set_border_width_all(1)
+	style.set_corner_radius_all(8)
+	style.set_content_margin_all(5)
+	inventory_panel.add_theme_stylebox_override("panel", style)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 6)
+	inventory_panel.add_child(row)
+	var icon := TextureRect.new()
+	icon.texture = WorldScript.OBJECT_SPRITES.backpack
+	icon.custom_minimum_size = Vector2(26, 26)
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	row.add_child(icon)
+	inventory_label = Label.new()
+	inventory_label.name = "InventoryText"
+	inventory_label.add_theme_font_size_override("font_size", 13)
+	inventory_label.add_theme_color_override("font_color", Color("fff3df"))
+	row.add_child(inventory_label)
+	hud.add_child(inventory_panel)
+	inventory_panel.visible = false
+
+func _refresh_inventory() -> void:
+	if not is_instance_valid(inventory_panel): return
+	var items: Array = GameState.flags.get("inventory", [])
+	inventory_panel.visible = not items.is_empty()
+	inventory_label.text = "Inventario: " + ", ".join(items.map(func(item): return str(item).capitalize()))
+
+func _pick_up_item(item: String, flag: String, message: String) -> void:
+	if save_in_progress: return
+	if GameState.has_item(item):
+		_toast("Ya llevas la " + item + " en tu inventario")
+		return
+	var previous: Dictionary = GameState.snapshot()
+	GameState.add_item(item)
+	GameState.flags[flag] = true
+	save_in_progress = true
+	world.enabled = false
+	if await SaveManager.save_slot_async():
+		save_in_progress = false
+		if not is_inside_tree(): return
+		# El objeto desaparece del mapa: deja de ser objetivo y de dibujarse.
+		world.objects.erase(flag)
+		if daily.active(): world.configure_story_targets(daily.targets(), daily._primary_target())
+		_update_hud()
+		AudioManager.play_effect("pickup")
+		world.enabled = modal_kind == ""
+		_toast(message)
+	else:
+		GameState.restore(previous)
+		save_in_progress = false
+		if modal_kind == "": world.enabled = true
+		_toast("Error al guardar")
+
 func _update_hud() -> void:
+	_refresh_inventory()
 	if daily.active():
 		hud.text = "DÍA %d · %s" % [int(daily.state().day), daily.objective()]
 		return
@@ -683,6 +749,7 @@ func _objective_text() -> String:
 
 func _on_interacted(target: String) -> void:
 	if daily.active():
+		if target != "backpack": AudioManager.play_effect("interact")
 		daily.interact(target)
 		return
 	match GameState.phase:
@@ -692,7 +759,9 @@ func _on_interacted(target: String) -> void:
 			if GameState.flags.get("draft_exploring", false) and target == "mateo":
 				_commit_preview(GameState.preview_scene, 0)
 		"bedroom":
-			if ["alarm", "backpack"].has(target):
+			if target == "backpack":
+				_pick_up_item("mochila", "backpack", "Mochila guardada en el inventario")
+			elif target == "alarm":
 				_commit_flag(target, "Interacción registrada: " + world.target_label(target))
 			elif target == "door":
 				if not GameState.flags.get("alarm", false) or not GameState.flags.get("backpack", false):
@@ -1566,9 +1635,20 @@ func _coral_choose(key: String) -> bool:
 		if not state.observed.has(fact): state.observed.append(fact)
 	elif scene_id.begins_with("D4_") and key == "A" and scene_id.ends_with("2"):
 		if not state.actions.has("REPAIR_OFFERED"): state.actions.append("REPAIR_OFFERED")
+		var repaired: String = scene_id.substr(3, 1)
+		if state.companion_states.has(repaired): state.companion_states[repaired].repair_needed = false
+	if scene_id.begins_with("D4_"):
+		# El plan acordado guía el objetivo; el final exige realizar la acción.
+		var plan: String = "SUPPORT_PLANNED" if key == "A" else "LIMIT_PLANNED" if scene_id.ends_with("1") else ""
+		if not plan.is_empty() and not state.actions.has(plan): state.actions.append(plan)
+	var kind: String = str(CoralFlowScript.CHOICE_BEHAVIOR.get(scene_id, {}).get(key, ""))
+	state.behavior = coral_flow.behavior_profile(state).label
 	state.mode = "reaction"
 	state.step = 0
-	return await _save_coral(previous)
+	var saved: bool = await _save_coral(previous)
+	if saved and not kind.is_empty():
+		_toast("Respuesta registrada como: " + str(CoralFlowScript.BEHAVIOR_LABELS[kind]).to_lower())
+	return saved
 
 func _coral_finish_scene(previous: Dictionary = {}) -> bool:
 	if save_in_progress or GameState.phase != "coral": return false
@@ -1658,6 +1738,7 @@ func _render_coral() -> void:
 		for choice in scene.choices:
 			var key: String = str(choice.get("key", ""))
 			options.append({"label": str(choice.get("text", "")), "action": func(): _coral_choose(key)})
+		options.append({"label": "¿No sabes qué responder? Pide un consejo al tutor (no elige por ti)", "action": func(): _show_tutor_advice(scene_id)})
 	else:
 		return
 	var presentation: String = str(scene.get("presentation", "vn"))
@@ -1702,7 +1783,19 @@ func _render_coral_summary() -> void:
 	var description: String = {"F01": "Se inició una conversación de apoyo con una persona adulta.", "F02": "Se ajustó la privacidad o el contacto con permiso.", "F03": "Hay pasos de protección pendientes; aún se puede pedir ayuda."}.get(ending, "")
 	_preview_text(body, description, 20)
 	_preview_text(body, "Sofi pudo escuchar a todo el grupo. Sus respuestas cambiaron la confianza de cada compañero y las acciones que concretaron juntos.", 16)
+	var profile: Dictionary = coral_flow.behavior_profile(GameState.coral_state)
+	_preview_text(body, "Clasificación del comportamiento: %s (%d protectoras, %d con límite, %d de riesgo)" % [profile.label, profile.counts.protectora, profile.counts.limite, profile.counts.riesgo], 17)
+	for detail in profile.details:
+		_preview_text(body, "· %s: %s" % [detail.name, detail.label], 14)
+	if int(profile.unrepaired_recess) >= 2 and ending == "F03" and GameState.coral_state.get("limit_completed", false):
+		_preview_text(body, "Las respuestas del recreo sin reparar impidieron que el límite acordado sostuviera al grupo.", 15)
 	_preview_button(body, "Volver al menú", _return_to_menu)
+
+func _show_tutor_advice(scene_id: String) -> void:
+	var state: Dictionary = GameState.coral_state
+	var action_id: String = "ADVICE_" + scene_id
+	if not state.get("actions", []).has(action_id) and state.get("actions", []).size() < 100: state.actions.append(action_id)
+	conversation_ui.show_advice("Tutor", coral_flow.decision_advice(scene_id))
 
 func _start_playable_draft() -> bool:
 	if save_in_progress or draft_flow.content.is_empty() or preview_catalog.scenes.is_empty():

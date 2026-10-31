@@ -1,0 +1,80 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Centinela 2.0 · cómo se juega un día (D0–D4)",
+    "locale": "es",
+    "output": ".archify/workflow-jugabilidad-centinela-20261030-234434/centinela-flujo-jugabilidad.html",
+    "quality_profile": "showcase"
+  },
+  "lanes": [
+    { "id": "inicio", "label": "Inicio" },
+    { "id": "casa", "label": "Casa" },
+    { "id": "colegio", "label": "Colegio y recreo" },
+    { "id": "decision", "label": "Decisiones y apoyo" },
+    { "id": "pc", "label": "PC · Discord · Arena" },
+    { "id": "cierre", "label": "Cierre" }
+  ],
+  "phases": [
+    { "id": "manana", "label": "Mañana", "fromCol": 0, "toCol": 2 },
+    { "id": "colegio_fase", "label": "Colegio", "fromCol": 3, "toCol": 3, "variant": "emphasis" },
+    { "id": "tarde", "label": "Tarde y noche", "fromCol": 4, "toCol": 5 }
+  ],
+  "mainPath": ["menu", "prologo", "cuarto", "desayuno", "calle", "recreo", "clase", "cena", "discord", "arena", "dormir", "final"],
+  "nodes": [
+    { "id": "menu", "lane": "inicio", "col": 0, "type": "external", "label": "Menú", "sublabel": "elige 1 de 3 ranuras" },
+    { "id": "prologo", "lane": "inicio", "col": 1, "type": "frontend", "label": "Prólogo D0", "sublabel": "presenta a Sofi y amigos" },
+    { "id": "cuarto", "lane": "casa", "col": 1, "type": "frontend", "label": "Habitación", "sublabel": "celular · mochila al inventario" },
+    { "id": "desayuno", "lane": "casa", "col": 2, "type": "frontend", "label": "Desayuno", "sublabel": "escena en la sala" },
+    { "id": "calle", "lane": "colegio", "col": 2, "type": "frontend", "label": "Camino al colegio", "sublabel": "suena la campana" },
+    { "id": "recreo", "lane": "colegio", "col": 3, "type": "frontend", "label": "Recreo en el patio", "sublabel": "4 amigos en cualquier orden", "tag": "flecha amarilla guía" },
+    { "id": "eleccion", "lane": "decision", "col": 3, "type": "security", "label": "Decisión A/B", "sublabel": "se clasifica la respuesta", "icon": "decision" },
+    { "id": "consejo", "lane": "decision", "col": 2, "type": "backend", "label": "Consejo del tutor", "sublabel": "opcional · no elige" },
+    { "id": "tutoria", "lane": "decision", "col": 4, "type": "backend", "label": "Tutoría", "sublabel": "pedir apoyo adulto" },
+    { "id": "clase", "lane": "colegio", "col": 4, "type": "frontend", "label": "Clase y despedida", "sublabel": "campana · amigos se van" },
+    { "id": "cena", "lane": "casa", "col": 4, "type": "frontend", "label": "Regreso y cena", "sublabel": "atardecer en casa" },
+    { "id": "discord", "lane": "pc", "col": 4, "type": "frontend", "label": "Discord en la PC", "sublabel": "chat del grupo" },
+    { "id": "arena", "lane": "pc", "col": 5, "type": "backend", "label": "Arena 5v5", "sublabel": "5 bajas o 60 s" },
+    { "id": "dormir", "lane": "casa", "col": 5, "type": "frontend", "label": "Dormir", "sublabel": "cama resaltada" },
+    { "id": "final", "lane": "cierre", "col": 5, "type": "database", "label": "Final F01 · F02 · F03", "sublabel": "clasificación del comportamiento" }
+  ],
+  "edges": [
+    { "id": "e1", "from": "menu", "to": "prologo", "label": "ranura nueva", "role": "main" },
+    { "id": "e2", "from": "prologo", "to": "cuarto", "label": "despierta", "role": "main" },
+    { "id": "e3", "from": "cuarto", "to": "desayuno", "label": "mochila guardada", "role": "main" },
+    { "id": "e4", "from": "desayuno", "to": "calle", "role": "main" },
+    { "id": "e5", "from": "calle", "to": "recreo", "label": "llega", "role": "main" },
+    { "id": "e6", "from": "recreo", "to": "eleccion", "label": "conversación", "role": "branch" },
+    { "id": "e7", "from": "eleccion", "to": "recreo", "label": "reacción", "role": "return" },
+    { "id": "e8", "from": "consejo", "to": "eleccion", "label": "orienta", "variant": "dashed" },
+    { "id": "e9", "from": "eleccion", "to": "tutoria", "label": "hay preocupación", "role": "branch" },
+    { "id": "e10", "from": "recreo", "to": "clase", "label": "escuchó a los 4", "role": "main" },
+    { "id": "e11", "from": "clase", "to": "cena", "label": "vuelve a casa", "role": "main" },
+    { "id": "e12", "from": "cena", "to": "discord", "role": "main" },
+    { "id": "e13", "from": "discord", "to": "arena", "label": "elige clase", "role": "main" },
+    { "id": "e14", "from": "arena", "to": "dormir", "label": "reacción de Camila", "role": "main" },
+    { "id": "e15", "from": "dormir", "to": "cuarto", "label": "día < 4", "role": "return" },
+    { "id": "e16", "from": "dormir", "to": "final", "label": "día 4", "role": "main" },
+    { "id": "e17", "from": "tutoria", "to": "final", "label": "apoyo → F01", "variant": "dashed" }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Rutina de cada día",
+      "items": [
+        "WASD mueve, F interactúa, E abre el celular, Tab el objetivo y P pausa. Los diálogos avanzan solos o con clic en el recuadro o Enter.",
+        "Los mapas cambian al llegar a los bordes. Una flecha amarilla que rebota marca el siguiente objetivo y «Pulsa F» aparece al estar cerca.",
+        "La mochila sale del cuarto al recogerla y queda en el inventario; a la mañana siguiente vuelve a estar en el cuarto."
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Decisiones y finales",
+      "items": [
+        "D1: cómo responder al nuevo jugador. D2 (recreo): responder a Camila, Mateo y Sebas. D4: plan de apoyo, límite o reparación.",
+        "Cada respuesta se clasifica (protectora, con límite o de riesgo) y cambia las escenas de D3 y D4.",
+        "F01 si se pidió apoyo en tutoría. F02 si se hizo bloqueo y privacidad en la PC y no quedaron dos o más heridas del recreo sin reparar. Si no, F03."
+      ]
+    }
+  ]
+}

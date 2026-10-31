@@ -32,8 +32,11 @@ const CHARACTER_SHEETS := {
 	"Mateo": preload("res://assets/characters/mateo_directions_v4.png"),
 	"Bruno": preload("res://assets/characters/bruno_directions.png"),
 	"Camila": preload("res://assets/characters/camila_directions_v3.png"),
-	"Sebas": preload("res://assets/characters/sebas_directions_v4.png")
+	"Sebas": preload("res://assets/characters/sebas_directions_v4.png"),
+	"Tutor": preload("res://assets/characters/tutor_directions.png")
 }
+const ACTOR_WALK_SPEED := 68.0
+const IDLE_FACINGS := ["down", "left", "down", "right"]
 const OBJECT_SPRITES := {
 	"alarm": preload("res://assets/objects/alarm.png"),
 	"backpack": preload("res://assets/objects/backpack.png"),
@@ -123,6 +126,9 @@ var evening_light := false
 var edge_routes: Dictionary = {}
 var edge_latched := ""
 var hide_player := false
+var anim_time := 0.0
+# Posición visible de cada personaje: camina hacia su objetivo en vez de aparecer de golpe.
+var actor_display: Dictionary = {}
 
 const ROUTINE_BACKGROUNDS := {"living": "res://assets/world/living_room_map.png", "street": "res://assets/world/street_map.png", "classroom": "res://assets/world/classroom_map.png", "school": "res://assets/world/day0_courtyard.png"}
 const ROUTINE_BLOCKS := {"living": [[30, 56, 708, 60], [80, 115, 175, 70], [530, 115, 170, 67], [304, 122, 156, 62]], "street": [[30, 56, 708, 88], [30, 357, 708, 37]], "classroom": [[30, 56, 708, 70], [80, 124, 185, 105], [500, 124, 185, 105], [360, 185, 50, 47], [350, 105, 70, 40]], "school": [[30, 56, 280, 55], [450, 56, 288, 55], [75, 171, 29, 22], [638, 168, 29, 22], [603, 357, 29, 22], [162, 153, 81, 22], [513, 153, 81, 22]]}
@@ -164,6 +170,7 @@ func configure(key: String, position: Vector2) -> void:
 	edge_latched = ""
 	hide_player = false
 	departures.clear()
+	actor_display.clear()
 	scene_key = key
 	player_pos = position
 	story_targets_active = false
@@ -172,6 +179,7 @@ func configure(key: String, position: Vector2) -> void:
 	if key == "bedroom":
 		objects = {"alarm": Vector2(150, 164), "backpack": Vector2(605, 294),
 			"desk": Vector2(278, 146), "photo": Vector2(494, 140), "door": Vector2(698, 230)}
+		if GameState.has_item("mochila"): objects.erase("backpack")
 	elif key == "courtyard":
 		objects = {"friends": Vector2(374, 175), "tutoria": Vector2(139, 306), "exit": Vector2(690, 227)}
 	elif key.begins_with("draft_d"):
@@ -249,7 +257,9 @@ func _physics_process(delta: float) -> void:
 	if not enabled:
 		player_body.velocity = Vector2.ZERO
 		return
+	anim_time += delta
 	_update_departures(delta)
+	_update_actor_walks(delta)
 	var direction := Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	if direction != Vector2.ZERO:
 		if absf(direction.x) > absf(direction.y):
@@ -364,28 +374,30 @@ func _draw() -> void:
 			draw_arc(pos, 28, 0, TAU, 24, mateo_color, 2.0)
 			draw_rect(Rect2(pos + Vector2(-44, -69), Vector2(90, 22)), Color("10192b", 0.87))
 			draw_string(ThemeDB.fallback_font, pos + Vector2(-39, -53), "F · Mateo", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, mateo_color)
-			_draw_objective_marker(pos + Vector2(0, 31))
+			_draw_objective_marker(pos + Vector2(0, -72))
 			continue
 		_draw_object(key, pos, active)
 	if scene_key == "courtyard":
 		if not GameState.flags.get("friends", false):
 			for friend in FRIENDS:
-				_draw_character(Vector2(374, 175) + friend.offset, str(friend.name), "down", true)
+				var idle_pos: Vector2 = Vector2(374, 175) + friend.offset
+				_draw_character(idle_pos, str(friend.name), _idle_facing(str(friend.name), idle_pos), true, true)
 		else:
 			for person in departures:
-				_draw_character(departures[person].position, person, str(departures[person].facing), true)
+				_draw_character(departures[person].position, person, str(departures[person].facing), true, true, true)
 	elif scene_key.begins_with("draft_d") and not story_targets_active:
-		_draw_character(objects.mateo, "Mateo")
+		_draw_character(objects.mateo, "Mateo", _idle_facing("mateo", objects.mateo), false, true)
 		if scene_key == "draft_d1":
-			_draw_character(Vector2(330, 245), "Camila")
-			_draw_character(Vector2(260, 250), "Bruno")
-			_draw_character(Vector2(400, 250), "Sebas")
+			for extra in [["Camila", Vector2(330, 245)], ["Bruno", Vector2(260, 250)], ["Sebas", Vector2(400, 250)]]:
+				_draw_character(extra[1], extra[0], _idle_facing(extra[0], extra[1]), false, true)
 	if not hide_player: _draw_character(player_pos, "Sofi", player_facing)
 	if routine_mode:
 		if scene_key == "school" and objects.has("friends"):
-			for friend in FRIENDS: _draw_character(Vector2(objects.friends) + friend.offset, str(friend.name), "down", true)
+			for friend in FRIENDS:
+				var idle_pos: Vector2 = Vector2(objects.friends) + friend.offset
+				_draw_character(idle_pos, str(friend.name), _idle_facing(str(friend.name), idle_pos), true, true)
 		if scene_key == "school":
-			for person in departures: _draw_character(departures[person].position, person, str(departures[person].facing), true)
+			for person in departures: _draw_character(departures[person].position, person, str(departures[person].facing), true, true, true)
 		if evening_light:
 			draw_rect(ROOM, Color(0.94, 0.38, 0.23, 0.20) if scene_key in ["school", "street"] else Color(0.24, 0.12, 0.38, 0.15))
 		for edge in edge_routes:
@@ -461,8 +473,17 @@ func _draw_shoe(pos: Vector2) -> void:
 
 func _draw_story_target(key: String, pos: Vector2, active: bool) -> void:
 	var color := Color("f5d479") if active else Color("8ec9c2")
+	if key == story_primary_target:
+		_draw_target_glow(pos, key)
 	if key.capitalize() in CHARACTER_SHEETS:
-		_draw_character(pos, key.capitalize())
+		var shown: Vector2 = actor_display.get(key, pos)
+		var walking: bool = shown.distance_to(pos) > 1.0
+		_draw_character(shown, key.capitalize(), _walk_facing(shown, pos) if walking else _idle_facing(key, shown), false, true, walking)
+		pos = shown
+	elif key == "tutoria":
+		# El tutor espera junto a la puerta de tutoría.
+		draw_texture_rect(OBJECT_SPRITES.tutoria, Rect2(pos + Vector2(-62, -40), Vector2(48, 54)), false)
+		_draw_character(pos, "Tutor", _idle_facing("tutor", pos), false, true)
 	elif routine_mode and key in ["bed", "photo", "backpack"]:
 		if key != "bed": draw_texture_rect(OBJECT_SPRITES[key], Rect2(pos - Vector2(23, 23), Vector2(46, 46)), false)
 	elif routine_mode and key in ["friends", "meal", "lesson"]:
@@ -473,10 +494,12 @@ func _draw_story_target(key: String, pos: Vector2, active: bool) -> void:
 		if key == "lobby" or key == "pc":
 			draw_texture_rect(OBJECT_SPRITES.pc, Rect2(pos - Vector2(17, 17), Vector2(34, 34)), false)
 	draw_rect(Rect2(pos + Vector2(-43, -64), Vector2(86, 19)), Color("10192b", 0.9))
-	var target_name: String = {"lobby": "Lobby", "tutoria": "Tutoría", "pc": "PC", "salida": "Salida", "friends": "Grupo", "bed": "Dormir", "meal": "Comer", "lesson": "Clase", "photo": "Foto", "backpack": "Mochila"}.get(key, key.capitalize())
+	var target_name: String = {"lobby": "Lobby", "tutoria": "Tutor", "pc": "PC", "salida": "Salida", "friends": "Grupo", "bed": "Dormir", "meal": "Comer", "lesson": "Clase", "photo": "Foto", "backpack": "Mochila"}.get(key, key.capitalize())
 	draw_string(ThemeDB.fallback_font, pos + Vector2(-42, -49), "F · " + target_name, HORIZONTAL_ALIGNMENT_CENTER, 84, 11, color)
 	if key == story_primary_target:
-		_draw_objective_marker(pos + Vector2(0, 31))
+		_draw_objective_marker(Vector2(131, 104) if key == "bed" else pos + Vector2(0, -70))
+	if active:
+		_draw_press_prompt(pos + Vector2(0, 30))
 
 func _draw_draft_caption() -> void:
 	var caption: String = str({"draft_d1": "DÍA 1 · LOBBY", "draft_d2": "DÍA 2 · EXTERIOR DEL COLEGIO", "draft_d3": "DÍA 3 · PASILLO", "draft_d4": "DÍA 4 · PATIO"}.get(scene_key, ""))
@@ -486,19 +509,36 @@ func _draw_draft_caption() -> void:
 	draw_string(ThemeDB.fallback_font, Vector2(65, 81), caption, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color("fff3df"))
 
 func _draw_objective_marker(pos: Vector2) -> void:
-	var marker := Color("f5d479")
-	draw_colored_polygon(PackedVector2Array([
-		pos + Vector2(-7, -2), pos + Vector2(7, -2), pos + Vector2(0, 9)
-	]), Color("10192b"))
-	draw_colored_polygon(PackedVector2Array([
-		pos + Vector2(-5, 0), pos + Vector2(5, 0), pos + Vector2(0, 6)
-	]), marker)
+	# Flecha amarilla grande que rebota sobre el objetivo actual.
+	var marker := Color("ffd84d")
+	var p: Vector2 = pos + Vector2(0, -absf(sin(anim_time * 4.0)) * 7.0)
+	var outline := PackedVector2Array([p + Vector2(-15, -13), p + Vector2(-6, -13), p + Vector2(-6, -24), p + Vector2(6, -24), p + Vector2(6, -13), p + Vector2(15, -13), p + Vector2(0, 5)])
+	draw_colored_polygon(outline, Color("10192b"))
+	var fill := PackedVector2Array([p + Vector2(-11, -11), p + Vector2(-4, -11), p + Vector2(-4, -21), p + Vector2(4, -21), p + Vector2(4, -11), p + Vector2(11, -11), p + Vector2(0, 1)])
+	draw_colored_polygon(fill, marker)
+	draw_line(p + Vector2(-2, -19), p + Vector2(-2, -12), Color(1, 1, 1, 0.65), 2.0)
+
+func _draw_target_glow(pos: Vector2, key: String) -> void:
+	var pulse: float = 0.5 + 0.5 * sin(anim_time * 3.2)
+	if key == "bed":
+		# La cama es grande: se resalta todo el mueble y no solo un punto.
+		var bed_rect := Rect2(79, 112, 104, 113).grow(4.0 + pulse * 3.0)
+		draw_rect(bed_rect, Color(1.0, 0.85, 0.3, 0.12 + 0.1 * pulse))
+		draw_rect(bed_rect, Color("ffd84d"), false, 3.0)
+		return
+	draw_circle(pos + Vector2(0, 12), 24.0 + pulse * 6.0, Color(1.0, 0.85, 0.3, 0.18 + 0.22 * pulse))
+	draw_arc(pos + Vector2(0, 12), 26.0 + pulse * 6.0, 0, TAU, 32, Color("ffd84d"), 2.5)
+
+func _draw_press_prompt(pos: Vector2) -> void:
+	draw_rect(Rect2(pos + Vector2(-34, 0), Vector2(68, 20)), Color("ffd84d"))
+	draw_rect(Rect2(pos + Vector2(-34, 0), Vector2(68, 20)), Color("10192b"), false, 2.0)
+	draw_string(ThemeDB.fallback_font, pos + Vector2(-34, 15), "Pulsa F", HORIZONTAL_ALIGNMENT_CENTER, 68, 13, Color("10192b"))
 
 func _draw_object(key: String, pos: Vector2, active: bool) -> void:
 	var color := Color("f5d479") if active else Color("8ec9c2")
 	if key == objective_target():
-		draw_arc(pos, 27, 0, TAU, 24, Color("f5d479"), 2.0)
-		_draw_objective_marker(pos + Vector2(0, 32))
+		_draw_target_glow(pos, key)
+		_draw_objective_marker(pos + Vector2(0, -50))
 	var sprite_size: Vector2 = OBJECT_SIZES[key]
 	draw_texture_rect(OBJECT_SPRITES[key], Rect2(pos - sprite_size * 0.5, sprite_size), false)
 	if key in ["alarm", "backpack"] and GameState.flags.get(key, false):
@@ -509,8 +549,41 @@ func _draw_object(key: String, pos: Vector2, active: bool) -> void:
 	draw_string(ThemeDB.fallback_font, pos + Vector2(-41, -30), target_label(key),
 		HORIZONTAL_ALIGNMENT_CENTER, 82, 12, color)
 
-func _draw_character(pos: Vector2, actor_name: String, facing: String = "down", compact_label: bool = false) -> void:
+func _idle_facing(key: String, pos: Vector2) -> String:
+	# Mira a Sofi si está cerca; si no, cambia de postura cada pocos segundos.
+	if pos.distance_to(player_pos) < 110.0:
+		return _walk_facing(pos, player_pos)
+	return IDLE_FACINGS[int(anim_time / 2.6 + _phase(key) * 4.0) % IDLE_FACINGS.size()]
+
+func _walk_facing(from: Vector2, to: Vector2) -> String:
+	var d: Vector2 = to - from
+	return ("right" if d.x > 0 else "left") if absf(d.x) > absf(d.y) else ("down" if d.y > 0 else "up")
+
+func _phase(actor_name: String) -> float:
+	return float(absi(hash(actor_name.to_lower())) % 1000) / 1000.0
+
+func _update_actor_walks(delta: float) -> void:
+	if not story_targets_active: return
+	for key in objects:
+		if not key.capitalize() in CHARACTER_SHEETS: continue
+		var target: Vector2 = objects[key]
+		if not actor_display.has(key):
+			actor_display[key] = target
+			continue
+		actor_display[key] = Vector2(actor_display[key]).move_toward(target, ACTOR_WALK_SPEED * delta)
+
+func _draw_character(pos: Vector2, actor_name: String, facing: String = "down", compact_label: bool = false, animated := false, walking := false) -> void:
 	var texture: Texture2D = CHARACTER_SHEETS[actor_name]
+	if walking:
+		# Pasos: pequeño rebote y balanceo al caminar.
+		pos += Vector2(sin(anim_time * 11.0) * 1.2, -absf(sin(anim_time * 11.0)) * 3.0)
+	elif animated:
+		var phase: float = _phase(actor_name)
+		pos.y += sin(anim_time * 2.3 + phase * TAU) * 1.4
+		var cycle: float = fmod(anim_time + phase * 7.0, 7.0)
+		if cycle < 0.45:
+			# Saltito ocasional para que el grupo no parezca de estatuas.
+			pos.y -= sin(cycle / 0.45 * PI) * 9.0
 	var half: Vector2 = texture.get_size() * 0.5
 	var cell := Vector2.ZERO
 	match facing:

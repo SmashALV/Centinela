@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "ae04c41e-dcfd-4189-9362-d1f50b433e9b",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "E:\\GODOT\\grooming-2\\.archify\\architecture-centinela-mejoras-20261030-234434\\candidate.json",
+  "output": "E:\\GODOT\\grooming-2\\.archify\\architecture-centinela-mejoras-20261030-234434\\centinela-arquitectura-v041.html",
+  "specification": {
+    "sha256": "4b80e35f8a9c62804f0d7a669411f260986296b9fd026f3b36452ccb306655f3",
+    "bytes": 5573
+  },
+  "artifact": {
+    "sha256": "34ab909edf9c11bf79b2dc9b9acbbf12c907fd1ae0917a7a1deadca9bee86d63",
+    "bytes": 861046
+  }
+}

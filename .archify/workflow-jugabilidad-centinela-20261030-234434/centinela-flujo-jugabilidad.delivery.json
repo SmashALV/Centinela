@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "bee4d387-41b5-4c20-9e63-ec01db9f56aa",
+  "status": "current",
+  "command": "deliver",
+  "type": "workflow",
+  "input": "E:\\GODOT\\grooming-2\\.archify\\workflow-jugabilidad-centinela-20261030-234434\\candidate.json",
+  "output": "E:\\GODOT\\grooming-2\\.archify\\workflow-jugabilidad-centinela-20261030-234434\\centinela-flujo-jugabilidad.html",
+  "specification": {
+    "sha256": "d2d1e230aa006d0ac2c40f43b77a3d34634669a90754e7194554133a55d9ce06",
+    "bytes": 5739
+  },
+  "artifact": {
+    "sha256": "6cc65b30b8428d220b2dcf6671c7a735f85c0455a0ac3ce220f0ff25f478820f",
+    "bytes": 863008
+  }
+}

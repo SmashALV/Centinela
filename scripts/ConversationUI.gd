@@ -17,7 +17,8 @@ const SPRITES := {
 	"Mateo_alarmed": "res://assets/vn/mateo_alarmed_v4.png",
 	"Camila": "res://assets/vn/camila_v4.png",
 	"Bruno": "res://assets/vn/bruno_v4.png",
-	"Sebas": "res://assets/vn/sebas_v4.png"
+	"Sebas": "res://assets/vn/sebas_v4.png",
+	"Tutor": "res://assets/vn/tutor_v1.png"
 }
 const AVATARS := {
 	"Kairo": "res://assets/portraits/kairo_v4.tres",
@@ -25,7 +26,8 @@ const AVATARS := {
 	"Mateo": "res://assets/portraits/mateo_v4.tres",
 	"Camila": "res://assets/portraits/camila_v4.tres",
 	"Bruno": "res://assets/portraits/bruno_v4.tres",
-	"Sebas": "res://assets/portraits/sebas_v4.tres"
+	"Sebas": "res://assets/portraits/sebas_v4.tres",
+	"Tutor": "res://assets/portraits/tutor_v1.tres"
 }
 
 var auto_action: Callable = Callable()
@@ -91,7 +93,8 @@ func can_click_advance(point: Vector2) -> bool:
 func reading_seconds(text_value: String) -> float:
 	var words: int = dialogue_text(text_value).split(" ", false).size()
 	var factor: float = {"slow": 1.35, "normal": 1.0, "fast": 0.75}.get(GameState.dialogue_speed, 1.0)
-	return maxf(4.0, (1.8 + words / 2.6) * factor)
+	# Lectura más pausada: el feedback indicó escenas que se sentían demasiado cortas.
+	return maxf(5.0, (2.4 + words / 2.3) * factor)
 
 func arm_auto(action: Callable, text_value: String) -> void:
 	if not action.is_valid(): return
@@ -111,6 +114,16 @@ func arm_auto(action: Callable, text_value: String) -> void:
 	auto_progress.add_theme_stylebox_override("background", track)
 	auto_progress.add_theme_stylebox_override("fill", fill)
 	add_child(auto_progress)
+	var hint := Label.new()
+	hint.name = "ClickHint"
+	hint.text = "Clic en el recuadro o Enter para continuar ▸"
+	hint.position = Vector2(520, 412)
+	hint.size = Vector2(214, 18)
+	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hint.add_theme_font_size_override("font_size", 11)
+	hint.add_theme_color_override("font_color", Color("8a6496"))
+	add_child(hint)
 
 func _process(delta: float) -> void:
 	if not visible or not auto_action.is_valid(): return
@@ -391,6 +404,41 @@ func show_scene(background_key: String, title: String, speaker: String, line: St
 	scroll.add_child(text_label)
 	if next_action.is_valid(): arm_auto(next_action, line)
 	return text_label
+
+func show_advice(speaker: String, text_value: String) -> void:
+	# Consejo superpuesto a las opciones: orienta sin elegir por el jugador.
+	var previous := get_node_or_null("AdvicePanel")
+	if is_instance_valid(previous):
+		remove_child(previous)
+		previous.queue_free()
+	var panel := _panel(Rect2(60, 52, 648, 132), Color("fff6dcf5"), Color("e2ad36"), 12)
+	panel.name = "AdvicePanel"
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var avatar := TextureRect.new()
+	avatar.texture = load(AVATARS.get(speaker, AVATARS.Sofi)) as Texture2D
+	avatar.position = Vector2(12, 14)
+	avatar.size = Vector2(100, 100)
+	avatar.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	avatar.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	avatar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.add_child(avatar)
+	avatar.size = Vector2(100, 100)
+	var title := Label.new()
+	title.text = "Consejo del " + speaker.to_lower()
+	title.position = Vector2(126, 10)
+	title.add_theme_font_size_override("font_size", 15)
+	title.add_theme_color_override("font_color", Color("8a5a12"))
+	panel.add_child(title)
+	var body := Label.new()
+	body.name = "AdviceText"
+	body.text = dialogue_text(text_value)
+	body.position = Vector2(126, 34)
+	body.size = Vector2(508, 92)
+	body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	body.add_theme_font_size_override("font_size", 14)
+	body.add_theme_color_override("font_color", Color("44304f"))
+	panel.add_child(body)
+	body.size = Vector2(508, 92)
 
 func _chat_message(list: VBoxContainer, speaker: String, message: String, font_size: int) -> Label:
 	var row := HBoxContainer.new()
