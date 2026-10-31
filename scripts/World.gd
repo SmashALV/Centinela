@@ -473,13 +473,17 @@ func _draw_shoe(pos: Vector2) -> void:
 
 func _draw_story_target(key: String, pos: Vector2, active: bool) -> void:
 	var color := Color("f5d479") if active else Color("8ec9c2")
+	var is_character: bool = key.capitalize() in CHARACTER_SHEETS
+	var target_pos: Vector2 = pos
+	if is_character: pos = actor_display.get(key, target_pos)
+	# Un solo aro por objetivo: el halo del objetivo principal sustituye al aro simple y sigue al personaje.
 	if key == story_primary_target:
 		_draw_target_glow(pos, key)
-	if key.capitalize() in CHARACTER_SHEETS:
-		var shown: Vector2 = actor_display.get(key, pos)
-		var walking: bool = shown.distance_to(pos) > 1.0
-		_draw_character(shown, key.capitalize(), _walk_facing(shown, pos) if walking else _idle_facing(key, shown), false, true, walking)
-		pos = shown
+	elif routine_mode and key in ["friends", "meal", "lesson"]:
+		draw_arc(pos, 20, 0, TAU, 24, color, 2)
+	if is_character:
+		var walking: bool = pos.distance_to(target_pos) > 1.0
+		_draw_character(pos, key.capitalize(), _walk_facing(pos, target_pos) if walking else _idle_facing(key, pos), false, true, walking)
 	elif key == "tutoria":
 		# El tutor espera junto a la puerta de tutoría.
 		draw_texture_rect(OBJECT_SPRITES.tutoria, Rect2(pos + Vector2(-62, -40), Vector2(48, 54)), false)
@@ -487,7 +491,7 @@ func _draw_story_target(key: String, pos: Vector2, active: bool) -> void:
 	elif routine_mode and key in ["bed", "photo", "backpack"]:
 		if key != "bed": draw_texture_rect(OBJECT_SPRITES[key], Rect2(pos - Vector2(23, 23), Vector2(46, 46)), false)
 	elif routine_mode and key in ["friends", "meal", "lesson"]:
-		draw_arc(pos, 20, 0, TAU, 24, color, 2)
+		pass
 	else:
 		draw_rect(Rect2(pos - Vector2(21, 20), Vector2(42, 40)), Color("193448", 0.88), true)
 		draw_rect(Rect2(pos - Vector2(21, 20), Vector2(42, 40)), color, false, 2.0)
@@ -526,8 +530,10 @@ func _draw_target_glow(pos: Vector2, key: String) -> void:
 		draw_rect(bed_rect, Color(1.0, 0.85, 0.3, 0.12 + 0.1 * pulse))
 		draw_rect(bed_rect, Color("ffd84d"), false, 3.0)
 		return
-	draw_circle(pos + Vector2(0, 12), 24.0 + pulse * 6.0, Color(1.0, 0.85, 0.3, 0.18 + 0.22 * pulse))
-	draw_arc(pos + Vector2(0, 12), 26.0 + pulse * 6.0, 0, TAU, 32, Color("ffd84d"), 2.5)
+	# En personajes el halo rodea los pies; en objetos, el centro.
+	var center: Vector2 = pos + (Vector2(0, 12) if key.capitalize() in CHARACTER_SHEETS or key == "tutoria" else Vector2.ZERO)
+	draw_circle(center, 24.0 + pulse * 6.0, Color(1.0, 0.85, 0.3, 0.18 + 0.22 * pulse))
+	draw_arc(center, 26.0 + pulse * 6.0, 0, TAU, 32, Color("ffd84d"), 2.5)
 
 func _draw_press_prompt(pos: Vector2) -> void:
 	draw_rect(Rect2(pos + Vector2(-34, 0), Vector2(68, 20)), Color("ffd84d"))

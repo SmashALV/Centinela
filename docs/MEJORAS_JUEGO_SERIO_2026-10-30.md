@@ -29,7 +29,7 @@ Fuente: checklist elaborado a partir del audio de retroalimentación y el requer
 
 **NPC.** Los amigos respiran, dan un saltito ocasional, cambian de postura cada pocos segundos y miran a Sofi cuando se acerca. Después de conversar, cada compañero camina a otro punto del patio. En la despedida se alejan caminando con balanceo de pasos.
 
-**Sonido.** La campana se rediseñó como timbre escolar eléctrico de 2,6 s. Suena al llegar al colegio y justo cuando el narrador la menciona en clase, ya no después de terminar la escena. Nuevos efectos: recoger objeto, puerta al cambiar de lugar, notificación de mensajes y transición al dormir; además, sonido de interacción en la rutina. Se regeneran con `python scripts/generate_audio.py`.
+**Sonido.** Al llegar al colegio suena un timbre eléctrico nuevo (`arrival_bell.wav`). El fin de clase conserva el timbre original (`school_bell.wav`), que ahora suena justo cuando el narrador lo menciona, ya no después de terminar la escena. Nuevos efectos: recoger objeto, puerta al cambiar de lugar, notificación de mensajes y transición al dormir; además, sonido de interacción en la rutina. Se regeneran con `python scripts/generate_audio.py`.
 
 ## Verificación
 

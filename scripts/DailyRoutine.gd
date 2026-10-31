@@ -186,7 +186,7 @@ func go(stage: String, place: String, position: Vector2, scene := "") -> bool:
 	_phase_for_place()
 	var saved: bool = await _commit(previous)
 	if saved and from_place != place:
-		AudioManager.play_effect("school_bell" if place == "school" and stage == "arrival" and from_place == "street" else "door")
+		AudioManager.play_effect("arrival_bell" if place == "school" and stage == "arrival" and from_place == "street" else "door")
 	return saved
 
 func boundary(edge: String) -> void:

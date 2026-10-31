@@ -56,7 +56,22 @@ def effect(start_hz: float, end_hz: float, duration: float, gain: float) -> byte
 
 
 def school_bell() -> bytes:
-    """Timbre escolar eléctrico: parciales metálicos con badajo rápido (~18 Hz)."""
+    """Timbre de fin de clase: golpes metálicos espaciados (sonido original)."""
+    duration = 1.8
+    samples = []
+    for index in range(round(duration * RATE)):
+        t = index / RATE
+        pulse = t % 0.45
+        envelope = min(1.0, pulse / 0.006) * math.exp(-8 * pulse)
+        fade = min(1.0, (duration - t) / 0.25)
+        metallic = sum(math.sin(math.tau * frequency * t) * gain for frequency, gain in
+                       [(1480, 0.45), (2105, 0.27), (2985, 0.16), (3890, 0.08)])
+        samples.append(metallic * envelope * fade * 0.30)
+    return wav_bytes(samples)
+
+
+def arrival_bell() -> bytes:
+    """Timbre de entrada eléctrico: parciales metálicos con badajo rápido (~18 Hz)."""
     duration = 2.6
     samples = []
     for index in range(round(duration * RATE)):
@@ -102,6 +117,7 @@ def door() -> bytes:
 def assets() -> dict[str, bytes]:
     return {
         "school_bell.wav": school_bell(),
+        "arrival_bell.wav": arrival_bell(),
         "explore_loop.wav": loop(
             [392, 440, 523.25, 440, 349.23, 392, 440, 0,
              392, 440, 523.25, 587.33, 523.25, 440, 392, 0],
