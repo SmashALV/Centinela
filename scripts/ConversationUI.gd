@@ -18,7 +18,9 @@ const SPRITES := {
 	"Camila": "res://assets/vn/camila_v4.png",
 	"Bruno": "res://assets/vn/bruno_v4.png",
 	"Sebas": "res://assets/vn/sebas_v4.png",
-	"Tutor": "res://assets/vn/tutor_v1.png"
+	"Tutor": "res://assets/vn/tutor_v2.png",
+	# El profesor de la clase es el mismo docente que atiende la tutoría.
+	"Profesor": "res://assets/vn/tutor_v2.png"
 }
 const AVATARS := {
 	"Kairo": "res://assets/portraits/kairo_v4.tres",
@@ -27,7 +29,8 @@ const AVATARS := {
 	"Camila": "res://assets/portraits/camila_v4.tres",
 	"Bruno": "res://assets/portraits/bruno_v4.tres",
 	"Sebas": "res://assets/portraits/sebas_v4.tres",
-	"Tutor": "res://assets/portraits/tutor_v1.tres"
+	"Tutor": "res://assets/portraits/tutor_v2.tres",
+	"Profesor": "res://assets/portraits/tutor_v2.tres"
 }
 
 var auto_action: Callable = Callable()
@@ -117,8 +120,8 @@ func arm_auto(action: Callable, text_value: String) -> void:
 	var hint := Label.new()
 	hint.name = "ClickHint"
 	hint.text = "Clic en el recuadro o Enter para continuar ▸"
-	hint.position = Vector2(520, 412)
-	hint.size = Vector2(214, 18)
+	hint.position = Vector2(440, 412)
+	hint.size = Vector2(284, 18)
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hint.add_theme_font_size_override("font_size", 11)

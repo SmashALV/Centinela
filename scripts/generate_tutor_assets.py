@@ -1,5 +1,8 @@
-"""Genera los recursos provisionales del tutor: hoja de 4 vistas para el mapa,
-ilustración de novela visual y avatar. Son reemplazables (ver docs/ASSETS.md).
+"""Genera los recursos de mapa del profesor tutor a partir de su ilustración.
+
+La ilustración de novela visual (`assets/vn/tutor_v2.png`) es arte entregado por
+el equipo. Este script produce la hoja de cuatro vistas en pixel art para el mapa
+y el recorte de avatar, con la paleta tomada de esa ilustración.
 
 Uso: python scripts/generate_tutor_assets.py
 """
@@ -8,27 +11,35 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from PIL import Image, ImageDraw, ImageFilter
+from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
 
-OUTLINE = (43, 32, 51, 255)
-HAIR = (74, 52, 38, 255)
-HAIR_LIGHT = (104, 76, 56, 255)
-SKIN = (217, 162, 122, 255)
-SKIN_SHADOW = (185, 128, 88, 255)
-CARDIGAN = (63, 143, 138, 255)
-CARDIGAN_SHADOW = (47, 111, 107, 255)
-SHIRT = (242, 239, 230, 255)
-LANYARD = (226, 173, 54, 255)
-CARD = (250, 250, 245, 255)
-PANTS = (107, 90, 72, 255)
-PANTS_SHADOW = (84, 70, 58, 255)
-SHOES = (58, 43, 43, 255)
-LENS = (196, 226, 236, 255)
+# Paleta muestreada de assets/vn/tutor_v2.png
+OUTLINE = (34, 26, 30, 255)
+HAIR = (92, 88, 90, 255)
+HAIR_LIGHT = (150, 146, 148, 255)
+HAIR_DARK = (60, 56, 60, 255)
+SKIN = (198, 136, 88, 255)
+SKIN_SHADOW = (160, 100, 62, 255)
+EYE = (70, 40, 24, 255)
+GLASSES = (52, 48, 52, 255)
+LENS = (214, 226, 230, 255)
+CARDIGAN = (34, 72, 48, 255)
+CARDIGAN_LIGHT = (52, 98, 66, 255)
+CARDIGAN_DARK = (22, 50, 34, 255)
+BUTTON = (96, 62, 44, 255)
+SHIRT = (250, 234, 206, 255)
+SHIRT_SHADOW = (222, 200, 168, 255)
+BELT = (70, 44, 36, 255)
+PANTS = (166, 138, 100, 255)
+PANTS_SHADOW = (128, 104, 74, 255)
+SHOES = (58, 40, 37, 255)
+FOLDER = (39, 66, 150, 255)
+FOLDER_EDGE = (200, 204, 216, 255)
 
+W, H = 32, 46
 
-# --- Hoja de mapa en pixel art (cuatro vistas, misma disposición que los compañeros) ---
 
 def _rect(px: dict, x0: int, y0: int, x1: int, y1: int, color: tuple) -> None:
     for x in range(x0, x1 + 1):
@@ -36,168 +47,179 @@ def _rect(px: dict, x0: int, y0: int, x1: int, y1: int, color: tuple) -> None:
             px[(x, y)] = color
 
 
-def _figure(facing: str) -> Image.Image:
-    w, h = 32, 44
+def _mirror(px: dict) -> dict:
+    return {(W - 1 - x, y): c for (x, y), c in px.items()}
+
+
+def _legs(px: dict, side: bool) -> None:
+    if side:
+        _rect(px, 13, 32, 18, 41, PANTS)
+        _rect(px, 13, 32, 14, 41, PANTS_SHADOW)
+        _rect(px, 12, 42, 19, 43, SHOES)
+        return
+    _rect(px, 10, 32, 15, 41, PANTS)
+    _rect(px, 17, 32, 22, 41, PANTS)
+    _rect(px, 15, 33, 16, 41, PANTS_SHADOW)
+    _rect(px, 10, 32, 11, 41, PANTS_SHADOW)
+    _rect(px, 9, 42, 15, 43, SHOES)
+    _rect(px, 17, 42, 23, 43, SHOES)
+
+
+def _front() -> dict:
     px: dict = {}
-    side = facing in ("left", "right")
-    # Piernas y zapatos
-    if side:
-        _rect(px, 13, 32, 18, 40, PANTS)
-        _rect(px, 13, 32, 14, 40, PANTS_SHADOW)
-        _rect(px, 12, 41, 19, 42, SHOES)
-    else:
-        _rect(px, 10, 32, 14, 40, PANTS)
-        _rect(px, 17, 32, 21, 40, PANTS)
-        _rect(px, 15, 32, 16, 34, PANTS_SHADOW)
-        _rect(px, 9, 41, 14, 42, SHOES)
-        _rect(px, 17, 41, 22, 42, SHOES)
-    # Torso con cárdigan
-    if side:
-        _rect(px, 11, 19, 20, 32, CARDIGAN)
-        _rect(px, 11, 19, 12, 32, CARDIGAN_SHADOW)
-        _rect(px, 14, 21, 17, 31, CARDIGAN_SHADOW)
-        _rect(px, 13, 32, 16, 33, SKIN)  # mano
-    else:
-        _rect(px, 8, 19, 23, 32, CARDIGAN)
-        _rect(px, 6, 20, 8, 31, CARDIGAN_SHADOW)
-        _rect(px, 23, 20, 25, 31, CARDIGAN_SHADOW)
-        _rect(px, 6, 32, 8, 33, SKIN)
-        _rect(px, 23, 32, 25, 33, SKIN)
-        if facing == "down":
-            _rect(px, 13, 19, 18, 31, SHIRT)
-            for y in range(20, 27):  # cordón de identificación
-                px[(13 + (y - 20) // 3, y)] = LANYARD
-                px[(18 - (y - 20) // 3, y)] = LANYARD
-            _rect(px, 14, 27, 17, 30, CARD)
-            _rect(px, 15, 28, 16, 28, CARDIGAN)
+    _legs(px, False)
+    # Torso: cárdigan abierto en V, camisa con cuello, cinturón
+    _rect(px, 8, 19, 24, 31, CARDIGAN)
+    _rect(px, 8, 19, 9, 31, CARDIGAN_DARK)
+    _rect(px, 23, 19, 24, 31, CARDIGAN_DARK)
+    _rect(px, 8, 30, 24, 31, CARDIGAN_LIGHT)  # puño del cárdigan
+    for y in range(19, 27):
+        half = max(0, 3 - (y - 19) // 3)
+        _rect(px, 16 - half - 1, y, 16 + half, y, SHIRT)
+    _rect(px, 13, 19, 14, 20, SHIRT_SHADOW)  # cuello
+    _rect(px, 17, 19, 18, 20, SHIRT_SHADOW)
+    for y in (24, 27, 30):
+        px[(16, y)] = BUTTON
+    _rect(px, 10, 32, 22, 32, BELT)
+    # Brazos: izquierdo gesticula, derecho sostiene la carpeta azul
+    _rect(px, 5, 20, 7, 28, CARDIGAN)
+    _rect(px, 5, 20, 5, 28, CARDIGAN_DARK)
+    _rect(px, 4, 29, 7, 30, SKIN)
+    _rect(px, 25, 20, 27, 27, CARDIGAN)
+    _rect(px, 27, 20, 27, 27, CARDIGAN_DARK)
+    _rect(px, 22, 22, 28, 31, FOLDER)
+    _rect(px, 28, 22, 28, 31, FOLDER_EDGE)
+    _rect(px, 23, 26, 25, 27, SKIN)
     # Cabeza
-    _rect(px, 10, 6, 21, 18, SKIN)
-    _rect(px, 13, 18, 18, 19, SKIN_SHADOW)
-    if facing == "up":
-        _rect(px, 9, 3, 22, 16, HAIR)
-        _rect(px, 11, 4, 18, 6, HAIR_LIGHT)
-    else:
-        _rect(px, 9, 3, 22, 7, HAIR)
-        _rect(px, 11, 3, 17, 4, HAIR_LIGHT)
-        if facing == "down":
-            _rect(px, 9, 7, 10, 12, HAIR)
-            _rect(px, 21, 7, 22, 12, HAIR)
-            # Gafas y ojos
-            _rect(px, 11, 10, 14, 13, OUTLINE)
-            _rect(px, 17, 10, 20, 13, OUTLINE)
-            _rect(px, 12, 11, 13, 12, LENS)
-            _rect(px, 18, 11, 19, 12, LENS)
-            _rect(px, 15, 11, 16, 11, OUTLINE)
-            px[(13, 12)] = OUTLINE
-            px[(18, 12)] = OUTLINE
-            _rect(px, 14, 16, 17, 16, SKIN_SHADOW)  # sonrisa
-        else:
-            back = 21 if facing == "left" else 10
-            front = 10 if facing == "left" else 21
-            step = -1 if facing == "left" else 1
-            _rect(px, min(back, back - 3 * step), 7, max(back, back - 3 * step), 13, HAIR)
-            _rect(px, min(front, front - 3 * step), 10, max(front, front - 3 * step), 13, OUTLINE)
-            px[(front - step, 11)] = LENS
-            px[(front - 2 * step, 11)] = LENS
-            px[(front + step, 14)] = SKIN  # nariz
-            px[(front - step, 16)] = SKIN_SHADOW
-            px[(back - step, 11)] = SKIN_SHADOW  # oreja
-    img = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    _rect(px, 10, 7, 21, 18, SKIN)
+    _rect(px, 14, 18, 18, 19, SKIN_SHADOW)
+    _rect(px, 9, 11, 9, 14, SKIN_SHADOW)
+    _rect(px, 22, 11, 22, 14, SKIN_SHADOW)
+    # Cabello gris en mechones
+    _rect(px, 9, 4, 22, 8, HAIR)
+    _rect(px, 9, 8, 10, 11, HAIR)
+    _rect(px, 21, 8, 22, 11, HAIR)
+    for x, y in ((10, 3), (13, 2), (16, 3), (19, 2), (22, 3), (8, 5), (23, 6)):
+        px[(x, y)] = HAIR
+    _rect(px, 12, 4, 17, 5, HAIR_LIGHT)
+    _rect(px, 19, 6, 21, 7, HAIR_DARK)
+    # Gafas rectangulares y ojos
+    _rect(px, 11, 11, 14, 13, GLASSES)
+    _rect(px, 17, 11, 20, 13, GLASSES)
+    _rect(px, 12, 12, 13, 12, LENS)
+    _rect(px, 18, 12, 19, 12, LENS)
+    _rect(px, 15, 11, 16, 11, GLASSES)
+    px[(13, 12)] = EYE
+    px[(18, 12)] = EYE
+    _rect(px, 14, 16, 17, 16, SKIN_SHADOW)  # sonrisa
+    return px
+
+
+def _back() -> dict:
+    px: dict = {}
+    _legs(px, False)
+    _rect(px, 8, 19, 24, 31, CARDIGAN)
+    _rect(px, 8, 19, 9, 31, CARDIGAN_DARK)
+    _rect(px, 23, 19, 24, 31, CARDIGAN_DARK)
+    _rect(px, 8, 30, 24, 31, CARDIGAN_LIGHT)
+    _rect(px, 14, 19, 18, 19, SHIRT)  # cuello de la camisa
+    _rect(px, 5, 20, 7, 28, CARDIGAN_DARK)
+    _rect(px, 25, 20, 27, 28, CARDIGAN_DARK)
+    _rect(px, 4, 29, 7, 30, SKIN)
+    _rect(px, 3, 22, 4, 31, FOLDER)
+    _rect(px, 25, 29, 27, 30, SKIN)
+    _rect(px, 10, 7, 21, 18, HAIR)
+    _rect(px, 13, 17, 18, 18, SKIN_SHADOW)  # nuca
+    _rect(px, 9, 4, 22, 14, HAIR)
+    for x, y in ((10, 3), (13, 2), (16, 3), (19, 2), (22, 3)):
+        px[(x, y)] = HAIR
+    _rect(px, 12, 5, 18, 7, HAIR_LIGHT)
+    # Brillos sueltos y borde inferior irregular en la nuca
+    for x, y in ((11, 9), (13, 11), (16, 9), (18, 12), (20, 10), (14, 14), (19, 14)):
+        px[(x, y)] = HAIR_LIGHT
+    for x in range(10, 22, 2):
+        px[(x, 15)] = HAIR
+    for corner in ((9, 4), (22, 4), (9, 14), (22, 14), (9, 13), (22, 13)):  # contorno redondeado
+        px.pop(corner, None)
+    _rect(px, 12, 5, 18, 7, HAIR)
+    for x, y in ((12, 5), (15, 6), (17, 5)):
+        px[(x, y)] = HAIR_LIGHT
+    return px
+
+
+def _side_left() -> dict:
+    px: dict = {}
+    _legs(px, True)
+    _rect(px, 11, 19, 20, 31, CARDIGAN)
+    _rect(px, 19, 19, 20, 31, CARDIGAN_DARK)
+    _rect(px, 11, 30, 20, 31, CARDIGAN_LIGHT)
+    _rect(px, 11, 19, 12, 24, SHIRT)  # camisa visible al frente
+    _rect(px, 11, 32, 20, 32, BELT)
+    # Brazo con la carpeta pegada al cuerpo
+    _rect(px, 14, 21, 17, 29, CARDIGAN_DARK)
+    _rect(px, 12, 23, 15, 31, FOLDER)
+    _rect(px, 12, 23, 12, 31, FOLDER_EDGE)
+    _rect(px, 14, 28, 16, 29, SKIN)
+    # Cabeza de perfil mirando a la izquierda
+    _rect(px, 10, 7, 20, 18, SKIN)
+    px[(9, 13)] = SKIN  # nariz
+    px[(9, 14)] = SKIN_SHADOW
+    _rect(px, 14, 18, 18, 19, SKIN_SHADOW)
+    _rect(px, 11, 4, 22, 8, HAIR)
+    _rect(px, 16, 8, 21, 14, HAIR)
+    for x, y in ((12, 3), (15, 2), (18, 3), (21, 2), (23, 5), (22, 9)):
+        px[(x, y)] = HAIR
+    _rect(px, 13, 4, 17, 5, HAIR_LIGHT)
+    for x in (18, 20):
+        _rect(px, x, 9, x, 12, HAIR_DARK)
+    _rect(px, 16, 11, 17, 13, SKIN_SHADOW)  # oreja
+    _rect(px, 10, 11, 14, 11, GLASSES)  # patilla y lente
+    _rect(px, 10, 12, 12, 13, GLASSES)
+    px[(11, 12)] = LENS
+    px[(12, 12)] = EYE
+    _rect(px, 11, 16, 12, 16, SKIN_SHADOW)
+    return px
+
+
+def _render(px: dict) -> Image.Image:
+    img = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     for (x, y), color in px.items():
-        if 0 <= x < w and 0 <= y < h:
+        if 0 <= x < W and 0 <= y < H:
             img.putpixel((x, y), color)
-    # Contorno de un píxel alrededor de la silueta
-    outline = img.copy()
     for (x, y) in list(px):
         for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
             nx, ny = x + dx, y + dy
-            if 0 <= nx < w and 0 <= ny < h and (nx, ny) not in px:
-                outline.putpixel((nx, ny), OUTLINE)
-    return outline
+            if 0 <= nx < W and 0 <= ny < H and (nx, ny) not in px:
+                img.putpixel((nx, ny), OUTLINE)
+    return img
 
 
 def direction_sheet() -> Image.Image:
+    # Cuadrícula 2×2 como los compañeros: frente, espalda, izquierda, derecha.
     cell = 320
     sheet = Image.new("RGBA", (cell * 2, cell * 2), (0, 0, 0, 0))
-    for index, facing in enumerate(["down", "up", "left", "right"]):
-        figure = _figure(facing).resize((32 * 6, 44 * 6), Image.NEAREST)
+    views = [_front(), _back(), _side_left(), _mirror(_side_left())]
+    for index, view in enumerate(views):
+        figure = _render(view).resize((W * 6, H * 6), Image.NEAREST)
         cx, cy = (index % 2) * cell, (index // 2) * cell
         sheet.alpha_composite(figure, (cx + (cell - figure.width) // 2, cy + (cell - figure.height) // 2))
     return sheet
 
 
-# --- Ilustración de novela visual (1024×1536, mismo encuadre que los compañeros) ---
-
-def portrait() -> Image.Image:
-    scale = 2
-    W, H = 1024 * scale, 1536 * scale
-    img = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-    d = ImageDraw.Draw(img)
-    S = lambda *v: [c * scale for c in v]
-    lw = 7 * scale
-    # Piernas
-    d.rectangle(S(340, 1230, 500, 1536), fill=PANTS, outline=OUTLINE, width=lw)
-    d.rectangle(S(524, 1230, 684, 1536), fill=PANTS, outline=OUTLINE, width=lw)
-    # Torso y cárdigan
-    d.polygon(S(250, 640, 774, 640, 820, 1260, 204, 1260), fill=CARDIGAN, outline=OUTLINE, width=lw)
-    d.polygon(S(420, 640, 604, 640, 560, 1240, 464, 1240), fill=SHIRT, outline=OUTLINE, width=lw)
-    d.polygon(S(420, 640, 512, 760, 604, 640), fill=SKIN_SHADOW, outline=OUTLINE, width=lw)
-    # Mangas y manos que sostienen una carpeta
-    d.polygon(S(250, 650, 160, 1000, 250, 1060, 330, 760), fill=CARDIGAN_SHADOW, outline=OUTLINE, width=lw)
-    d.polygon(S(774, 650, 864, 1000, 774, 1060, 694, 760), fill=CARDIGAN_SHADOW, outline=OUTLINE, width=lw)
-    d.rounded_rectangle(S(300, 930, 560, 1130), radius=18 * scale, fill=(116, 92, 156, 255), outline=OUTLINE, width=lw)
-    d.rectangle(S(320, 960, 540, 975), fill=(222, 206, 240, 255))
-    d.ellipse(S(220, 980, 330, 1080), fill=SKIN, outline=OUTLINE, width=lw)
-    d.ellipse(S(520, 990, 620, 1080), fill=SKIN, outline=OUTLINE, width=lw)
-    # Cordón y credencial
-    d.line(S(440, 660, 500, 900), fill=LANYARD, width=12 * scale)
-    d.line(S(584, 660, 524, 900), fill=LANYARD, width=12 * scale)
-    d.rounded_rectangle(S(462, 880, 562, 1000), radius=10 * scale, fill=CARD, outline=OUTLINE, width=5 * scale)
-    d.rectangle(S(480, 900, 544, 930), fill=CARDIGAN)
-    d.line(S(480, 950, 544, 950), fill=OUTLINE, width=4 * scale)
-    d.line(S(480, 970, 530, 970), fill=OUTLINE, width=4 * scale)
-    # Cuello y cabeza
-    d.rectangle(S(452, 560, 572, 680), fill=SKIN_SHADOW, outline=OUTLINE, width=lw)
-    d.ellipse(S(330, 230, 694, 640), fill=SKIN, outline=OUTLINE, width=lw)
-    d.ellipse(S(304, 400, 360, 500), fill=SKIN, outline=OUTLINE, width=lw)
-    d.ellipse(S(664, 400, 720, 500), fill=SKIN, outline=OUTLINE, width=lw)
-    # Cabello corto con raya al costado y algunas canas
-    d.pieslice(S(316, 180, 708, 520), 180, 360, fill=HAIR, outline=OUTLINE, width=lw)
-    d.polygon(S(330, 350, 360, 470, 380, 350), fill=HAIR, outline=OUTLINE, width=lw)
-    d.polygon(S(694, 350, 664, 470, 644, 350), fill=HAIR, outline=OUTLINE, width=lw)
-    d.arc(S(420, 210, 640, 360), 200, 300, fill=(160, 150, 145, 255), width=8 * scale)
-    d.arc(S(380, 230, 560, 380), 210, 290, fill=HAIR_LIGHT, width=10 * scale)
-    # Cejas, ojos tras gafas, nariz, sonrisa y mejillas
-    d.line(S(400, 395, 470, 385), fill=OUTLINE, width=9 * scale)
-    d.line(S(554, 385, 624, 395), fill=OUTLINE, width=9 * scale)
-    for x in (390, 534):
-        d.rounded_rectangle(S(x, 410, x + 100, 482), radius=22 * scale, fill=(220, 236, 240, 255), outline=OUTLINE, width=8 * scale)
-        d.ellipse(S(x + 32, 425, x + 68, 468), fill=(70, 54, 44, 255))
-        d.ellipse(S(x + 44, 432, x + 54, 444), fill=(255, 255, 255, 255))
-    d.line(S(490, 440, 534, 440), fill=OUTLINE, width=7 * scale)
-    d.line(S(512, 470, 500, 530), fill=SKIN_SHADOW, width=7 * scale)
-    d.arc(S(450, 520, 574, 590), 20, 160, fill=OUTLINE, width=8 * scale)
-    d.ellipse(S(380, 500, 440, 540), fill=(232, 150, 140, 110))
-    d.ellipse(S(584, 500, 644, 540), fill=(232, 150, 140, 110))
-    img = img.filter(ImageFilter.SMOOTH)
-    return img.resize((1024, 1536), Image.LANCZOS)
-
-
 AVATAR_TRES = """[gd_resource type="AtlasTexture" load_steps=2 format=3]
 
-[ext_resource type="Texture2D" path="res://assets/vn/tutor_v1.png" id="1"]
+[ext_resource type="Texture2D" path="res://assets/vn/tutor_v2.png" id="1"]
 
 [resource]
 atlas = ExtResource("1")
-region = Rect2(262, 170, 500, 500)
+region = Rect2(262, 40, 500, 500)
 """
 
 
 def main() -> None:
     direction_sheet().save(ROOT / "assets" / "characters" / "tutor_directions.png")
-    portrait().save(ROOT / "assets" / "vn" / "tutor_v1.png")
-    (ROOT / "assets" / "portraits" / "tutor_v1.tres").write_text(AVATAR_TRES, encoding="utf-8")
-    print("PASS tutor_directions.png, tutor_v1.png, tutor_v1.tres")
+    (ROOT / "assets" / "portraits" / "tutor_v2.tres").write_text(AVATAR_TRES, encoding="utf-8", newline="\n")
+    print("PASS tutor_directions.png, tutor_v2.tres")
 
 
 if __name__ == "__main__":
