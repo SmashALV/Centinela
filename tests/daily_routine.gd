@@ -54,6 +54,8 @@ func _ready() -> void:
 func _run() -> void:
 	main = preload("res://scenes/Main.tscn").instantiate()
 	get_tree().root.add_child(main)
+	var routine_errors: Array[String] = preload("res://scripts/routine/RoutineCatalog.gd").validate()
+	check(routine_errors.is_empty(), "textos de la rutina en JSON válidos " + str(routine_errors))
 	main.set_process(false)
 	main.world.set_physics_process(false)
 	main.daily.set_process(false)
