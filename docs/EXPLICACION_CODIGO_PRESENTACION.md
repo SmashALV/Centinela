@@ -4,7 +4,7 @@ Documento de apoyo para explicar el código en una exposición. Cada sección di
 
 **Diagramas de apoyo** (abrir en el navegador):
 
-- Arquitectura: `.archify/architecture-centinela-v043-20261102/centinela-arquitectura-v043.html`
+- Arquitectura modular: `.archify/architecture-centinela-modular-20261103/centinela-arquitectura-modular.html`
 - Ramas de la historia hasta cada final: `.archify/workflow-ramas-conversacion-20261102/centinela-ramas-conversacion.html`
 
 ---
@@ -17,7 +17,8 @@ Documento de apoyo para explicar el código en una exposición. Cada sección di
 
 | Pieza | Archivo | Para qué sirve |
 |---|---|---|
-| Escena principal | `scenes/Main.tscn` + `scripts/Main.gd` | Coordina todo: menú, HUD, pantallas, historia y MOBA |
+| Escena principal | `scenes/Main.tscn` + `scripts/Main.gd` | Coordinador: crea los módulos, recibe la entrada del jugador y enruta las interacciones |
+| Módulos | `scripts/ui/`, `scripts/story/`, `scripts/game/`, `scripts/world/`, `scripts/routine/` | Menú, HUD, pausa, historia, reglas, inventario, mapas, indicadores y animación (ver sección 12) |
 | Rutina diaria | `scripts/DailyRoutine.gd` | Etapas del día (mañana → colegio → tarde → noche) y lugares |
 | Mundo | `scripts/World.gd` | Mapas, movimiento con colisiones, flecha de objetivo y animación de personajes |
 | Conversaciones | `scripts/ConversationUI.gd` | Novela visual, chat de grupo, mensajes directos y consejo del tutor |
@@ -35,9 +36,9 @@ Un **autoload** es un script que Godot carga una sola vez al iniciar y que cualq
 ## 3. Arranque del juego
 
 1. Godot abre `Main.tscn` (configurado en `project.godot`).
-2. `Main._ready()` crea el mundo (`World`), la rutina (`DailyRoutine`), la interfaz de conversaciones y el escritorio, y carga el guion coral.
-3. Se muestra el **menú de tres ranuras**. Al elegir una, `_start_slot()` crea una partida nueva o restaura la guardada.
-4. `_load_phase()` decide qué mostrar según el estado guardado. Con la rutina activa, delega en `DailyRoutine.load_view()`.
+2. `Main._ready()` llama a `_create_modules()`, que crea los módulos (menú, HUD, historia, pausa…). Después crea el mundo (`World`), la rutina (`DailyRoutine`) y las pantallas, y carga el guion coral.
+3. Se muestra el **menú de tres ranuras** (`ui/MainMenu.gd`). Al elegir una, `menu.start_slot()` crea una partida nueva o restaura la guardada.
+4. `router.load_phase()` (`game/PhaseRouter.gd`) decide qué mostrar según el estado guardado. Con la rutina activa, delega en `DailyRoutine.load_view()`.
 
 **Qué decir:** «Todo parte de una escena principal que crea los sistemas y, al elegir una ranura, recupera exactamente dónde se quedó el jugador».
 
@@ -94,15 +95,16 @@ Los **bordes del mapa** funcionan como puertas. `boundary(edge)` decide a dónde
 ## 6. El inventario de la mochila
 
 ```gdscript
-func _pick_up_item(item: String, flag: String, message: String) -> void:
+# scripts/game/Inventory.gd
+func pick_up(item: String, flag: String, message: String) -> void:
 	if GameState.has_item(item):
-		_toast("Ya llevas la " + item + " en tu inventario")
+		main._toast("Ya llevas la " + item + " en tu inventario")
 		return
 	var previous: Dictionary = GameState.snapshot()
 	GameState.add_item(item)
 	...
 	if await SaveManager.save_slot_async():
-		world.objects.erase(flag)          # desaparece del cuarto
+		main.world.objects.erase(flag)          # desaparece del cuarto
 		...
 		AudioManager.play_effect("pickup")
 ```
@@ -128,10 +130,11 @@ En cualquier día, la **tutoría** permite pedir apoyo adulto, y el día 4 la **
 
 ## 8. Reglas educativas: clasificación y final
 
-Cada respuesta se clasifica como *protectora*, *protectora con límite* o *de riesgo* (`CHOICE_BEHAVIOR`). Al final se muestra el perfil completo, decisión por decisión. El final sale de **lo que el jugador hizo**:
+Cada respuesta se clasifica como *protectora*, *protectora con límite* o *de riesgo* (`CHOICE_BEHAVIOR` en `scripts/story/BehaviorRules.gd`). Al final se muestra el perfil completo, decisión por decisión. El final sale de **lo que el jugador hizo**:
 
 ```gdscript
-func ending_for(state: Dictionary) -> String:
+# scripts/story/BehaviorRules.gd
+static func ending_for(state: Dictionary) -> String:
 	# Pedir apoyo adulto nunca se bloquea por respuestas anteriores.
 	if state.get("adult_support_started", false): return "F01"
 	# Un límite solo sostiene al grupo si la confianza del recreo no quedó rota.
@@ -140,7 +143,7 @@ func ending_for(state: Dictionary) -> String:
 ```
 
 ```gdscript
-func unrepaired_recess(state: Dictionary) -> int:
+static func unrepaired_recess(state: Dictionary) -> int:
 	# Respuestas de riesgo en el recreo (D2) que no se repararon en D4.
 	...
 		if choices.get("D2_" + companion, "") == "B" and choices.get("D4_%s2" % companion, "") != "A": total += 1
@@ -198,9 +201,20 @@ Ocho suites de Godot se ejecutan sin abrir ventana (`--headless`):
 
 ---
 
-## 12. Hacia dónde crece el código
+## 12. Arquitectura modular
 
-La [propuesta de arquitectura modular](ARQUITECTURA_MODULAR_PROPUESTA.md) divide `Main.gd` (2220 líneas) en módulos pequeños: menú, HUD, pausa, controlador de la historia, reglas educativas, catálogo de mapas e indicadores. También mueve textos y mapas a JSON. **No cambia la jugabilidad.** Añadir un lugar o una decisión pasa a ser cuestión de datos.
+El código se reorganizó en 8 pasos sin cambiar la jugabilidad ([detalle](ARQUITECTURA_MODULAR_PROPUESTA.md)). `Main.gd` pasó de 2220 a 402 líneas y ahora solo coordina:
+
+| Carpeta | Módulos |
+|---|---|
+| `ui/` | `UiKit` (piezas comunes), `MainMenu`, `Hud`, `PauseMenu`, `PhoneModal`, `ObjectiveModal`, `ComputerScreens` |
+| `story/` | `CoralController` (D1–D4), `Day0Flow`, `BehaviorRules` (clasificación y final), `TutorAdvice` |
+| `game/` | `PhaseRouter` (qué pantalla mostrar), `Inventory` |
+| `world/` | `MapCatalog`, `TargetMarkers` (flecha y halo), `ActorAnimator` |
+| `routine/` | `RoutineCatalog` |
+| `data/` | `routine/scenes.json` (textos de la rutina), `maps/maps.json` (mapas y colisiones), `narrative/` (guiones) |
+
+**Qué decir:** «Cada archivo hace una sola cosa. Para corregir una frase se edita un JSON; para añadir un lugar se agrega su mapa al catálogo; la regla del final está en una función de seis líneas. En cada paso de la reorganización comprobamos que el juego siguiera igual: mismas pruebas, mismos textos, mismas colisiones y capturas idénticas píxel a píxel».
 
 ---
 
@@ -211,4 +225,4 @@ La [propuesta de arquitectura modular](ARQUITECTURA_MODULAR_PROPUESTA.md) divide
 3. **(45 s)** «El mundo mueve a Sofi con colisiones reales, marca el objetivo con una flecha y avisa con señales cuando el jugador interactúa».
 4. **(60 s)** «La historia está en un JSON. En el recreo del día 2 hay tres decisiones clave. Cada respuesta se clasifica, y el final se decide con una función pura: apoyo adulto, límite o pasos pendientes».
 5. **(30 s)** «El guardado es transaccional y la telemetría anónima viaja en la misma transacción».
-6. **(30 s)** «Ocho suites de pruebas verifican los tres finales antes de cada cambio, y la propuesta modular prepara el código para crecer».
+6. **(30 s)** «Ocho suites de pruebas verifican los tres finales antes de cada cambio. El código está organizado en módulos pequeños y los contenidos en JSON, así que crecer es añadir datos y no reescribir».

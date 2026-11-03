@@ -113,20 +113,7 @@ var window_too_small := false
 var window_check_elapsed := 0.0
 
 func _ready() -> void:
-	ui_kit = UiKitScript.new()
-	ui_kit.main = self
-	menu = MainMenuScript.new()
-	menu.main = self
-	hud_view = HudScript.new()
-	hud_view.main = self
-	inventory = InventoryScript.new()
-	inventory.main = self
-	day0 = Day0FlowScript.new()
-	day0.main = self
-	computer = ComputerScreensScript.new()
-	computer.main = self
-	router = PhaseRouterScript.new()
-	router.main = self
+	_create_modules()
 	SaveManager.lock_lost.connect(_on_lock_lost)
 	dialogue_story = NarrativeScript.new()
 	preview_catalog = PreviewCatalogScript.new()
@@ -140,16 +127,6 @@ func _ready() -> void:
 	else:
 		preview_catalog.scenes["D2_04_A"] = draft_flow.authored_scene()
 		preview_catalog.scenes["D1_03_A"] = draft_flow.d1_private_scene()
-	legacy = PreviewFlowScript.new()
-	legacy.main = self
-	coral = CoralControllerScript.new()
-	coral.main = self
-	pause_menu = PauseMenuScript.new()
-	pause_menu.main = self
-	phone_modal = PhoneModalScript.new()
-	phone_modal.main = self
-	objective_modal = ObjectiveModalScript.new()
-	objective_modal.main = self
 	coral_flow = CoralFlowScript.new()
 	var coral_errors: Array[String] = coral_flow.load_story()
 	if not coral_errors.is_empty():
@@ -204,6 +181,28 @@ func _ready() -> void:
 	_check_window_size()
 	if return_to_result and GameState.phase == "result":
 		menu.start_slot(GameState.slot)
+
+## Crea los módulos del juego. Main solo coordina: cada módulo hace una tarea y recibe
+## una referencia a Main para usar el estado compartido y los servicios (guardar, avisos).
+func _create_modules() -> void:
+	var modules := {
+		"ui_kit": UiKitScript,               # piezas de interfaz comunes
+		"menu": MainMenuScript,              # menú de ranuras
+		"hud_view": HudScript,               # objetivo e inventario en pantalla
+		"inventory": InventoryScript,        # recoger objetos
+		"router": PhaseRouterScript,         # qué pantalla mostrar según la fase
+		"day0": Day0FlowScript,              # prólogo, guías y diálogos del Día 0
+		"computer": ComputerScreensScript,   # escritorio, Discord, clase y arena
+		"coral": CoralControllerScript,      # historia de los Días 1 a 4
+		"pause_menu": PauseMenuScript,       # pausa y opciones
+		"phone_modal": PhoneModalScript,     # celular
+		"objective_modal": ObjectiveModalScript,  # objetivo y pistas
+		"legacy": PreviewFlowScript,         # vista previa heredada (partidas antiguas)
+	}
+	for name in modules:
+		var module: RefCounted = modules[name].new()
+		module.main = self
+		set(name, module)
 
 func _process(delta: float) -> void:
 	window_check_elapsed += delta

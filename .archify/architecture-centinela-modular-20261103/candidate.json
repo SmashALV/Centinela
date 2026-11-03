@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Arquitectura modular · Centinela 2.0 (noviembre 2026)",
+    "locale": "es",
+    "output": ".archify/architecture-centinela-modular-20261103/centinela-arquitectura-modular.html",
+    "quality_profile": "showcase"
+  },
+  "components": [
+    { "id": "jugadora", "type": "external", "label": "Jugador/a", "sublabel": "WASD · F · E · clic", "icon": "person", "pos": [40, 48], "size": [150, 64] },
+    { "id": "main", "type": "frontend", "label": "Main.gd · coordinador", "sublabel": "crea módulos · entrada · avisos", "pos": [270, 40], "size": [240, 80] },
+    { "id": "rutina", "type": "backend", "label": "DailyRoutine.gd", "sublabel": "etapas del día · dormir", "pos": [600, 40], "size": [220, 80] },
+    { "id": "mundo", "type": "frontend", "label": "World.gd + world/", "sublabel": "mapas · flecha · animación", "pos": [940, 40], "size": [240, 80] },
+
+    { "id": "ui", "type": "frontend", "label": "ui/ · pantallas", "sublabel": "menú · HUD · pausa · PC", "pos": [40, 250], "size": [200, 80] },
+    { "id": "story", "type": "backend", "label": "story/ · historia", "sublabel": "CoralController · Day0Flow", "pos": [300, 250], "size": [220, 80] },
+    { "id": "audio", "type": "backend", "label": "AudioManager", "sublabel": "campana · puerta · sueño", "pos": [600, 250], "size": [220, 80] },
+
+    { "id": "arena", "type": "frontend", "label": "MOBAArena", "sublabel": "Arena 5v5 · 60 s", "pos": [40, 460], "size": [200, 80] },
+    { "id": "reglas", "type": "backend", "label": "Reglas educativas", "sublabel": "BehaviorRules · TutorAdvice", "pos": [300, 460], "size": [220, 80] },
+    { "id": "datos", "type": "database", "label": "data/ · JSON", "sublabel": "guion · rutina · mapas", "pos": [940, 460], "size": [240, 80] },
+
+    { "id": "local", "type": "database", "label": "Archivos user://", "sublabel": "snapshot + .bak", "pos": [40, 670], "size": [200, 80] },
+    { "id": "guardado", "type": "backend", "label": "SaveManager", "sublabel": "3 ranuras · rollback · eventos", "pos": [300, 670], "size": [220, 80] },
+    { "id": "estado", "type": "backend", "label": "GameState", "sublabel": "flags · inventario · historia", "pos": [620, 670], "size": [220, 80] },
+
+    { "id": "webbridge", "type": "backend", "label": "WebBridge.gd", "sublabel": "puente a JavaScript", "pos": [300, 870], "size": [220, 80] },
+    { "id": "indexeddb", "type": "database", "label": "IndexedDB", "sublabel": "ranuras · locks", "pos": [620, 870], "size": [220, 80] },
+    { "id": "sync", "type": "backend", "label": "SyncManager", "sublabel": "cola · reintentos", "pos": [940, 870], "size": [240, 80] },
+    { "id": "supabase", "type": "external", "label": "Supabase", "sublabel": "enabled=false", "icon": "cloud", "pos": [940, 1060], "size": [240, 80] }
+  ],
+  "connections": [
+    { "id": "c1", "from": "jugadora", "to": "main", "label": "juega", "variant": "emphasis" },
+    { "id": "c2", "from": "main", "to": "rutina", "label": "etapa", "variant": "emphasis" },
+    { "id": "c3", "from": "rutina", "to": "mundo", "label": "mapa y objetivos", "variant": "emphasis" },
+    { "id": "c4", "from": "main", "to": "ui", "label": "pantallas" },
+    { "id": "c5", "from": "main", "to": "story", "label": "historia D0–D4" },
+    { "id": "c6", "from": "rutina", "to": "audio", "label": "efectos" },
+    { "id": "c7", "from": "mundo", "to": "datos", "label": "maps.json" },
+    { "id": "c8", "from": "story", "to": "datos", "label": "guion y textos" },
+    { "id": "c9", "from": "story", "to": "reglas", "label": "final" },
+    { "id": "c10", "from": "ui", "to": "arena", "label": "clase elegida" },
+    { "id": "c11", "from": "arena", "to": "guardado", "label": "resultado" },
+    { "id": "c12", "from": "estado", "to": "guardado", "label": "snapshot" },
+    { "id": "c13", "from": "guardado", "to": "local", "label": "escritorio" },
+    { "id": "c14", "from": "guardado", "to": "webbridge", "label": "navegador" },
+    { "id": "c15", "from": "webbridge", "to": "indexeddb", "label": "transacción" },
+    { "id": "c16", "from": "indexeddb", "to": "sync", "label": "cola" },
+    { "id": "c17", "from": "sync", "to": "supabase", "label": "opcional", "variant": "dashed" }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Módulos (cada uno hace una sola cosa)",
+      "items": [
+        "Main.gd (402 líneas, antes 2220) crea los módulos en _create_modules(), recibe la entrada, enruta las interacciones y ofrece avisos y guardado. game/PhaseRouter decide qué pantalla mostrar y game/Inventory recoge objetos.",
+        "ui/: UiKit (piezas comunes), MainMenu, Hud, PauseMenu, PhoneModal, ObjectiveModal y ComputerScreens (escritorio, Discord, clase y arena).",
+        "story/: CoralController (D1–D4) y Day0Flow (prólogo, guías y diálogos). Las reglas son funciones puras: BehaviorRules clasifica cada respuesta y decide el final; TutorAdvice da pistas y consejos.",
+        "world/: MapCatalog (fondos y colisiones), TargetMarkers (flecha, halo, «Pulsa F») y ActorAnimator (respiración, saltitos, caminata, despedidas). routine/RoutineCatalog lee los textos de la rutina."
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Contenido en datos",
+      "items": [
+        "data/narrative/coral_story_v0_2.json: escenas, decisiones y reacciones de D1–D4.",
+        "data/routine/scenes.json: textos de despertar, desayuno, clase, despedida, cena y chat, con versión por día.",
+        "data/maps/maps.json: fondo, colisiones, baldosas y props de 14 mapas. Añadir un lugar es añadir su entrada y su imagen."
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Cómo se verificó la migración",
+      "items": [
+        "8 pasos, cada uno en su commit. Tras cada paso pasaron las 8 suites de Godot con los mismos resultados.",
+        "Los textos (125 parlamentos), los mapas (89 colisiones) y los indicadores (capturas idénticas píxel a píxel) se compararon antes y después.",
+        "Telemetría: SaveManager guarda los eventos en la misma transacción; SyncManager los enviaría a Supabase, hoy desactivado."
+      ]
+    }
+  ]
+}

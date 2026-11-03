@@ -212,6 +212,42 @@ Cada paso es un commit independiente. Se aplican cuatro reglas:
 
 ---
 
+## 8. Estructura resultante
+
+```text
+scripts/
+├── Main.gd                    402  Coordinador: crea módulos, bucle, entrada, avisos y guardado
+├── GameState.gd · SaveManager.gd · AudioManager.gd · Telemetry.gd · SyncManager.gd · WebBridge.gd  (autoloads)
+├── DailyRoutine.gd            399  Máquina de etapas del día
+├── World.gd                   520  Movimiento, colisiones y dibujo del mapa
+├── ConversationUI.gd · DesktopUI.gd    Pantallas de conversación y escritorio
+├── game/
+│   ├── PhaseRouter.gd          58  Qué pantalla mostrar según la fase
+│   └── Inventory.gd            31  Recoger objetos
+├── routine/RoutineCatalog.gd   55  Textos de la rutina (data/routine/scenes.json)
+├── story/
+│   ├── CoralController.gd     305  Historia D1–D4: escenas, elecciones, final
+│   ├── Day0Flow.gd            331  Prólogo, guías y diálogos del Día 0
+│   ├── BehaviorRules.gd        60  Clasificación de respuestas y regla del final
+│   └── TutorAdvice.gd          55  Consejos y pistas del tutor
+├── world/
+│   ├── MapCatalog.gd           72  Mapas (data/maps/maps.json)
+│   ├── TargetMarkers.gd        43  Flecha, halo y «Pulsa F»
+│   └── ActorAnimator.gd        88  Animación de personajes
+├── ui/
+│   ├── UiKit.gd               186  Piezas comunes de interfaz
+│   ├── MainMenu.gd            211  Menú de ranuras
+│   ├── Hud.gd                  76  Objetivo e inventario
+│   ├── PauseMenu.gd · PhoneModal.gd · ObjectiveModal.gd · ComputerScreens.gd
+├── narrative/CoralStoryFlow.gd · NarrativeManager.gd · …   Lectura de guiones
+├── legacy/PreviewFlow.gd      388  Vista previa heredada (solo partidas antiguas)
+└── moba/MOBAArena.gd               Arena 5v5
+```
+
+Cada módulo es un `RefCounted` con una referencia `main` al coordinador. Usa el estado compartido (`GameState`) y los servicios comunes (`main._toast`, `SaveManager`). `Main` los crea en `_create_modules()`; por ejemplo, `coral.choose(key)`, `inventory.pick_up(...)` o `router.load_phase()`.
+
+**Siguiente mejora posible (opcional):** reemplazar la referencia `main` por señales en los módulos de interfaz y unificar los distintos «guardar y volver atrás si falla» en una sola función `commit(previous)`. Ninguno de los dos cambios es necesario para el funcionamiento actual.
+
 ## 7. Avance de la migración
 
 | Paso | Estado | Resultado |
@@ -223,11 +259,12 @@ Cada paso es un commit independiente. Se aplican cuatro reglas:
 | 5 · Textos de la rutina → `data/routine/scenes.json` | ✅ Hecho (02-11-2026) | `scripts/routine/RoutineCatalog.gd` lee los textos. Se comparó la salida antes y después: 125 parlamentos (7 escenas × 5 días) idénticos. Nueva comprobación de estructura en `DailyRoutineTests` |
 | 6 · Mapas → `data/maps/maps.json` + `scripts/world/MapCatalog.gd` | ✅ Hecho (02-11-2026) | 14 mapas con fondo, colisiones, baldosas y props. `World.gd` ya no tiene datos de mapas (619 → 567 líneas). Se comparó la configuración real de cada mapa antes y después: fondos, recortes, escalas, baldosas, 89 colisiones y props idénticos. `RunTests` valida el catálogo |
 | 7 · Indicadores y animación → `scripts/world/TargetMarkers.gd` y `ActorAnimator.gd` | ✅ Hecho (03-11-2026) | Flecha, halo, cama resaltada y «Pulsa F» son funciones puras de dibujo; respiración, saltitos, posturas, caminata y despedidas viven en el animador. `World.gd` 567 → 520 líneas. Capturas con tiempo congelado y semilla fija del patio, el cuarto, la tutoría y la despedida: idénticas píxel a píxel antes y después |
-| 8 · `Main` como coordinador | Pendiente | |
+| 8 · `Main` como coordinador | ✅ Hecho (03-11-2026) | `ui/UiKit.gd`, `ui/MainMenu.gd`, `ui/Hud.gd`, `game/Inventory.gd`, `story/Day0Flow.gd`, `ui/ComputerScreens.gd` y `game/PhaseRouter.gd`. `Main` crea los módulos en `_create_modules()` y conserva el bucle, la entrada, el enrutado de interacciones, los avisos y el guardado (1340 → 402 líneas). Se verificó línea a línea que ningún texto entre comillas cambió |
 
-`Main.gd` bajó de 2221 a 1340 líneas. En cada paso pasaron las 8 suites de Godot con los mismos resultados que antes del cambio (488, 1449, 1, 24, 33, 5, 5 y 12 comprobaciones; desde el paso 5, `DailyRoutineTests` suma una comprobación más: 1450; desde el paso 6, `RunTests` suma otra: 489). La jugabilidad y el formato del guardado no cambiaron.
+**Migración terminada.** `Main.gd` bajó de 2221 a 402 líneas. Los 18 módulos nuevos tienen entre 31 y 388 líneas. Siguen siendo grandes, pero con una sola responsabilidad, `ConversationUI.gd` (651), `World.gd` (520) y `MOBAArena.gd` (781), que la propuesta no dividía. En cada paso pasaron las 8 suites de Godot con los mismos resultados que antes del cambio (488, 1449, 1, 24, 33, 5, 5 y 12 comprobaciones; desde el paso 5, `DailyRoutineTests` suma una comprobación más: 1450; desde el paso 6, `RunTests` suma otra: 489). La jugabilidad y el formato del guardado no cambiaron.
 
 ## 7. Diagramas
 
-- Arquitectura actual: `.archify/architecture-centinela-v043-20261102/centinela-arquitectura-v043.html`
+- Arquitectura modular (después de la migración): `.archify/architecture-centinela-modular-20261103/centinela-arquitectura-modular.html`
+- Arquitectura antes de la migración: `.archify/architecture-centinela-v043-20261102/centinela-arquitectura-v043.html`
 - Ramas de conversación hasta cada final: `.archify/workflow-ramas-conversacion-20261102/centinela-ramas-conversacion.html`

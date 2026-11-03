@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "69b64545-c8cc-4ce3-81f4-3a9857c96da0",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "E:\\GODOT\\grooming-2\\.archify\\architecture-centinela-modular-20261103\\candidate.json",
+  "output": "E:\\GODOT\\grooming-2\\.archify\\architecture-centinela-modular-20261103\\centinela-arquitectura-modular.html",
+  "specification": {
+    "sha256": "65b2cf3115e772083e1891741827e341db6309b88f7d25dbda64d5f997218ffd",
+    "bytes": 6178
+  },
+  "artifact": {
+    "sha256": "48eb52f34be322d52416dd6c926e3b54ad79e4a3287b854f2fde09122eff4f4a",
+    "bytes": 867223
+  }
+}
