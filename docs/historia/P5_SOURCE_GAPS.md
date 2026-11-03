@@ -22,4 +22,4 @@ Se necesita el guion aprobado completo con:
 
 Al recibirlo, generar archivos canónicos nuevos en lugar de cambiar el significado de `*_RECOVERED_PREVIEW.json`. Cualquier cambio que afecte guardados existentes debe definir una migración explícita.
 
-No se añadieron assets visuales nuevos en P5. Los personajes y escenarios siguen siendo dibujos provisionales; `docs/ASSETS.md` indica cómo reemplazarlos.
+No se añadieron assets visuales nuevos en P5. Los personajes y escenarios siguen siendo dibujos provisionales; `docs/arte/ASSETS.md` indica cómo reemplazarlos.

@@ -10,7 +10,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data" / "narrative"
-OUTPUT = ROOT / "docs" / "GUION_EDITORIAL_CANDIDATO_v2.md"
+OUTPUT = ROOT / "docs" / "historia" / "GUION_EDITORIAL_CANDIDATO_v2.md"
 MAIN_ORDER = ("D1_02_A", "D1_03_A", "D2_03_A", "D2_04_A", "D3_01_A", "D4_01_A", "D4_02_A", "D4_03_A")
 ENDING_ORDER = ("F01_A", "F01_B", "F02", "F03")
 
@@ -33,7 +33,7 @@ def lines(items: list[dict], provenance: str) -> list[str]:
 
 def render() -> str:
     draft = loaded(DATA / "playable_draft_v0_3.json")
-    rubric = loaded(ROOT / "docs" / "rubric_candidate_v2.json")
+    rubric = loaded(ROOT / "docs" / "historia" / "rubric_candidate_v2.json")
     recovered = {}
     for path in DATA.glob("*_RECOVERED_PREVIEW.json"):
         for scene in loaded(path).get("scenes", []):

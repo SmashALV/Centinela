@@ -19,7 +19,7 @@ def require(condition: bool, message: str) -> None:
 
 def run() -> None:
     candidate = json.loads((DATA / "playable_draft_v0_3.json").read_text(encoding="utf-8"))
-    rubric = json.loads((ROOT / "docs" / "rubric_candidate_v2.json").read_text(encoding="utf-8"))
+    rubric = json.loads((ROOT / "docs" / "historia" / "rubric_candidate_v2.json").read_text(encoding="utf-8"))
     require(candidate["draft_version"] == "PLAYABLE_DRAFT_v0.3" and candidate["provisional"] is True
             and candidate["ready_for_publication"] is False, "Guion candidato marcado como aprobado")
     require(rubric["rubric_version"] == "RUBRIC_CANDIDATE_v2"

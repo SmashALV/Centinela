@@ -26,4 +26,4 @@ La decisión académica pendiente con Quintana y los protocolos de pretest, cons
 
 `TeacherFeedbackTests.tscn` cubre las guías y su recuperación, movimiento bloqueado antes de exploración, transición temporal, código oculto pero conservado, despedidas, tutoría, devolución en F01/F02/F03 y nuevas texturas. También pasaron la suite general, recorridos compartidos, presentación automática, IndexedDB y la comparación de textos recuperados. La prueba Web captura `bedroom_guide.png`, `bedroom_decorated.png`, `camila_identity_v2.png` y `closing_education.png` en `build/web/`.
 
-Los archivos gráficos y sus prompts se detallan en [Camila v2](CAMILA_V2_ASSETS_2026-10-29.md).
+Los archivos gráficos y sus prompts se detallan en [Camila v2](../arte/CAMILA_V2_ASSETS_2026-10-29.md).

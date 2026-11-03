@@ -2,7 +2,7 @@
 
 Inventario de lo que el recorrido diario (casa → calle → colegio → tutoría → clase → despedida → regreso → cena → cuarto) todavía muestra con arte reutilizado, dibujado por código o sin ilustración, más los sprites pendientes. Cada asset tiene su archivo de destino, tamaño, dónde se ve y su prompt.
 
-Los prompts siguen el formato de `docs/ROUTINE_ASSET_PROMPTS_2026-10-29.json`: en inglés, una imagen por llamada, con referencias **solo de estilo o identidad**. Los fondos van sin transparencia; los sprites y personajes, con **fondo transparente real** o, si la herramienta no lo permite, con **verde puro #00FF00** para recortarlo después.
+Los prompts siguen el formato de `docs/arte/ROUTINE_ASSET_PROMPTS_2026-10-29.json`: en inglés, una imagen por llamada, con referencias **solo de estilo o identidad**. Los fondos van sin transparencia; los sprites y personajes, con **fondo transparente real** o, si la herramienta no lo permite, con **verde puro #00FF00** para recortarlo después.
 
 **Leyenda:** 🟢 se reemplaza sin tocar código (mismo nombre y tamaño) · 🟡 requiere un cambio pequeño de código para usarlo · ✅ entregado e integrado.
 

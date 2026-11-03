@@ -24,7 +24,7 @@ Cinco aliados contra cinco rivales, sin torres ni bases. Se mantienen el obstác
 
 Nuevas posturas en novela visual para Sofi, Camila, Bruno, Mateo, Sebas y el avatar anónimo de Kairo. Mateo tiene pelo rizado, rostro más largo y mochila; Sebas tiene un rostro más ancho con pecas y pelo corto recto. Se actualizan sus hojas de cuatro vistas para el mapa. Mateo conserva expresiones de preocupación y alarma con su identidad nueva; Sofi tiene su versión atenta y preocupada. Avatares y caras del prólogo usan recortes AtlasTexture de los nuevos dibujos.
 
-Los 18 PNG generados mediante la herramienta integrada `imagegen`, sus rutas finales y prompts completos están en [ROUTINE_ASSET_PROMPTS_2026-10-29.json](ROUTINE_ASSET_PROMPTS_2026-10-29.json). Las versiones anteriores se conservan. Los recortes se definen en `assets/portraits/*_v4.tres` y `assets/world/props/sofi_sleep.tres`, sin modificar los PNG generados.
+Los 18 PNG generados mediante la herramienta integrada `imagegen`, sus rutas finales y prompts completos están en [ROUTINE_ASSET_PROMPTS_2026-10-29.json](../arte/ROUTINE_ASSET_PROMPTS_2026-10-29.json). Las versiones anteriores se conservan. Los recortes se definen en `assets/portraits/*_v4.tres` y `assets/world/props/sofi_sleep.tres`, sin modificar los PNG generados.
 
 Para sustituirlos:
 

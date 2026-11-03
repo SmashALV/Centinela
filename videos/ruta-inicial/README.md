@@ -1,6 +1,6 @@
 # Presentación · Ruta inicial (Día 0)
 
-Video Remotion de ~2 min 56 s (1920×1080, 30 fps) que explica la jugabilidad del Día 0 de Centinela 2.0. Sigue el guion de [docs/GUION_GRABACION_RUTA_INICIAL.md](../../docs/GUION_GRABACION_RUTA_INICIAL.md): portada, 13 bloques y cierre. Cada bloque muestra capturas reales del juego, un panel lateral (controles, opciones o reglas) y un subtítulo con la narración sugerida. Tiene música suave del juego y sonidos puntuales (notificación, campana y resultado). No incluye voz: se puede grabar encima siguiendo los subtítulos.
+Video Remotion de ~2 min 56 s (1920×1080, 30 fps) que explica la jugabilidad del Día 0 de Centinela 2.0. Sigue el guion de [docs/presentacion/GUION_GRABACION_RUTA_INICIAL.md](../../docs/presentacion/GUION_GRABACION_RUTA_INICIAL.md): portada, 13 bloques y cierre. Cada bloque muestra capturas reales del juego, un panel lateral (controles, opciones o reglas) y un subtítulo con la narración sugerida. Tiene música suave del juego y sonidos puntuales (notificación, campana y resultado). No incluye voz: se puede grabar encima siguiendo los subtítulos.
 
 ## Uso
 

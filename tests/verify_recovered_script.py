@@ -8,7 +8,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SOURCE = ROOT / "docs/recovered/Guion_Literal_Recuperado_Ampliado_D0_D4_v0_2.md"
+SOURCE = ROOT / "docs/historia/recovered/Guion_Literal_Recuperado_Ampliado_D0_D4_v0_2.md"
 PREVIEW = ROOT / "data/narrative/day_0_RECOVERED_PREVIEW.json"
 
 

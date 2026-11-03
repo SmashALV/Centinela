@@ -23,4 +23,4 @@
 
 URL y clave publicable de desarrollo anotadas en `web/backend_config.json`; `enabled: false`. La comprobación remota devolvió Auth anónima desactivada y HTTP 404 para las cuatro funciones. La CLI local indicó que falta `supabase login`. Por ello **P4 no está desplegada ni validada de extremo a extremo**. El usuario indicó que hará después el inicio de sesión CLI y la activación de Auth anónima. Los pasos de despliegue y prueba están en `supabase/README.md`.
 
-No hay repositorio Git inicializado en `E:\GODOT\grooming-2`; por tanto no se creó checkpoint Git. Ningún asset nuevo fue necesario en esta fase; los reemplazos gráficos pendientes siguen especificados en `docs/ASSETS.md`.
+No hay repositorio Git inicializado en `E:\GODOT\grooming-2`; por tanto no se creó checkpoint Git. Ningún asset nuevo fue necesario en esta fase; los reemplazos gráficos pendientes siguen especificados en `docs/arte/ASSETS.md`.

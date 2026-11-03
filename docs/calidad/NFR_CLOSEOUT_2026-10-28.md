@@ -16,7 +16,7 @@ Este registro evalúa el prototipo local. Un PASS local acredita solo la prueba 
 
 ## Orden de cierre
 
-1. Sustituir el guion provisional por escenas canónicas completas, destinos y condiciones F01/F02/F03 verificadas; ejecutar la prueba de rutas sobre esos datos. La [auditoría del ZIP](P5_ZIP_AUDIT_2026-10-28.md) explica qué piezas originales siguen sin confirmarse.
+1. Sustituir el guion provisional por escenas canónicas completas, destinos y condiciones F01/F02/F03 verificadas; ejecutar la prueba de rutas sobre esos datos. La [auditoría del ZIP](../historia/P5_ZIP_AUDIT_2026-10-28.md) explica qué piezas originales siguen sin confirmarse.
 2. Incorporar IDs canónicos y rúbrica aprobada; emitir cada decisión con guardado y evento atómicos y comprobar que solo el backend calcula puntajes.
 3. Desplegar P4/P6 en desarrollo, activar Auth anónima, provisionar una cuenta administrativa y completar `npm run test:backend-e2e` con datos sintéticos. Los accesos administrativos y secretos se mantienen fuera del cliente.
 4. Repetir QA-01–15 en los navegadores y equipos del laboratorio; medir descarga y arranque reales para fijar un presupuesto de rendimiento, revisar contenido y preparar staging separado con prueba de restauración y rollback.

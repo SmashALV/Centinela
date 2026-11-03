@@ -6,7 +6,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SOURCE = ROOT / "docs/recovered/Guion_Literal_Recuperado_Ampliado_D0_D4_v0_2.md"
+SOURCE = ROOT / "docs/historia/recovered/Guion_Literal_Recuperado_Ampliado_D0_D4_v0_2.md"
 OUT = ROOT / "data/narrative"
 VERSION = "RECOVERED_PREVIEW_D0_D4_v0.2"
 

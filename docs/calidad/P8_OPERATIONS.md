@@ -53,4 +53,4 @@ Registrar en cada sesión la versión del juego, narrativa y rúbrica. El servid
 - Comprobar en el **proyecto concreto** el plan contratado, el panel `Database > Backups`, retención visible, PITR si procede, alcance de Storage y una restauración ensayada a un proyecto aislado. Esta comprobación no se ha podido hacer sin acceso al proyecto/plan.
 - La [documentación actual de Supabase](https://supabase.com/docs/guides/platform/backups) indica copias diarias en Pro/Team/Enterprise, PITR como complemento y recomienda exportaciones externas para Free. Una copia física o PITR no implica que los objetos de Storage estén incluidos. Verificar capacidad y política reales antes de operar con menores.
 
-El procedimiento de reversión está en [RECOVERY.md](RECOVERY.md). Los manuales de uso están en [STUDENT_GUIDE.md](STUDENT_GUIDE.md) y [RESEARCHER_GUIDE.md](RESEARCHER_GUIDE.md).
+El procedimiento de reversión está en [RECOVERY.md](../guias/RECOVERY.md). Los manuales de uso están en [STUDENT_GUIDE.md](../guias/STUDENT_GUIDE.md) y [RESEARCHER_GUIDE.md](../guias/RESEARCHER_GUIDE.md).

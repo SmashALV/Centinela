@@ -1,10 +1,10 @@
 # P4 · Backend de desarrollo
 
-La extensión P6 para sesiones e informes administrativos se describe en [`../docs/P6_STATUS.md`](../docs/P6_STATUS.md). La función `research_admin` usa una cuenta no anónima permitida explícitamente; las funciones del juego conservan su acceso anónimo. Estas funciones aún no están desplegadas en el proyecto alojado.
+La extensión P6 para sesiones e informes administrativos se describe en [`../docs/calidad/P6_STATUS.md`](../docs/calidad/P6_STATUS.md). La función `research_admin` usa una cuenta no anónima permitida explícitamente; las funciones del juego conservan su acceso anónimo. Estas funciones aún no están desplegadas en el proyecto alojado.
 
 La migración crea tablas privadas y cuatro RPC accesibles solo con rol de servicio. Las Edge Functions exigen un JWT de usuario y verifican su identidad antes de llamar esas RPC. La credencial de recuperación sale del servidor y se almacena en IndexedDB separada del snapshot. `CTN-XXXXXX` es solo un código visible; no autoriza recuperación.
 
-La migración `20261031000100_gameplay_telemetry.sql` añade la telemetría descriptiva de juego, la versión `DESCRIPTIVE_ONLY_v1` sin puntaje y las vistas `telemetry_events` y `telemetry_summary`; el catálogo de eventos está en [`../docs/TELEMETRIA_SUPABASE.md`](../docs/TELEMETRIA_SUPABASE.md).
+La migración `20261031000100_gameplay_telemetry.sql` añade la telemetría descriptiva de juego, la versión `DESCRIPTIVE_ONLY_v1` sin puntaje y las vistas `telemetry_events` y `telemetry_summary`; el catálogo de eventos está en [`../docs/arquitectura/TELEMETRIA_SUPABASE.md`](../docs/arquitectura/TELEMETRIA_SUPABASE.md).
 
 ## Preparación local
 

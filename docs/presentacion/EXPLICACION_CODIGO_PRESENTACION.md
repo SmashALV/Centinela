@@ -203,7 +203,7 @@ Ocho suites de Godot se ejecutan sin abrir ventana (`--headless`):
 
 ## 12. Arquitectura modular
 
-El código se reorganizó en 8 pasos sin cambiar la jugabilidad ([detalle](ARQUITECTURA_MODULAR_PROPUESTA.md)). `Main.gd` pasó de 2220 a 402 líneas y ahora solo coordina:
+El código se reorganizó en 8 pasos sin cambiar la jugabilidad ([detalle](../arquitectura/ARQUITECTURA_MODULAR_PROPUESTA.md)). `Main.gd` pasó de 2220 a 402 líneas y ahora solo coordina:
 
 | Carpeta | Módulos |
 |---|---|
