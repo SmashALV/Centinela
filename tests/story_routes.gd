@@ -52,7 +52,7 @@ func _run() -> void:
 		if not await _press_button(story, "Continuar") or not GameState.flags.get("d1_interlude_active", false):
 			_fail("no se abrió el interludio en ruta " + route)
 			return
-		if not await story._start_playable_draft() or not GameState.flags.get("draft_exploring", false):
+		if not await story.legacy.start_playable_draft() or not GameState.flags.get("draft_exploring", false):
 			_fail("no se abrió el Día 1 en ruta " + route)
 			return
 		var visited: Array[String] = []
@@ -73,13 +73,13 @@ func _run() -> void:
 					return
 				continue
 			if GameState.flags.get("draft_exploring", false):
-				if not await story._commit_preview(scene_id, 0):
+				if not await story.legacy.commit_preview(scene_id, 0):
 					_fail("no se abrió la conversación " + scene_id)
 					return
 				continue
 			var scene: Dictionary = story.preview_catalog.get_scene(scene_id)
 			var choices: Array = scene.get("choices", [])
-			var choice_step: int = story._scene_parts(scene_id, true).lines.size()
+			var choice_step: int = story.legacy.scene_parts(scene_id, true).lines.size()
 			var prefix := "Continuar"
 			if not choices.is_empty() and GameState.preview_step == choice_step:
 				var letter: String = plan.final if scene_id == "D4_03_A" else plan.early
