@@ -81,7 +81,7 @@ Los **bordes del mapa** funcionan como puertas. `boundary(edge)` decide a dónde
 
 `World.gd` es un `Node2D` que:
 
-- **Dibuja el fondo del lugar** y crea **cuerpos de colisión** (`StaticBody2D`) a partir de listas de rectángulos (`ROUTINE_BLOCKS`). El cuarto de Sofi tiene un mapa de día y otro de noche con las mismas colisiones.
+- **Dibuja el fondo del lugar** y crea **cuerpos de colisión** (`StaticBody2D`) a partir de rectángulos guardados en `data/maps/maps.json`, que lee `MapCatalog.gd`. El cuarto de Sofi tiene un mapa de día y otro de noche con las mismas colisiones.
 - **Mueve a Sofi** con `CharacterBody2D.move_and_slide()`, que la detiene contra los muebles.
 - **Detecta el objetivo cercano** y, al pulsar **F**, emite la señal `interacted(target)`. Al llegar a un borde emite `boundary_reached(edge)`.
 - **Dibuja los indicadores:** la flecha amarilla que rebota (`_draw_objective_marker`), el halo pulsante (`_draw_target_glow`) y el aviso «Pulsa F» (`_draw_press_prompt`).

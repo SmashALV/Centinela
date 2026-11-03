@@ -1,32 +1,14 @@
 extends Node2D
 class_name CentinelaWorld
 
+const MapCatalog = preload("res://scripts/world/MapCatalog.gd")
+
 signal interacted(target_id: String)
 signal departure_finished
 signal boundary_reached(edge: String)
 
 const SPEED := 152.0
 const ROOM := Rect2(30, 56, 708, 338)
-const DRAFT_BACKGROUNDS := {
-	"draft_d1": preload("res://assets/world/day1_lobby_generated.png"),
-	"draft_d2": preload("res://assets/world/day2_school_exterior_generated.png"),
-	"draft_d3": preload("res://assets/world/day3_corridor_generated.png"),
-	"draft_d4": preload("res://assets/world/day4_courtyard_generated.png")
-}
-const DAY0_BACKGROUNDS := {
-	"bedroom": preload("res://assets/world/day0_bedroom.png"),
-	"courtyard": preload("res://assets/world/day0_courtyard.png"),
-	"computer": preload("res://assets/world/day0_computer_room.png")
-}
-const GROUND_TILES := {
-	"bedroom": "res://assets/world/tiles/day0_bedroom_floor.png",
-	"courtyard": "res://assets/world/tiles/day0_courtyard_paving.png",
-	"computer": "res://assets/world/tiles/day0_computer_floor.png",
-	"draft_d1": "res://assets/world/tiles/day1_lobby_floor.png",
-	"draft_d2": "res://assets/world/tiles/day2_exterior_paving.png",
-	"draft_d3": "res://assets/world/tiles/day3_corridor_floor.png",
-	"draft_d4": "res://assets/world/tiles/day4_courtyard_paving.png"
-}
 const CHARACTER_SHEETS := {
 	"Sofi": preload("res://assets/characters/sofi_directions.png"),
 	"Mateo": preload("res://assets/characters/mateo_directions_v4.png"),
@@ -60,40 +42,6 @@ const PROP_SPRITES := {
 	"tree": preload("res://assets/world/props/tree.png"),
 	"bench": preload("res://assets/world/props/bench.png"),
 	"plant": preload("res://assets/world/props/plant.png")
-}
-const SCENE_PROPS := {
-	"bedroom": [
-		{"sprite": "bed", "rect": Rect2(79, 112, 104, 113)},
-		{"sprite": "wardrobe", "rect": Rect2(437, 101, 114, 74)},
-		{"sprite": "bookshelf", "rect": Rect2(565, 109, 86, 57)},
-		{"sprite": "plant", "rect": Rect2(669, 121, 44, 50)},
-		{"sprite": "plant", "rect": Rect2(53, 323, 49, 58)},
-		{"sprite": "plant", "rect": Rect2(654, 325, 48, 55)}
-	],
-	"courtyard": [
-		{"sprite": "tree", "rect": Rect2(44, 113, 90, 91)},
-		{"sprite": "tree", "rect": Rect2(607, 110, 90, 91)},
-		{"sprite": "tree", "rect": Rect2(572, 299, 90, 91)},
-		{"sprite": "bench", "rect": Rect2(157, 145, 91, 43)},
-		{"sprite": "bench", "rect": Rect2(508, 145, 91, 43)},
-		{"sprite": "plant", "rect": Rect2(266, 113, 40, 46)},
-		{"sprite": "plant", "rect": Rect2(455, 113, 40, 46)}
-	],
-	"computer": [
-		{"sprite": "bookshelf", "rect": Rect2(93, 117, 104, 67)},
-		{"sprite": "plant", "rect": Rect2(610, 133, 51, 58)}
-	]
-}
-const DAY0_BLOCKS := {
-	"bedroom": [[30, 56, 708, 52], [86, 123, 91, 94], [238, 124, 80, 39], [455, 112, 78, 55], [569, 118, 78, 47], [680, 151, 24, 20], [46, 269, 60, 24], [148, 365, 64, 21], [552, 367, 76, 22]],
-	"courtyard": [[30, 56, 708, 55], [75, 171, 29, 22], [638, 168, 29, 22], [603, 357, 29, 22], [162, 153, 81, 22], [513, 153, 81, 22], [277, 141, 18, 15], [466, 141, 18, 15]],
-	"computer": [[30, 56, 708, 62], [97, 129, 96, 51], [343, 155, 78, 43], [626, 161, 20, 25]]
-}
-const DRAFT_BLOCKS := {
-	"draft_d1": [[30, 56, 708, 123], [30, 178, 130, 42], [30, 215, 99, 150], [681, 205, 57, 165]],
-	"draft_d2": [[30, 56, 375, 124], [30, 180, 154, 64], [530, 125, 35, 60], [434, 197, 68, 28], [30, 345, 142, 49], [620, 346, 118, 48]],
-	"draft_d3": [[30, 56, 708, 117], [30, 342, 122, 52], [626, 342, 112, 52]],
-	"draft_d4": [[30, 56, 708, 107], [80, 163, 112, 34], [185, 163, 115, 50], [575, 163, 100, 50], [625, 163, 113, 34], [30, 349, 145, 45], [616, 349, 122, 45]]
 }
 const TARGET_LABELS := {
 	"alarm": "Alarma", "backpack": "Mochila", "desk": "Escritorio",
@@ -130,8 +78,6 @@ var anim_time := 0.0
 # Posición visible de cada personaje: camina hacia su objetivo en vez de aparecer de golpe.
 var actor_display: Dictionary = {}
 
-const ROUTINE_BACKGROUNDS := {"living": "res://assets/world/living_room_map.png", "street": "res://assets/world/street_map.png", "classroom": "res://assets/world/classroom_map.png", "school": "res://assets/world/day0_courtyard.png", "tutor_office": "res://assets/world/tutor_office_map.png", "sofi_room": "res://assets/world/bedroom_map.png", "sofi_room_night": "res://assets/world/bedroom_map_night.png"}
-const ROUTINE_BLOCKS := {"living": [[30, 56, 708, 60], [80, 115, 175, 70], [530, 115, 170, 67], [304, 122, 156, 62]], "street": [[30, 56, 708, 88], [30, 357, 708, 37]], "classroom": [[30, 56, 708, 70], [80, 124, 185, 105], [500, 124, 185, 105], [360, 185, 50, 47], [350, 105, 70, 40]], "school": [[30, 56, 280, 55], [450, 56, 288, 55], [75, 171, 29, 22], [638, 168, 29, 22], [603, 357, 29, 22], [162, 153, 81, 22], [513, 153, 81, 22]], "tutor_office": [[30, 56, 708, 85], [89, 56, 112, 106], [240, 130, 138, 72], [440, 110, 176, 75], [608, 56, 55, 106], [57, 110, 32, 60], [30, 306, 49, 76], [690, 289, 48, 68]], "sofi_room": [[30, 56, 708, 83], [30, 140, 28, 165], [62, 100, 186, 123], [343, 110, 74, 46], [453, 110, 26, 42], [483, 110, 131, 52], [530, 150, 44, 34], [614, 56, 57, 110], [671, 56, 58, 98], [30, 305, 47, 78], [692, 290, 46, 70]], "sofi_room_night": [[30, 56, 708, 83], [30, 140, 28, 165], [62, 100, 186, 123], [343, 110, 74, 46], [453, 110, 26, 42], [483, 110, 131, 52], [530, 150, 44, 34], [614, 56, 57, 110], [671, 56, 58, 98], [30, 305, 47, 78], [692, 290, 46, 70]]}
 # Cama del cuarto de Sofi en el mapa nuevo: se resalta completa a la hora de dormir.
 const SOFI_BED_RECT := Rect2(62, 100, 186, 123)
 
@@ -200,24 +146,25 @@ func _configure_layers() -> void:
 	for body in collision_root.get_children():
 		collision_root.remove_child(body)
 		body.free()
-	map_sprite.visible = DRAFT_BACKGROUNDS.has(scene_key) or DAY0_BACKGROUNDS.has(scene_key) or ROUTINE_BACKGROUNDS.has(scene_key)
+	# Fondo, piso y colisiones vienen de data/maps/maps.json (paso 6 de la migración modular).
+	map_sprite.visible = MapCatalog.has_map(scene_key)
 	ground_layer.visible = map_sprite.visible
 	ground_layer.clear()
 	if map_sprite.visible:
-		var texture: Texture2D = load(ROUTINE_BACKGROUNDS[scene_key]) if ROUTINE_BACKGROUNDS.has(scene_key) else DRAFT_BACKGROUNDS[scene_key] if DRAFT_BACKGROUNDS.has(scene_key) else DAY0_BACKGROUNDS[scene_key]
+		var texture: Texture2D = load(MapCatalog.background(scene_key))
 		var size: Vector2 = texture.get_size()
 		var crop_height: float = minf(size.y, size.x * ROOM.size.y / ROOM.size.x)
 		map_sprite.texture = texture
 		map_sprite.region_rect = Rect2(Vector2.ZERO, Vector2(size.x, crop_height))
 		map_sprite.position = ROOM.position
 		map_sprite.scale = Vector2(ROOM.size.x / size.x, ROOM.size.y / crop_height)
-		_configure_ground_tiles()
-		var blocks: Array = ROUTINE_BLOCKS[scene_key] if ROUTINE_BLOCKS.has(scene_key) else DRAFT_BLOCKS[scene_key] if DRAFT_BLOCKS.has(scene_key) else DAY0_BLOCKS[scene_key]
-		for dimensions in blocks:
-			_add_obstacle(Rect2(float(dimensions[0]), float(dimensions[1]), float(dimensions[2]), float(dimensions[3])))
-		if DRAFT_BLOCKS.has(scene_key):
-			for dimensions in blocks:
-				if Rect2(float(dimensions[0]), float(dimensions[1]), float(dimensions[2]), float(dimensions[3])).grow(11.0).has_point(player_pos):
+		_configure_ground_tiles(MapCatalog.ground_tiles(scene_key))
+		var blocks: Array[Rect2] = MapCatalog.blocks(scene_key)
+		for block in blocks:
+			_add_obstacle(block)
+		if MapCatalog.keeps_player_clear(scene_key):
+			for block in blocks:
+				if block.grow(11.0).has_point(player_pos):
 					player_pos = Vector2(180, 315)
 					break
 	else:
@@ -225,11 +172,12 @@ func _configure_layers() -> void:
 		ground_layer.tile_set = null
 	player_body.position = player_pos
 
-func _configure_ground_tiles() -> void:
-	if ROUTINE_BACKGROUNDS.has(scene_key):
+func _configure_ground_tiles(tile_path: String) -> void:
+	# Los mapas nuevos traen el piso pintado; solo los antiguos usan baldosas.
+	if tile_path.is_empty():
 		ground_layer.visible = false
 		return
-	var tile_texture: Texture2D = load(GROUND_TILES[scene_key]) as Texture2D
+	var tile_texture: Texture2D = load(tile_path) as Texture2D
 	var tiles := TileSet.new()
 	tiles.tile_size = Vector2i(32, 32)
 	var atlas := TileSetAtlasSource.new()
@@ -354,7 +302,7 @@ func _draw() -> void:
 	if scene_key.begins_with("draft_d"):
 		_draw_draft_caption()
 	if scene_key == "bedroom": _draw_bedroom_decor()
-	for prop in SCENE_PROPS.get(scene_key, []):
+	for prop in MapCatalog.props(scene_key):
 		draw_texture_rect(PROP_SPRITES[prop.sprite], prop.rect, false)
 	for key in objects:
 		var pos: Vector2 = objects[key]

@@ -1,0 +1,242 @@
+{
+  "version": "MAPS_v1",
+  "_ayuda": "Mapas explorables. background: imagen 2:1 o 16:9 (se muestra el ancho completo). blocks: colisiones [x, y, ancho, alto] en coordenadas del juego (768x448; el área del mapa va de x 30 a 738 y de y 56 a 394). ground_tiles: atlas de piso de 4 baldosas (solo mapas antiguos). props: muebles dibujados encima. keep_player_clear: aparta al jugador si aparece dentro de una colisión (mapas del borrador antiguo). Rutina diaria: sofi_room, living, street, school, classroom, tutor_office; el resto son mapas del Día 0 antiguo y del borrador heredado.",
+  "maps": {
+    "sofi_room": {
+      "background": "res://assets/world/bedroom_map.png",
+      "blocks": [
+        [30, 56, 708, 83],
+        [30, 140, 28, 165],
+        [62, 100, 186, 123],
+        [343, 110, 74, 46],
+        [453, 110, 26, 42],
+        [483, 110, 131, 52],
+        [530, 150, 44, 34],
+        [614, 56, 57, 110],
+        [671, 56, 58, 98],
+        [30, 305, 47, 78],
+        [692, 290, 46, 70]
+      ]
+    },
+    "sofi_room_night": {
+      "background": "res://assets/world/bedroom_map_night.png",
+      "blocks": [
+        [30, 56, 708, 83],
+        [30, 140, 28, 165],
+        [62, 100, 186, 123],
+        [343, 110, 74, 46],
+        [453, 110, 26, 42],
+        [483, 110, 131, 52],
+        [530, 150, 44, 34],
+        [614, 56, 57, 110],
+        [671, 56, 58, 98],
+        [30, 305, 47, 78],
+        [692, 290, 46, 70]
+      ]
+    },
+    "living": {
+      "background": "res://assets/world/living_room_map.png",
+      "blocks": [
+        [30, 56, 708, 60],
+        [80, 115, 175, 70],
+        [530, 115, 170, 67],
+        [304, 122, 156, 62]
+      ]
+    },
+    "street": {
+      "background": "res://assets/world/street_map.png",
+      "blocks": [
+        [30, 56, 708, 88],
+        [30, 357, 708, 37]
+      ]
+    },
+    "school": {
+      "background": "res://assets/world/day0_courtyard.png",
+      "blocks": [
+        [30, 56, 280, 55],
+        [450, 56, 288, 55],
+        [75, 171, 29, 22],
+        [638, 168, 29, 22],
+        [603, 357, 29, 22],
+        [162, 153, 81, 22],
+        [513, 153, 81, 22]
+      ]
+    },
+    "classroom": {
+      "background": "res://assets/world/classroom_map.png",
+      "blocks": [
+        [30, 56, 708, 70],
+        [80, 124, 185, 105],
+        [500, 124, 185, 105],
+        [360, 185, 50, 47],
+        [350, 105, 70, 40]
+      ]
+    },
+    "tutor_office": {
+      "background": "res://assets/world/tutor_office_map.png",
+      "blocks": [
+        [30, 56, 708, 85],
+        [89, 56, 112, 106],
+        [240, 130, 138, 72],
+        [440, 110, 176, 75],
+        [608, 56, 55, 106],
+        [57, 110, 32, 60],
+        [30, 306, 49, 76],
+        [690, 289, 48, 68]
+      ]
+    },
+    "bedroom": {
+      "background": "res://assets/world/day0_bedroom.png",
+      "blocks": [
+        [30, 56, 708, 52],
+        [86, 123, 91, 94],
+        [238, 124, 80, 39],
+        [455, 112, 78, 55],
+        [569, 118, 78, 47],
+        [680, 151, 24, 20],
+        [46, 269, 60, 24],
+        [148, 365, 64, 21],
+        [552, 367, 76, 22]
+      ],
+      "ground_tiles": "res://assets/world/tiles/day0_bedroom_floor.png",
+      "props": [
+        {
+          "rect": [79, 112, 104, 113],
+          "sprite": "bed"
+        },
+        {
+          "rect": [437, 101, 114, 74],
+          "sprite": "wardrobe"
+        },
+        {
+          "rect": [565, 109, 86, 57],
+          "sprite": "bookshelf"
+        },
+        {
+          "rect": [669, 121, 44, 50],
+          "sprite": "plant"
+        },
+        {
+          "rect": [53, 323, 49, 58],
+          "sprite": "plant"
+        },
+        {
+          "rect": [654, 325, 48, 55],
+          "sprite": "plant"
+        }
+      ]
+    },
+    "courtyard": {
+      "background": "res://assets/world/day0_courtyard.png",
+      "blocks": [
+        [30, 56, 708, 55],
+        [75, 171, 29, 22],
+        [638, 168, 29, 22],
+        [603, 357, 29, 22],
+        [162, 153, 81, 22],
+        [513, 153, 81, 22],
+        [277, 141, 18, 15],
+        [466, 141, 18, 15]
+      ],
+      "ground_tiles": "res://assets/world/tiles/day0_courtyard_paving.png",
+      "props": [
+        {
+          "rect": [44, 113, 90, 91],
+          "sprite": "tree"
+        },
+        {
+          "rect": [607, 110, 90, 91],
+          "sprite": "tree"
+        },
+        {
+          "rect": [572, 299, 90, 91],
+          "sprite": "tree"
+        },
+        {
+          "rect": [157, 145, 91, 43],
+          "sprite": "bench"
+        },
+        {
+          "rect": [508, 145, 91, 43],
+          "sprite": "bench"
+        },
+        {
+          "rect": [266, 113, 40, 46],
+          "sprite": "plant"
+        },
+        {
+          "rect": [455, 113, 40, 46],
+          "sprite": "plant"
+        }
+      ]
+    },
+    "computer": {
+      "background": "res://assets/world/day0_computer_room.png",
+      "blocks": [
+        [30, 56, 708, 62],
+        [97, 129, 96, 51],
+        [343, 155, 78, 43],
+        [626, 161, 20, 25]
+      ],
+      "ground_tiles": "res://assets/world/tiles/day0_computer_floor.png",
+      "props": [
+        {
+          "rect": [93, 117, 104, 67],
+          "sprite": "bookshelf"
+        },
+        {
+          "rect": [610, 133, 51, 58],
+          "sprite": "plant"
+        }
+      ]
+    },
+    "draft_d1": {
+      "background": "res://assets/world/day1_lobby_generated.png",
+      "blocks": [
+        [30, 56, 708, 123],
+        [30, 178, 130, 42],
+        [30, 215, 99, 150],
+        [681, 205, 57, 165]
+      ],
+      "ground_tiles": "res://assets/world/tiles/day1_lobby_floor.png",
+      "keep_player_clear": true
+    },
+    "draft_d2": {
+      "background": "res://assets/world/day2_school_exterior_generated.png",
+      "blocks": [
+        [30, 56, 375, 124],
+        [30, 180, 154, 64],
+        [530, 125, 35, 60],
+        [434, 197, 68, 28],
+        [30, 345, 142, 49],
+        [620, 346, 118, 48]
+      ],
+      "ground_tiles": "res://assets/world/tiles/day2_exterior_paving.png",
+      "keep_player_clear": true
+    },
+    "draft_d3": {
+      "background": "res://assets/world/day3_corridor_generated.png",
+      "blocks": [
+        [30, 56, 708, 117],
+        [30, 342, 122, 52],
+        [626, 342, 112, 52]
+      ],
+      "ground_tiles": "res://assets/world/tiles/day3_corridor_floor.png",
+      "keep_player_clear": true
+    },
+    "draft_d4": {
+      "background": "res://assets/world/day4_courtyard_generated.png",
+      "blocks": [
+        [30, 56, 708, 107],
+        [80, 163, 112, 34],
+        [185, 163, 115, 50],
+        [575, 163, 100, 50],
+        [625, 163, 113, 34],
+        [30, 349, 145, 45],
+        [616, 349, 122, 45]
+      ],
+      "ground_tiles": "res://assets/world/tiles/day4_courtyard_paving.png",
+      "keep_player_clear": true
+    }
+  }
+}

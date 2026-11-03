@@ -1,5 +1,6 @@
 extends Node
 
+const MapCatalogScript = preload("res://scripts/world/MapCatalog.gd")
 const Validator = preload("res://scripts/narrative/NarrativeValidator.gd")
 const Narrative = preload("res://scripts/narrative/NarrativeManager.gd")
 const Arena = preload("res://scenes/moba/MOBAArena.tscn")
@@ -54,16 +55,18 @@ func _run() -> void:
 	courtyard_world._physics_process(0.0)
 	_check(courtyard_world.nearby == "friends", "grupo interactuable junto a Mateo")
 	_check(courtyard_world.target_label("friends") == "Grupo" and courtyard_world.target_label("exit") == "Salida", "interacciones de exploración etiquetadas en español")
+	var map_errors: Array[String] = MapCatalogScript.validate(WorldScript.PROP_SPRITES.keys())
+	_check(map_errors.is_empty(), "catálogo de mapas válido " + str(map_errors))
 	for map_key in ["draft_d1", "draft_d2", "draft_d3", "draft_d4"]:
-		var background: Texture2D = WorldScript.DRAFT_BACKGROUNDS[map_key]
+		var background: Texture2D = load(MapCatalogScript.background(map_key))
 		_check(background != null and background.get_width() >= 768 and background.get_height() >= 448, "fondo generado importado: " + map_key)
 		courtyard_world.configure(map_key, Vector2(180, 315))
 		_check(courtyard_world.objective_target() == "mateo" and courtyard_world.objects.has("mateo"), "Mateo interactuable sobre fondo: " + map_key)
 	for map_key in ["bedroom", "courtyard", "computer"]:
-		var day0_background: Texture2D = WorldScript.DAY0_BACKGROUNDS[map_key]
+		var day0_background: Texture2D = load(MapCatalogScript.background(map_key))
 		_check(day0_background != null and day0_background.get_width() >= 768 and day0_background.get_height() >= 448, "fondo D0 importado: " + map_key)
 		courtyard_world.configure(map_key, Vector2(384, 280))
-		_check(courtyard_world.ground_layer.get_used_cells().size() == 220 and courtyard_world.collision_root.get_child_count() >= 4 and WorldScript.SCENE_PROPS[map_key].size() >= 2, "tiles, props y colisiones separados: " + map_key)
+		_check(courtyard_world.ground_layer.get_used_cells().size() == 220 and courtyard_world.collision_root.get_child_count() >= 4 and MapCatalogScript.props(map_key).size() >= 2, "tiles, props y colisiones separados: " + map_key)
 	var saved_flags := GameState.flags.duplicate(true)
 	GameState.flags = {}
 	courtyard_world.configure("bedroom", Vector2(384, 280))
