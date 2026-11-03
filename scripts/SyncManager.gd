@@ -1,6 +1,7 @@
 extends Node
 
 const CONFIG_PATH := "res://web/backend_config.json"
+const INACTIVITY_SECONDS := 90.0
 
 var configured := false
 var rubric_version := ""
@@ -13,6 +14,8 @@ var _generation := 0
 var _busy := false
 var _elapsed := 0.0
 var _retry_seconds := 2.0
+var sync_completed := false
+var _idle_seconds := 0.0
 
 func _ready() -> void:
 	if not OS.has_feature("web"):
@@ -36,9 +39,12 @@ func on_slot_opened() -> void:
 	last_error = ""
 	_elapsed = 0.0
 	_retry_seconds = 2.0
+	sync_completed = false
 	_cycle()
 
 func on_slot_closed() -> void:
+	SaveManager.end_telemetry_session()
+	_idle_seconds = 0.0
 	var old_slot := _slot
 	var old_generation := _generation
 	_slot = -1
@@ -49,7 +55,28 @@ func on_slot_closed() -> void:
 	if old_slot >= 0:
 		WebBridge.request("sync_close", {"slot": old_slot, "generation": old_generation})
 
+func _input(event: InputEvent) -> void:
+	if not (event is InputEventKey or event is InputEventMouseButton or event is InputEventJoypadButton):
+		return
+	if _idle_seconds >= INACTIVITY_SECONDS:
+		SaveManager.queue_telemetry("inactivity", {"mode": _activity_mode(), "duration_s": mini(int(_idle_seconds), 999999)})
+	_idle_seconds = 0.0
+
+func _activity_mode() -> String:
+	var scene := get_tree().current_scene
+	if scene != null and scene.scene_file_path.ends_with("MOBAArena.tscn"):
+		return "moba"
+	if scene != null and str(scene.get("modal_kind")) in ["coral", "preview", "preview_unplaced", "day_intro", "prologue", "stage_guide", "routine", "dialogue"]:
+		return "dialogue"
+	return "exploration"
+
+func _paused_by_player() -> bool:
+	var scene := get_tree().current_scene
+	return scene == null or str(scene.get("modal_kind")) in ["pause", "menu", "slot_confirm"] or scene.get("window_too_small") == true
+
 func _process(delta: float) -> void:
+	if not SaveManager.telemetry_baseline.is_empty() and not _paused_by_player():
+		_idle_seconds += delta
 	if not configured or _slot < 0 or _busy or blocked:
 		return
 	_elapsed += delta
@@ -92,6 +119,8 @@ func _cycle() -> void:
 		connected = true
 		last_error = ""
 		_retry_seconds = 10.0
+		if not sync_completed and not str(GameState.coral_state.get("ending", "")).is_empty():
+			sync_completed = await finalize_story()
 	else:
 		last_error = str(response.get("error", {}).get("code", "SYNC_ERROR"))
 		if last_error == "EVENT_REJECTED" or last_error == "BACKEND_REJECTED":

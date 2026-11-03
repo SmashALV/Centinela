@@ -227,3 +227,27 @@ test("ranuras, bloqueo, transacción de decisión e idempotencia", async () => {
   assert.equal((await send(second, "delete_slot", { slot: 1, generation: 4 })).error.code, "LOCK_LOST");
   assert.equal((await send(second, "unknown")).error.code, "INVALID_REQUEST");
 });
+
+test("telemetría: varios eventos descriptivos en una sola transacción", async () => {
+  now += 120000;
+  const client = tab();
+  const acquired = await send(client, "acquire_lock", { slot: 2 });
+  assert.equal(acquired.success, true, JSON.stringify(acquired.error));
+  const lock = acquired.result;
+  const base = { slot: 2, generation: lock.generation, snapshot: snapshot(2) };
+  const meta = (await send(client, "get_slot_meta", { slot: 2, generation: lock.generation })).result;
+  const start = (meta?.sequence || 0) + 1;
+  const events = ["session_start", "day_start", "scene_start"].map((kind, index) =>
+    ({ event_id: `TEST_ONLY_batch_${index}`, kind, sequence: start + index }));
+  const saved = await send(client, "save_event_atomic", { ...base, events });
+  assert.equal(saved.success, true);
+  assert.equal(saved.result.sequence, start + 2);
+  const queued = (await send(client, "peek_outbox", { slot: 2, generation: lock.generation })).result;
+  assert.deepEqual(queued.map((event) => event.kind), ["session_start", "day_start", "scene_start"]);
+  const gap = [{ event_id: "TEST_ONLY_gap_a", kind: "pause", sequence: start + 3 },
+    { event_id: "TEST_ONLY_gap_b", kind: "pause", sequence: start + 5 }];
+  assert.equal((await send(client, "save_event_atomic", { ...base, events: gap })).error.code, "INVALID_REQUEST");
+  const decision = [{ event_id: "TEST_ONLY_bad", kind: "decision", sequence: start + 3 }];
+  assert.equal((await send(client, "save_event_atomic", { ...base, events: decision })).error.code, "INVALID_REQUEST");
+  assert.equal((await send(client, "get_slot_meta", { slot: 2, generation: lock.generation })).result.sequence, start + 2);
+});

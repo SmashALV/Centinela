@@ -35,6 +35,7 @@ jobs:
       - name: Test storage, backend, dashboard and synchronization
         run: |
           npm run test:web-storage
+          npm run test:telemetry-sql
           npm run test:web-sync
           npm run test:backend-sql
           npm run test:research-sql

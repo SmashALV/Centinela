@@ -2,8 +2,12 @@ extends Node
 
 signal lock_lost
 
+const TelemetryScript = preload("res://scripts/Telemetry.gd")
+const CoralFlowScript = preload("res://scripts/narrative/CoralStoryFlow.gd")
 const SAVE_PREFIX := "user://centinela_slot_"
+const TELEMETRY_DIR := "user://telemetry/"
 var storage_prefix := SAVE_PREFIX
+var telemetry_dir := TELEMETRY_DIR
 var web_slot := -1
 var web_generation := 0
 var web_sequence := 0
@@ -12,6 +16,11 @@ var _renew_elapsed := 0.0
 var _renew_busy := false
 var _write_busy := false
 var recovered_slot := -1
+var telemetry_baseline: Dictionary = {}
+var _queued_facts: Array = []
+var _telemetry_key := ""
+var _coral_profile := CoralFlowScript.new()
+var _crypto := Crypto.new()
 
 func _process(delta: float) -> void:
 	if not OS.has_feature("web") or web_slot < 0 or _renew_busy:
@@ -93,22 +102,130 @@ func load_slot_data_async(chosen_slot: int) -> Dictionary:
 
 func save_slot_async() -> bool:
 	if not OS.has_feature("web"):
-		return save_slot()
+		var facts := _pending_facts()
+		if not save_slot():
+			return false
+		_telemetry_saved(facts)
+		return true
 	while _write_busy:
 		await get_tree().process_frame
 	if web_slot != GameState.slot:
 		last_error = "LOCK_LOST"
 		return false
+	var facts := _pending_facts() if SyncManager.configured else []
+	var payload := {"slot": GameState.slot, "generation": web_generation, "snapshot": GameState.snapshot()}
+	if not facts.is_empty():
+		payload["events"] = _stamp(facts, web_sequence + 1)
 	_write_busy = true
-	var response: Dictionary = await WebBridge.request("save_snapshot", {"slot": GameState.slot,
-		"generation": web_generation, "snapshot": GameState.snapshot()})
+	var response: Dictionary = await WebBridge.request("save_snapshot" if facts.is_empty() else "save_event_atomic", payload)
 	_write_busy = false
 	if not response.get("success", false):
 		_handle_web_error(response)
 		return false
 	web_sequence = int(response.result.sequence)
+	_telemetry_saved(facts)
 	last_error = ""
 	return true
+
+# Abre la sesión de telemetría de la ranura: fija la línea base y registra el inicio.
+func begin_telemetry_session(resumed: bool) -> bool:
+	# Volver del MOBA reabre la escena principal, pero es la misma sesión.
+	if not telemetry_baseline.is_empty() and _telemetry_key == "%d:%s" % [GameState.slot, GameState.code]:
+		return true
+	telemetry_baseline = {}
+	_queued_facts = []
+	_telemetry_key = "%d:%s" % [GameState.slot, GameState.code]
+	var baseline := TelemetryScript.capture(GameState)
+	if TelemetryScript.closed(baseline):
+		telemetry_baseline = baseline
+		return true
+	var day := int(baseline.day)
+	_queued_facts.append(_timed(TelemetryScript.fact("session_start", day, GameState.phase,
+		{"platform": "web" if OS.has_feature("web") else OS.get_name().to_lower(),
+		"build": TelemetryScript.safe_scene(str(ProjectSettings.get_setting("application/config/version", "dev"))),
+		"resumed": resumed})))
+	if not resumed:
+		_queued_facts.append(_timed(TelemetryScript.fact("day_start", day, "D%d" % day)))
+	telemetry_baseline = baseline
+	return await save_slot_async()
+
+func end_telemetry_session() -> void:
+	_telemetry_key = ""
+	telemetry_baseline = {}
+	_queued_facts = []
+
+# Pausa e inactividad viajan con el siguiente guardado de la partida.
+func queue_telemetry(kind: String, context: Dictionary = {}) -> void:
+	if (OS.has_feature("web") and not SyncManager.configured) or telemetry_baseline.is_empty() or TelemetryScript.closed(telemetry_baseline) or _queued_facts.size() >= TelemetryScript.MAX_EVENTS_PER_SAVE:
+		return
+	if kind == "moba_result" and _queued_facts.any(func(queued): return queued.kind == "moba_result"):
+		return
+	var day := TelemetryScript.current_day(GameState)
+	_queued_facts.append(_timed(TelemetryScript.fact(kind, day, GameState.phase, context)))
+
+func _pending_facts() -> Array:
+	if telemetry_baseline.is_empty():
+		return []
+	var current := TelemetryScript.capture(GameState)
+	var facts: Array = _queued_facts.duplicate(true)
+	facts.append_array(TelemetryScript.diff(telemetry_baseline, current,
+		_coral_profile.behavior_profile(GameState.coral_state)))
+	return facts.slice(0, TelemetryScript.MAX_EVENTS_PER_SAVE)
+
+func _telemetry_saved(facts: Array) -> void:
+	if telemetry_baseline.is_empty():
+		return
+	telemetry_baseline = TelemetryScript.capture(GameState)
+	_queued_facts = _queued_facts.slice(mini(facts.size(), _queued_facts.size()))
+	if not OS.has_feature("web") and not facts.is_empty():
+		_append_desktop_log(facts)
+
+func _timed(fact: Dictionary) -> Dictionary:
+	fact["occurred_at"] = Time.get_datetime_string_from_system(true) + "Z"
+	return fact
+
+func _stamp(facts: Array, first_sequence: int) -> Array:
+	var stamped: Array = []
+	for index in facts.size():
+		var event: Dictionary = facts[index].duplicate(true)
+		if not event.has("occurred_at"):
+			_timed(event)
+		event["event_id"] = new_event_id()
+		event["sequence"] = first_sequence + index
+		event["narrative_version"] = GameState.NARRATIVE_VERSION
+		event["rubric_version"] = SyncManager.rubric_version
+		stamped.append(event)
+	return stamped
+
+func new_event_id() -> String:
+	var raw := _crypto.generate_random_bytes(16)
+	raw[6] = (raw[6] & 0x0f) | 0x40
+	raw[8] = (raw[8] & 0x3f) | 0x80
+	var hex := raw.hex_encode()
+	return "%s-%s-%s-%s-%s" % [hex.substr(0, 8), hex.substr(8, 4), hex.substr(12, 4), hex.substr(16, 4), hex.substr(20, 12)]
+
+# En escritorio no hay backend: los eventos quedan en un JSONL por código para entregarlos al investigador.
+func telemetry_log_path() -> String:
+	return telemetry_dir + "centinela_slot_%d_%s.jsonl" % [GameState.slot, GameState.code]
+
+func _append_desktop_log(facts: Array) -> void:
+	# Las suites que cambian el prefijo de guardado no escriben en la carpeta real de telemetría.
+	if storage_prefix != SAVE_PREFIX and telemetry_dir == TELEMETRY_DIR:
+		return
+	DirAccess.make_dir_recursive_absolute(_global_path(telemetry_dir))
+	var path := telemetry_log_path()
+	var sequence := 0
+	if FileAccess.file_exists(path):
+		sequence = FileAccess.get_file_as_string(path).count("\n")
+	var file := FileAccess.open(path, FileAccess.READ_WRITE if FileAccess.file_exists(path) else FileAccess.WRITE)
+	if file == null:
+		push_warning("No se pudo escribir la telemetría local")
+		return
+	file.seek_end()
+	for event in _stamp(facts, sequence + 1):
+		event["code"] = GameState.code
+		file.store_line(JSON.stringify(event))
+	file.close()
 
 func clear_slot_async(chosen_slot: int, replacement: Dictionary = {}) -> bool:
 	if chosen_slot < 1 or chosen_slot > 3:
@@ -143,6 +260,8 @@ func clear_slot_async(chosen_slot: int, replacement: Dictionary = {}) -> bool:
 func save_moba_result_async(event_id: String, request_id: String,
 		occurred_at: String, frozen_snapshot: Dictionary) -> bool:
 	if not OS.has_feature("web") or not SyncManager.configured:
+		if not OS.has_feature("web"):
+			queue_telemetry("moba_result", {"result": {"victoria": "victory", "derrota": "defeat", "empate": "draw"}.get(GameState.moba_result, "draw")})
 		return await save_slot_async()
 	while _write_busy:
 		await get_tree().process_frame
@@ -155,7 +274,7 @@ func save_moba_result_async(event_id: String, request_id: String,
 		return false
 	var event := {"event_id": event_id, "sequence": web_sequence + 1,
 		"kind": "moba_result", "narrative_version": GameState.NARRATIVE_VERSION,
-		"rubric_version": SyncManager.rubric_version, "day": 0, "scene": "moba",
+		"rubric_version": SyncManager.rubric_version, "day": TelemetryScript.current_day(GameState), "scene": "moba",
 		"occurred_at": occurred_at,
 		"context": {"result": english_result}}
 	_write_busy = true

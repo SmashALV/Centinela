@@ -496,15 +496,16 @@ func _apply_slot_action(chosen: int, redo: bool) -> void:
 		return
 	_show_menu()
 	if redo:
-		_start_slot(chosen)
+		_start_slot(chosen, true, true)
 	else:
 		_toast("Ranura %d eliminada" % chosen)
 
-func _start_slot(chosen: int, upgrade_routine := true) -> void:
+func _start_slot(chosen: int, upgrade_routine := true, fresh_slot := false) -> void:
 	if slot_loading:
 		return
 	slot_loading = true
 	var recovered_local := false
+	var resumed := not fresh_slot
 	if OS.has_feature("web"):
 		if not await SaveManager.acquire_slot_async(chosen):
 			slot_loading = false
@@ -520,6 +521,7 @@ func _start_slot(chosen: int, upgrade_routine := true) -> void:
 			return
 		if response.result == null:
 			GameState.new_game(chosen)
+			resumed = false
 			if upgrade_routine: daily.initialize()
 			if not await SaveManager.save_slot_async():
 				slot_loading = false
@@ -540,6 +542,7 @@ func _start_slot(chosen: int, upgrade_routine := true) -> void:
 			recovered_local = SaveManager.recovered_slot == chosen
 		else:
 			GameState.new_game(chosen)
+			resumed = false
 			if upgrade_routine: daily.initialize()
 			if not SaveManager.save_slot():
 				slot_loading = false
@@ -561,6 +564,9 @@ func _start_slot(chosen: int, upgrade_routine := true) -> void:
 			_toast("No se pudo actualizar la rutina de esta ranura")
 			_show_menu()
 			return
+	await SaveManager.begin_telemetry_session(resumed)
+	if not is_inside_tree():
+		return
 	SyncManager.on_slot_opened()
 	AudioManager.apply_preferences()
 	if GameState.phase != "moba":
@@ -1043,6 +1049,7 @@ func _show_pause() -> void:
 	if modal_kind == "pause": return
 	paused_reading = conversation_ui.capture_reading_state()
 	modal_before_pause = modal_kind
+	SaveManager.queue_telemetry("pause")
 	AudioManager.set_music_paused(true)
 	_render_pause()
 

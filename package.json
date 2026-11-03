@@ -9,7 +9,8 @@
     "test:dashboard-export": "node --test tests/dashboard_export.test.mjs",
     "test:dashboard-browser": "node tests/dashboard_browser.test.cjs",
     "test:web-sync": "node --test tests/web_sync.test.cjs",
-    "test:backend-e2e": "node tests/backend_e2e.cjs"
+    "test:backend-e2e": "node tests/backend_e2e.cjs",
+    "test:telemetry-sql": "node --test tests/telemetry_sql.test.cjs"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.12",

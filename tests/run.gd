@@ -7,6 +7,7 @@ const MainScene = preload("res://scenes/Main.tscn")
 const PreviewCatalog = preload("res://scripts/narrative/RecoveredPreviewCatalog.gd")
 const DisplayGuardScript = preload("res://scripts/DisplayGuard.gd")
 const WorldScript = preload("res://scripts/World.gd")
+const TelemetryScript = preload("res://scripts/Telemetry.gd")
 
 var failures := 0
 
@@ -22,6 +23,7 @@ func _check(condition: bool, description: String) -> void:
 
 func _run() -> void:
 	SaveManager.storage_prefix = "user://centinela_TEST_ONLY_%d_" % Time.get_ticks_usec()
+	await _telemetry_tests()
 	var story := Narrative.new()
 	var errors: Array[String] = story.load_story("res://data/narrative/day_0_TEST_ONLY.json", true)
 	_check(errors.is_empty(), "fixture narrativa válida")
@@ -724,6 +726,53 @@ func _run() -> void:
 	_check(not SaveManager.slot_exists(1) and main.modal_kind == "menu", "borrar desde menú deja la ranura vacía")
 	main.queue_free()
 	_finish_tests()
+
+func _telemetry_tests() -> void:
+	var before := {"day": 1, "coral": {"day": 1, "mode": "explore", "node": "", "choices": {}, "actions": [], "hint_requests": {}, "ending": ""}}
+	var after: Dictionary = before.duplicate(true)
+	after.coral.mode = "scene"
+	after.coral.node = "D1_GATE"
+	var facts: Array = TelemetryScript.diff(before, after)
+	_check(facts.size() == 1 and facts[0].kind == "scene_start" and facts[0].scene == "D1_GATE", "telemetría: abrir escena genera scene_start")
+	after.coral.choices = {"D1_GATE": "C"}
+	after.coral.actions = ["D1_LOBBY_DONE", "DONE_D2_A", "HINT_D1_h1"]
+	after.coral.hint_requests = {"1": "h1"}
+	after.day = 2
+	facts = TelemetryScript.diff(before, after)
+	var kinds: Array = facts.map(func(item): return item.kind)
+	_check(kinds == ["day_start", "scene_start", "story_choice", "story_action", "hint_request"], "telemetría: día, elección, acción y pista sin acciones internas")
+	_check(facts[2].context == {"decision_id": "D1_GATE", "choice_id": "C", "behavior": "riesgo"}, "telemetría: elección con clasificación descriptiva y sin puntaje")
+	after.coral.ending = "F02"
+	facts = TelemetryScript.diff(before, after, {"label": "Protectora", "counts": {"protectora": 5, "limite": 1, "riesgo": 1}})
+	_check(facts[-1].kind == "ending_reached" and facts[-1].context.profile == "protective" and facts[-1].context.risk_choices == 1, "telemetría: final con perfil y conteos")
+	_check(TelemetryScript.diff(after, before).is_empty(), "telemetría: después del final no se emiten eventos")
+	_check(TelemetryScript.safe_scene("día 1/x") == "d_a_1_x" and TelemetryScript.safe_scene("") == "general", "telemetría: escena saneada para el servidor")
+	SaveManager.telemetry_dir = "user://telemetry_TEST_ONLY_%d/" % Time.get_ticks_usec()
+	GameState.new_game(3)
+	_check(SaveManager.save_slot(), "telemetría: ranura de prueba creada")
+	await SaveManager.begin_telemetry_session(false)
+	GameState.coral_state = {"day": 1, "mode": "scene", "node": "D1_GATE", "choices": {}, "actions": [], "hint_requests": {}, "ending": ""}
+	SaveManager.queue_telemetry("pause")
+	await SaveManager.save_slot_async()
+	var log_path: String = SaveManager.telemetry_log_path()
+	var lines: PackedStringArray = FileAccess.get_file_as_string(log_path).strip_edges().split("\n")
+	var logged: Array = []
+	for line in lines: logged.append(JSON.parse_string(line))
+	_check(logged.map(func(item): return item.kind) == ["session_start", "day_start", "pause", "day_start", "scene_start"], "telemetría local: sesión, días, pausa y escena en orden")
+	var uuid := RegEx.create_from_string("^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$")
+	var iso := RegEx.create_from_string("^20[0-9]{2}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$")
+	var well_formed := true
+	for index in logged.size():
+		var item: Dictionary = logged[index]
+		well_formed = well_formed and int(item.sequence) == index + 1 and uuid.search(str(item.event_id)) != null and iso.search(str(item.occurred_at)) != null and item.code == GameState.code
+	_check(well_formed, "telemetría local: secuencia consecutiva, UUID v4 y fecha ISO aceptada por el servidor")
+	SaveManager.end_telemetry_session()
+	await SaveManager.save_slot_async()
+	_check(FileAccess.get_file_as_string(log_path).strip_edges().split("\n").size() == 5, "telemetría: sin sesión abierta no se registran eventos")
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(log_path))
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(SaveManager.telemetry_dir))
+	SaveManager.telemetry_dir = SaveManager.TELEMETRY_DIR
+	_check(SaveManager.delete_slot(3), "telemetría: ranura de prueba eliminada")
 
 func _finish_tests() -> void:
 	var focused: Control = get_viewport().gui_get_focus_owner()

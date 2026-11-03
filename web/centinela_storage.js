@@ -315,18 +315,26 @@
     if (!validSlot(slot) || !Number.isInteger(generation)) throw failure("INVALID_REQUEST", "Ranura o generación inválida");
     validateSnapshot(snapshot, slot);
     const hasEvent = eventMode !== "none";
+    // Un guardado descriptivo puede llevar varios eventos de telemetría consecutivos.
+    const events = !hasEvent ? [] : Array.isArray(payload.events) && eventMode === "descriptive" ?
+      payload.events : [payload.event];
     if (hasEvent) {
-      const event = payload.event;
-      if (!event || typeof event.event_id !== "string" || !event.event_id ||
-          !Number.isInteger(event.sequence) || event.sequence < 1) {
-        throw failure("INVALID_REQUEST", "Evento inválido");
+      if (events.length < 1 || events.length > 10 ||
+          new Set(events.map((event) => event?.event_id)).size !== events.length)
+        throw failure("INVALID_REQUEST", "Lote de eventos inválido");
+      for (const [index, event] of events.entries()) {
+        if (!event || typeof event.event_id !== "string" || !event.event_id ||
+            !Number.isInteger(event.sequence) || event.sequence < 1 ||
+            event.sequence !== events[0].sequence + index) {
+          throw failure("INVALID_REQUEST", "Evento inválido");
+        }
+        if (eventMode === "decision" &&
+            (typeof event.decision_id !== "string" || !event.decision_id ||
+             typeof event.choice_id !== "string" || !event.choice_id || event.kind !== "decision"))
+          throw failure("INVALID_REQUEST", "Decisión inválida");
+        if (eventMode === "descriptive" && event.kind === "decision")
+          throw failure("INVALID_REQUEST", "Una decisión requiere guardado de decisión");
       }
-      if (eventMode === "decision" &&
-          (typeof event.decision_id !== "string" || !event.decision_id ||
-           typeof event.choice_id !== "string" || !event.choice_id || event.kind !== "decision"))
-        throw failure("INVALID_REQUEST", "Decisión inválida");
-      if (eventMode === "descriptive" && event.kind === "decision")
-        throw failure("INVALID_REQUEST", "Una decisión requiere guardado de decisión");
     }
     const db = await openDatabase();
     const operation = eventMode === "none" ? "save_snapshot" :
@@ -353,31 +361,33 @@
             metaRequest.onsuccess = () => {
             const previous = metaRequest.result;
             const sequence = previous?.sequence || 0;
-            if (hasEvent && payload.event.sequence !== sequence + 1) {
+            if (hasEvent && events[0].sequence !== sequence + 1) {
               abort("INVALID_REQUEST", "Secuencia de evento no consecutiva");
               return;
             }
             const saveId = previous?.save_id || root.crypto.randomUUID();
-            const nextSequence = hasEvent ? sequence + 1 : sequence;
+            const nextSequence = sequence + events.length;
             const result = { slot, save_id: saveId, sequence: nextSequence };
             tx.objectStore("save_slots").put({ slot, save_id: saveId, code: snapshot.code,
               phase: snapshot.phase, sequence: nextSequence });
             tx.objectStore("save_snapshots").put({ slot, snapshot });
-            if (hasEvent) {
-              tx.objectStore("event_outbox").put({ event_id: payload.event.event_id,
-                slot, sequence: nextSequence, payload: payload.event });
+            for (const event of events) {
+              tx.objectStore("event_outbox").put({ event_id: event.event_id,
+                slot, sequence: event.sequence, payload: event });
             }
             tx.objectStore("request_log").put({ request_id: requestId, slot, operation, signature, result });
             done(result);
             };
           };
-          if (hasEvent) {
-            const eventRequest = tx.objectStore("event_outbox").get(payload.event.event_id);
+          const checkEvent = (index) => {
+            if (index >= events.length) { continueWrite(); return; }
+            const eventRequest = tx.objectStore("event_outbox").get(events[index].event_id);
             eventRequest.onsuccess = () => {
               if (eventRequest.result) abort("INVALID_REQUEST", "event_id ya registrado");
-              else continueWrite();
+              else checkEvent(index + 1);
             };
-          } else continueWrite();
+          };
+          checkEvent(0);
         };
       };
     });

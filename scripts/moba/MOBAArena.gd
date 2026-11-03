@@ -705,7 +705,7 @@ func _finish(result: String) -> void:
 	result_event_id = "%s-%s-%s-%s-%s" % [raw_id.substr(0, 8), raw_id.substr(8, 4),
 		raw_id.substr(12, 4), raw_id.substr(16, 4), raw_id.substr(20, 12)]
 	result_request_id = _crypto.generate_random_bytes(16).hex_encode()
-	result_occurred_at = Time.get_datetime_string_from_system(true, true) + "Z"
+	result_occurred_at = Time.get_datetime_string_from_system(true) + "Z"
 	result_snapshot = GameState.snapshot()
 	result_saved = await SaveManager.save_moba_result_async(result_event_id, result_request_id,
 		result_occurred_at, result_snapshot)

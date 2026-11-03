@@ -69,7 +69,7 @@ python tests/verify_recovered_script.py
 
 ## Backend de desarrollo
 
-La base P4 está en [`supabase/README.md`](supabase/README.md): migración PostgreSQL, cuatro Edge Functions, cola Web, Auth anónima y pruebas sintéticas. `web/backend_config.json` contiene la URL y clave publicable del proyecto de desarrollo, pero `enabled` permanece en `false` hasta desplegar el backend y activar Auth anónima. El juego sigue guardando localmente. El resultado del MOBA se encola como evento descriptivo al activar esa configuración. No se calcula ninguna puntuación educativa en el cliente.
+La base P4 está en [`supabase/README.md`](supabase/README.md): migración PostgreSQL, cuatro Edge Functions, cola Web, Auth anónima y pruebas sintéticas. `web/backend_config.json` contiene la URL y clave publicable del proyecto de desarrollo, pero `enabled` permanece en `false` hasta desplegar el backend y activar Auth anónima. El juego sigue guardando localmente. Al activar esa configuración, la [telemetría descriptiva](docs/TELEMETRIA_SUPABASE.md) envía sesión, días, escenas, elecciones con su clasificación, acciones, pistas, pausas, inactividad, resultados MOBA y final; en escritorio se escribe un JSONL por código en `user://telemetry/`. No se calcula ninguna puntuación educativa en el cliente.
 
 ## Dashboard del investigador
 
