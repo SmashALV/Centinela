@@ -2,6 +2,8 @@ extends Node2D
 class_name CentinelaWorld
 
 const MapCatalog = preload("res://scripts/world/MapCatalog.gd")
+const TargetMarkers = preload("res://scripts/world/TargetMarkers.gd")
+const ActorAnimatorScript = preload("res://scripts/world/ActorAnimator.gd")
 
 signal interacted(target_id: String)
 signal departure_finished
@@ -17,8 +19,6 @@ const CHARACTER_SHEETS := {
 	"Sebas": preload("res://assets/characters/sebas_directions_v4.png"),
 	"Tutor": preload("res://assets/characters/tutor_directions.png")
 }
-const ACTOR_WALK_SPEED := 68.0
-const IDLE_FACINGS := ["down", "left", "down", "right"]
 const OBJECT_SPRITES := {
 	"alarm": preload("res://assets/objects/alarm.png"),
 	"backpack": preload("res://assets/objects/backpack.png"),
@@ -68,15 +68,21 @@ var collision_root: Node2D
 var player_body: CharacterBody2D
 var story_targets_active := false
 var story_primary_target := ""
-var departures: Dictionary = {}
 var routine_mode := false
 var evening_light := false
 var edge_routes: Dictionary = {}
 var edge_latched := ""
 var hide_player := false
-var anim_time := 0.0
-# Posición visible de cada personaje: camina hacia su objetivo en vez de aparecer de golpe.
-var actor_display: Dictionary = {}
+# Animación de personajes (paso 7 de la migración modular). Estas propiedades conservan los
+# nombres anteriores para el resto del juego y las pruebas.
+var animator = ActorAnimatorScript.new()
+var anim_time: float:
+	get: return animator.time
+	set(value): animator.time = value
+var actor_display: Dictionary:
+	get: return animator.display
+var departures: Dictionary:
+	get: return animator.departures
 
 # Cama del cuarto de Sofi en el mapa nuevo: se resalta completa a la hora de dormir.
 const SOFI_BED_RECT := Rect2(62, 100, 186, 123)
@@ -117,8 +123,7 @@ func configure(key: String, position: Vector2) -> void:
 	edge_routes.clear()
 	edge_latched = ""
 	hide_player = false
-	departures.clear()
-	actor_display.clear()
+	animator.reset()
 	scene_key = key
 	player_pos = position
 	story_targets_active = false
@@ -207,9 +212,9 @@ func _physics_process(delta: float) -> void:
 	if not enabled:
 		player_body.velocity = Vector2.ZERO
 		return
-	anim_time += delta
+	animator.time += delta
 	_update_departures(delta)
-	_update_actor_walks(delta)
+	if story_targets_active: animator.update_walks(delta, objects, CHARACTER_SHEETS.keys())
 	var direction := Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	if direction != Vector2.ZERO:
 		if absf(direction.x) > absf(direction.y):
@@ -359,26 +364,11 @@ func _draw() -> void:
 func begin_departures() -> void:
 	if scene_key not in ["courtyard", "school"] or not departures.is_empty(): return
 	objects.erase("friends")
-	var exits: Array = [Vector2(47, 290), Vector2(720, 230), Vector2(180, 389), Vector2(550, 389)]
-	exits.shuffle()
-	for i in FRIENDS.size():
-		var friend: Dictionary = FRIENDS[i]
-		var endpoint: Vector2 = exits[i]
-		departures[str(friend.name)] = {"position": Vector2(374, 245 if routine_mode else 175) + friend.offset, "path": [Vector2(314 + i * 40, 260 + i * 8), Vector2(endpoint.x, 285), endpoint], "step": 0, "speed": randf_range(52.0, 72.0), "facing": "down"}
+	animator.start_departures(FRIENDS, Vector2(374, 245 if routine_mode else 175))
 	queue_redraw()
 
 func _update_departures(delta: float) -> void:
-	if departures.is_empty(): return
-	for person in departures.keys():
-		var walk: Dictionary = departures[person]
-		var target: Vector2 = walk.path[int(walk.step)]
-		var direction: Vector2 = target - Vector2(walk.position)
-		walk.facing = ("right" if direction.x > 0 else "left") if absf(direction.x) > absf(direction.y) else ("down" if direction.y > 0 else "up")
-		walk.position = Vector2(walk.position).move_toward(target, float(walk.speed) * delta)
-		if Vector2(walk.position).distance_to(target) < 0.5:
-			walk.step = int(walk.step) + 1
-			if int(walk.step) >= walk.path.size(): departures.erase(person)
-	if departures.is_empty(): departure_finished.emit()
+	if animator.update_departures(delta): departure_finished.emit()
 
 func _draw_bedroom_decor() -> void:
 	draw_rect(ROOM, Color(0.80, 0.48, 0.71, 0.14))
@@ -467,32 +457,19 @@ func _draw_draft_caption() -> void:
 	draw_string(ThemeDB.fallback_font, Vector2(65, 81), caption, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color("fff3df"))
 
 func _draw_objective_marker(pos: Vector2) -> void:
-	# Flecha amarilla grande que rebota sobre el objetivo actual.
-	var marker := Color("ffd84d")
-	var p: Vector2 = pos + Vector2(0, -absf(sin(anim_time * 4.0)) * 7.0)
-	var outline := PackedVector2Array([p + Vector2(-15, -13), p + Vector2(-6, -13), p + Vector2(-6, -24), p + Vector2(6, -24), p + Vector2(6, -13), p + Vector2(15, -13), p + Vector2(0, 5)])
-	draw_colored_polygon(outline, Color("10192b"))
-	var fill := PackedVector2Array([p + Vector2(-11, -11), p + Vector2(-4, -11), p + Vector2(-4, -21), p + Vector2(4, -21), p + Vector2(4, -11), p + Vector2(11, -11), p + Vector2(0, 1)])
-	draw_colored_polygon(fill, marker)
-	draw_line(p + Vector2(-2, -19), p + Vector2(-2, -12), Color(1, 1, 1, 0.65), 2.0)
+	TargetMarkers.draw_objective_marker(self, pos, animator.time)
 
 func _draw_target_glow(pos: Vector2, key: String) -> void:
-	var pulse: float = 0.5 + 0.5 * sin(anim_time * 3.2)
 	if key == "bed":
 		# La cama es grande: se resalta todo el mueble y no solo un punto.
-		var bed_rect := (SOFI_BED_RECT if scene_key.begins_with("sofi_room") else Rect2(79, 112, 104, 113)).grow(4.0 + pulse * 3.0)
-		draw_rect(bed_rect, Color(1.0, 0.85, 0.3, 0.12 + 0.1 * pulse))
-		draw_rect(bed_rect, Color("ffd84d"), false, 3.0)
+		TargetMarkers.draw_rect_glow(self, SOFI_BED_RECT if scene_key.begins_with("sofi_room") else Rect2(79, 112, 104, 113), animator.time)
 		return
 	# En personajes el halo rodea los pies; en objetos, el centro.
 	var center: Vector2 = pos + (Vector2(0, 12) if key.capitalize() in CHARACTER_SHEETS or key == "tutoria" else Vector2.ZERO)
-	draw_circle(center, 24.0 + pulse * 6.0, Color(1.0, 0.85, 0.3, 0.18 + 0.22 * pulse))
-	draw_arc(center, 26.0 + pulse * 6.0, 0, TAU, 32, Color("ffd84d"), 2.5)
+	TargetMarkers.draw_glow(self, center, animator.time)
 
 func _draw_press_prompt(pos: Vector2) -> void:
-	draw_rect(Rect2(pos + Vector2(-34, 0), Vector2(68, 20)), Color("ffd84d"))
-	draw_rect(Rect2(pos + Vector2(-34, 0), Vector2(68, 20)), Color("10192b"), false, 2.0)
-	draw_string(ThemeDB.fallback_font, pos + Vector2(-34, 15), "Pulsa F", HORIZONTAL_ALIGNMENT_CENTER, 68, 13, Color("10192b"))
+	TargetMarkers.draw_press_prompt(self, pos)
 
 func _draw_object(key: String, pos: Vector2, active: bool) -> void:
 	var color := Color("f5d479") if active else Color("8ec9c2")
@@ -510,40 +487,16 @@ func _draw_object(key: String, pos: Vector2, active: bool) -> void:
 		HORIZONTAL_ALIGNMENT_CENTER, 82, 12, color)
 
 func _idle_facing(key: String, pos: Vector2) -> String:
-	# Mira a Sofi si está cerca; si no, cambia de postura cada pocos segundos.
-	if pos.distance_to(player_pos) < 110.0:
-		return _walk_facing(pos, player_pos)
-	return IDLE_FACINGS[int(anim_time / 2.6 + _phase(key) * 4.0) % IDLE_FACINGS.size()]
+	return animator.idle_facing(key, pos, player_pos)
 
 func _walk_facing(from: Vector2, to: Vector2) -> String:
-	var d: Vector2 = to - from
-	return ("right" if d.x > 0 else "left") if absf(d.x) > absf(d.y) else ("down" if d.y > 0 else "up")
+	return ActorAnimatorScript.walk_facing(from, to)
 
-func _phase(actor_name: String) -> float:
-	return float(absi(hash(actor_name.to_lower())) % 1000) / 1000.0
 
-func _update_actor_walks(delta: float) -> void:
-	if not story_targets_active: return
-	for key in objects:
-		if not key.capitalize() in CHARACTER_SHEETS: continue
-		var target: Vector2 = objects[key]
-		if not actor_display.has(key):
-			actor_display[key] = target
-			continue
-		actor_display[key] = Vector2(actor_display[key]).move_toward(target, ACTOR_WALK_SPEED * delta)
 
 func _draw_character(pos: Vector2, actor_name: String, facing: String = "down", compact_label: bool = false, animated := false, walking := false) -> void:
 	var texture: Texture2D = CHARACTER_SHEETS[actor_name]
-	if walking:
-		# Pasos: pequeño rebote y balanceo al caminar.
-		pos += Vector2(sin(anim_time * 11.0) * 1.2, -absf(sin(anim_time * 11.0)) * 3.0)
-	elif animated:
-		var phase: float = _phase(actor_name)
-		pos.y += sin(anim_time * 2.3 + phase * TAU) * 1.4
-		var cycle: float = fmod(anim_time + phase * 7.0, 7.0)
-		if cycle < 0.45:
-			# Saltito ocasional para que el grupo no parezca de estatuas.
-			pos.y -= sin(cycle / 0.45 * PI) * 9.0
+	pos += animator.pose_offset(actor_name, animated, walking)
 	var half: Vector2 = texture.get_size() * 0.5
 	var cell := Vector2.ZERO
 	match facing:
