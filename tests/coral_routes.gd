@@ -19,16 +19,16 @@ func _fail(message: String) -> void:
 
 func _advance_intro(story: Node) -> bool:
 	for ignored in range(2):
-		if story.modal_kind != "coral" or not await story._coral_advance(): return false
+		if story.modal_kind != "coral" or not await story.coral.advance(): return false
 	return GameState.coral_state.mode == "explore"
 
 func _play_scene(story: Node, scene_id: String, choice: String = "") -> bool:
-	if not await story._coral_begin_scene(scene_id): return false
+	if not await story.coral.begin_scene(scene_id): return false
 	if story.conversation_ui.visible == false: return false
 	var scene: Dictionary = story.coral_flow.scene(scene_id, story.preview_catalog, story.draft_flow, GameState.coral_state)
 	if scene.get("lines", []).is_empty(): return false
 	for ignored in range(scene.lines.size()):
-		if not await story._coral_advance(): return false
+		if not await story.coral.advance(): return false
 	if choice.is_empty():
 		return true
 	if GameState.coral_state.mode != "scene" or GameState.coral_state.step != scene.lines.size(): return false
@@ -47,7 +47,7 @@ func _play_scene(story: Node, scene_id: String, choice: String = "") -> bool:
 		if not story.save_in_progress and GameState.coral_state.mode == "reaction": break
 	if GameState.coral_state.mode != "reaction": return false
 	if GameState.coral_state.choices.get(scene_id) != choice: return false
-	return await story._coral_finish_scene()
+	return await story.coral.finish_scene()
 
 func _run() -> void:
 	var story: Node = MainScene.instantiate()
@@ -65,14 +65,14 @@ func _run() -> void:
 		GameState.phase = "result"
 		GameState.moba_class = "Defensor"
 		GameState.moba_result = "victoria"
-		if not SaveManager.save_slot() or not await story._start_coral_story():
+		if not SaveManager.save_slot() or not await story.coral.start_story():
 			_fail("inicio coral")
 			return
 		for day in [1, 2, 3, 4]:
 			if not await _advance_intro(story):
 				_fail("introducción día " + str(day))
 				return
-			if await story._coral_next_day():
+			if await story.coral.next_day():
 				_fail("salida prematura")
 				return
 			for person in plan.order:
@@ -89,7 +89,7 @@ func _run() -> void:
 					_fail("conversación " + id)
 					return
 				if GameState.coral_state.node == "N_D2":
-					if not await story._coral_advance():
+					if not await story.coral.advance():
 						_fail("narrador después de observar")
 						return
 				if not story.coral_flow.talked_today(GameState.coral_state, person) or GameState.coral_state.day != day:
@@ -108,11 +108,11 @@ func _run() -> void:
 				for follow_id in ["D1_A_FOLLOW", "D1_B_FOLLOW"]:
 					var follow: Dictionary = story.coral_flow.scene(follow_id, story.preview_catalog, story.draft_flow, GameState.coral_state)
 					for ignored in range(follow.lines.size()):
-						if not await story._coral_advance():
+						if not await story.coral.advance():
 							_fail("continuidad lobby y privado")
 							return
 			if day < 4:
-				if not await story._coral_next_day():
+				if not await story.coral.next_day():
 					_fail("cierre de jornada")
 					return
 		if GameState.coral_state.observed.size() != 3:
@@ -120,7 +120,7 @@ func _run() -> void:
 			return
 		if plan.action == "support": await _play_scene(story, "I_TUTOR")
 		if plan.action == "limit": await _play_scene(story, "I_LIMIT")
-		if not await story._coral_finish_day() or GameState.coral_state.ending != plan.ending:
+		if not await story.coral.finish_day() or GameState.coral_state.ending != plan.ending:
 			_fail("final por acciones")
 			return
 		var profile: Dictionary = story.coral_flow.behavior_profile(GameState.coral_state)
@@ -142,7 +142,7 @@ func _run() -> void:
 			if person not in voices:
 				_fail("falta voz en epílogo: " + person)
 				return
-		for ignored in range(ending_scene.lines.size()): await story._coral_advance()
+		for ignored in range(ending_scene.lines.size()): await story.coral.advance()
 		print("PASS jornada compartida D1–D4, cuatro compañeros, orden %s, final %s y reanudación" % [str(plan.order), plan.ending])
 		SaveManager.delete_slot(1)
 	var old_save: Dictionary = GameState.snapshot()

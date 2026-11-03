@@ -60,14 +60,14 @@ func _run() -> void:
 	GameState.phase = "coral"
 	GameState.coral_state = main.coral_flow.new_state()
 	GameState.coral_state.mode = "explore"
-	await main._coral_begin_scene("I_TUTOR")
-	await main._coral_finish_scene()
+	await main.coral.begin_scene("I_TUTOR")
+	await main.coral.finish_scene()
 	check(not GameState.coral_state.adult_support_started, "conocer tutoría no simula una petición de ayuda")
 	GameState.coral_state.observed.append("camila_request_shared")
 	var tutor_scene: Dictionary = main.coral_flow.scene("I_TUTOR", main.preview_catalog, main.draft_flow, GameState.coral_state)
 	check(tutor_scene.lines[0].text.contains("Camila"), "visita de apoyo tiene un motivo conocido")
-	await main._coral_begin_scene("I_TUTOR")
-	await main._coral_finish_scene()
+	await main.coral.begin_scene("I_TUTOR")
+	await main.coral.finish_scene()
 	check(GameState.coral_state.adult_support_started, "preocupación compartida inicia apoyo")
 	for ending in ["F01", "F02", "F03"]:
 		GameState.coral_state.choices = {"D2_A": "B", "D2_B": "A", "D2_C": "B"}

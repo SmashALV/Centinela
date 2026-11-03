@@ -132,7 +132,7 @@ func load_view() -> void:
 	elif int(state().day) == 0 and state().stage == "morning" and not GameState.flags.get("wakeup_seen", false):
 		main._show_dialogue("wakeup")
 	elif not str(state().scene).is_empty(): _render_scene()
-	elif int(state().day) > 0 and GameState.coral_state.get("mode") != "explore": main._render_coral()
+	elif int(state().day) > 0 and GameState.coral_state.get("mode") != "explore": main.coral.render()
 	else: main._close_modal()
 
 func _primary_target() -> String:
@@ -248,14 +248,14 @@ func interact(target: String) -> void:
 			else: main._toast("Todavía no es hora de dormir")
 		"tutoria":
 			if int(state().day) == 0: main._inspect_d0("tutoria")
-			else: main._coral_interact(target)
+			else: main.coral.interact(target)
 		"friends":
 			if state().stage == "farewell": begin_scene("goodbye")
 			elif int(state().day) == 0:
 				if GameState.flags.get("friends", false): main._toast("El grupo está listo. Entra a clase por arriba")
 				else: main._show_dialogue("courtyard")
 		_:
-			if int(state().day) > 0: main._coral_interact(target)
+			if int(state().day) > 0: main.coral.interact(target)
 
 func begin_scene(key: String) -> bool:
 	if main.save_in_progress: return false

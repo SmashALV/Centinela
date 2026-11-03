@@ -19,17 +19,17 @@ func routine_scene() -> void:
 	check(false, "rutina no entra en bucle")
 
 func coral_scene(id: String, answer := "A") -> void:
-	check(await main._coral_begin_scene(id), "abre " + id)
+	check(await main.coral.begin_scene(id), "abre " + id)
 	for line in 120:
 		var state: Dictionary = GameState.coral_state
 		if state.mode in ["explore", "summary"]: return
 		if state.mode == "reaction":
-			check(await main._coral_finish_scene(), "reacción guardada")
+			check(await main.coral.finish_scene(), "reacción guardada")
 			continue
 		var scene: Dictionary = main.coral_flow.scene(str(state.node), main.preview_catalog, main.draft_flow, state)
 		if int(state.step) == scene.get("lines", []).size() and not scene.get("choices", []).is_empty():
-			check(await main._coral_choose(answer), "decisión guardada")
-		else: check(await main._coral_advance(), "parlamento guardado")
+			check(await main.coral.choose(answer), "decisión guardada")
+		else: check(await main.coral.advance(), "parlamento guardado")
 	check(false, "conversación no entra en bucle")
 
 func d0_dialogue() -> void:
@@ -95,7 +95,7 @@ func _run() -> void:
 				for companion in ["mateo", "bruno", "camila", "sebas"]:
 					check(main.world.objects.has(companion), "compañero disponible " + companion)
 					await coral_scene(main.coral_flow.companion_scene(GameState.coral_state, companion), "B" if ending == "F03" else "A")
-				check(not await main._coral_next_day(), "la salida no cambia el día")
+				check(not await main.coral.next_day(), "la salida no cambia el día")
 			if day == 4 and ending == "F01":
 				await edge("left", "tutor", "arrival")
 				await coral_scene("I_TUTOR")

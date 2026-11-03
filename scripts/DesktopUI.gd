@@ -96,7 +96,7 @@ func show_desktop(main: Node) -> void:
 	privacy.size = Vector2(277, 48)
 	privacy.add_theme_font_size_override("font_size", owner_main._scaled_text_size(15))
 	privacy.pressed.connect(func():
-		if main.daily.active() and int(main.daily.state().day) == 4: main._coral_begin_scene("I_LIMIT")
+		if main.daily.active() and int(main.daily.state().day) == 4: main.coral.begin_scene("I_LIMIT")
 		else: main._inspect_profile())
 	add_child(privacy)
 	_panel(Rect2(294, 400, 452, 40), Color("30233d", 0.94))

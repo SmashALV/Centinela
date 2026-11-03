@@ -630,7 +630,7 @@ func _run() -> void:
 		main._show_result()
 		var result_buttons: Array[Node] = main.conversation_ui.find_children("*", "Button", true, false)
 		_check(main.conversation_ui.visible and result_buttons.is_empty() and main.conversation_ui.auto_action.is_valid(), "resultado deja una sola continuación lineal")
-		_check(await main._show_d1_interlude() and GameState.flags.get("d1_interlude_active", false), "interludio del narrador se guarda tras el resultado")
+		_check(await main.coral.show_d1_interlude() and GameState.flags.get("d1_interlude_active", false), "interludio del narrador se guarda tras el resultado")
 		var interlude_lines := ""
 		for label in main.conversation_ui.find_children("*", "Label", true, false):
 			interlude_lines += label.text + "\n"

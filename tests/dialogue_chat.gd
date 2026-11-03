@@ -96,7 +96,7 @@ func _run() -> void:
 	GameState.coral_state.mode = "explore"
 	main.modal_kind = ""
 	main._load_phase()
-	await main._coral_begin_scene("I_D1_CAMILA")
+	await main.coral.begin_scene("I_D1_CAMILA")
 	check(ui.find_child("VNBackground", true, false).texture.resource_path == "res://assets/vn/computer_lab.png", "Día 1 presenta conversaciones dentro de la sala de cómputo")
 	remaining = ui.auto_remaining - 0.3
 	ui.auto_remaining = remaining
@@ -114,7 +114,7 @@ func _run() -> void:
 	main.pause_menu.resume_pause()
 	check(main.modal_kind == "coral" and ui.auto_remaining == ui.auto_duration, "al retomar, la nueva línea recibe su propio tiempo")
 	var old_state: Dictionary = ui.capture_reading_state()
-	ui.show_scene("courtyard", "Otra escena", "Sofi", "Un texto distinto.", [], main._coral_advance, "", "Sofi", "", false, 18)
+	ui.show_scene("courtyard", "Otra escena", "Sofi", "Un texto distinto.", [], main.coral.advance, "", "Sofi", "", false, 18)
 	check(not ui.restore_reading_state(old_state), "un contador anterior no se aplica a otra escena")
 	SaveManager.delete_slot(1)
 	SaveManager.storage_prefix = SaveManager.SAVE_PREFIX

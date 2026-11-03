@@ -114,7 +114,7 @@ func resume_pause() -> void:
 		"day_intro": main.legacy.render_day_intro()
 		"preview": main.legacy.render_preview()
 		"preview_unplaced": main.legacy.render_unplaced_preview()
-		"coral": main._render_coral()
+		"coral": main.coral.render()
 		"routine": main.daily._render_scene()
 		"sleep": main.daily._render_sleep()
 		_: main._close_modal()
