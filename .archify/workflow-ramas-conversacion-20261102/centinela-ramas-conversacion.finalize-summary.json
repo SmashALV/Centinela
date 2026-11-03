@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "workflow",
+  "quality": "showcase",
+  "specification": {
+    "path": "E:\\GODOT\\grooming-2\\.archify\\workflow-ramas-conversacion-20261102\\candidate.json",
+    "sha256": "70a93ff715144728986246c66753c724de9efe8db03abf2a27e66f57a630402d",
+    "bytes": 13522
+  },
+  "artifact": {
+    "path": "E:\\GODOT\\grooming-2\\.archify\\workflow-ramas-conversacion-20261102\\centinela-ramas-conversacion.html",
+    "sha256": "d982d52afb6b425317f3924b347fca4ff59d8b99d89f4ab03d456d7858c2495d",
+    "bytes": 899297
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "E:\\GODOT\\grooming-2\\.archify\\workflow-ramas-conversacion-20261102\\centinela-ramas-conversacion.finalize.json",
+    "summaryReceipt": "E:\\GODOT\\grooming-2\\.archify\\workflow-ramas-conversacion-20261102\\centinela-ramas-conversacion.finalize-summary.json",
+    "browserCheckReceipt": "E:\\GODOT\\grooming-2\\.archify\\workflow-ramas-conversacion-20261102\\centinela-ramas-conversacion.browser-check.json"
+  },
+  "update": {
+    "status": "current",
+    "installedVersion": "3.2.0",
+    "availableVersion": "3.2.0",
+    "releaseNotes": null,
+    "checkedAt": "2026-11-03T04:04:34.347Z",
+    "source": "cache",
+    "noticeRequired": false,
+    "noticeText": null
+  },
+  "visualReview": "not-requested",
+  "durationMs": 8564,
+  "browserCheck": {
+    "requested": true,
+    "ran": true
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "architecture",
+  "quality": "showcase",
+  "specification": {
+    "path": "E:\\GODOT\\grooming-2\\.archify\\architecture-centinela-v043-20261102\\candidate.json",
+    "sha256": "5642858e607e12f87fed4faccaa539229b13f09b1e6ed6bdf77f317c1e182539",
+    "bytes": 8392
+  },
+  "artifact": {
+    "path": "E:\\GODOT\\grooming-2\\.archify\\architecture-centinela-v043-20261102\\centinela-arquitectura-v043.html",
+    "sha256": "33e86687778260fe022930bc4fd45aab62ddf9f01cf2d579244a9e0033274f3c",
+    "bytes": 868200
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "E:\\GODOT\\grooming-2\\.archify\\architecture-centinela-v043-20261102\\centinela-arquitectura-v043.finalize.json",
+    "summaryReceipt": "E:\\GODOT\\grooming-2\\.archify\\architecture-centinela-v043-20261102\\centinela-arquitectura-v043.finalize-summary.json",
+    "browserCheckReceipt": "E:\\GODOT\\grooming-2\\.archify\\architecture-centinela-v043-20261102\\centinela-arquitectura-v043.browser-check.json"
+  },
+  "update": {
+    "status": "current",
+    "installedVersion": "3.2.0",
+    "availableVersion": "3.2.0",
+    "releaseNotes": null,
+    "checkedAt": "2026-11-03T04:04:34.347Z",
+    "source": "cache",
+    "noticeRequired": false,
+    "noticeText": null
+  },
+  "visualReview": "not-requested",
+  "durationMs": 5554,
+  "browserCheck": {
+    "requested": true,
+    "ran": true
+  }
+}

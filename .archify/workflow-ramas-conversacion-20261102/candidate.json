@@ -1,0 +1,643 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Centinela 2.0 · ramas de conversación hasta cada final",
+    "locale": "es",
+    "output": ".archify/workflow-ramas-conversacion-20261102/centinela-ramas-conversacion.html",
+    "quality_profile": "showcase"
+  },
+  "lanes": [
+    {
+      "id": "d0",
+      "label": "Día 0 · presentación"
+    },
+    {
+      "id": "d1",
+      "label": "Día 1 · Kairo entra al grupo"
+    },
+    {
+      "id": "d2",
+      "label": "Día 2 · recreo, decisiones clave"
+    },
+    {
+      "id": "d3",
+      "label": "Día 3 · consecuencias"
+    },
+    {
+      "id": "d4",
+      "label": "Día 4 · plan con cada amigo"
+    },
+    {
+      "id": "acc",
+      "label": "Acciones de protección"
+    },
+    {
+      "id": "fin",
+      "label": "Final"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "p0",
+      "lane": "d0",
+      "col": 0,
+      "type": "frontend",
+      "label": "Prólogo y despertar",
+      "sublabel": "Sofi y sus 4 amigos"
+    },
+    {
+      "id": "p1",
+      "lane": "d0",
+      "col": 1,
+      "type": "frontend",
+      "label": "Patio con amigos",
+      "sublabel": "conversación del D0"
+    },
+    {
+      "id": "p2",
+      "lane": "d0",
+      "col": 2,
+      "type": "security",
+      "icon": "decision",
+      "label": "Chat grupal · A/B/C",
+      "sublabel": "no cambia el final"
+    },
+    {
+      "id": "p3",
+      "lane": "d0",
+      "col": 3,
+      "type": "backend",
+      "label": "Arena 5v5",
+      "sublabel": "Camila comenta el resultado"
+    },
+    {
+      "id": "a0",
+      "lane": "d1",
+      "col": 0,
+      "type": "frontend",
+      "label": "Conocer al grupo",
+      "sublabel": "Camila, Bruno, Sebas, Mateo"
+    },
+    {
+      "id": "a1",
+      "lane": "d1",
+      "col": 1,
+      "type": "security",
+      "icon": "decision",
+      "label": "Lobby con Kairo",
+      "sublabel": "D1_GATE · decisión A/B/C"
+    },
+    {
+      "id": "a2a",
+      "lane": "d1",
+      "col": 2,
+      "yOffset": -60,
+      "type": "frontend",
+      "label": "A · Acuerdo",
+      "sublabel": "límites en grupo"
+    },
+    {
+      "id": "a2c",
+      "lane": "d1",
+      "col": 2,
+      "yOffset": 60,
+      "type": "frontend",
+      "label": "C · Una más",
+      "sublabel": "resta importancia"
+    },
+    {
+      "id": "a3",
+      "lane": "d1",
+      "col": 3,
+      "type": "frontend",
+      "label": "Privado de Mateo",
+      "sublabel": "toda opción llega aquí"
+    },
+    {
+      "id": "b0",
+      "lane": "d2",
+      "col": 0,
+      "type": "frontend",
+      "label": "Bruno",
+      "sublabel": "la ausencia de Mateo"
+    },
+    {
+      "id": "b1",
+      "lane": "d2",
+      "col": 1,
+      "type": "security",
+      "icon": "decision",
+      "label": "Camila · D2_A",
+      "sublabel": "A permiso · B lo cuenta"
+    },
+    {
+      "id": "b2",
+      "lane": "d2",
+      "col": 2,
+      "type": "security",
+      "icon": "decision",
+      "label": "Mateo · D2_B",
+      "sublabel": "A escucha · B minimiza"
+    },
+    {
+      "id": "b3",
+      "lane": "d2",
+      "col": 3,
+      "type": "security",
+      "icon": "decision",
+      "label": "Sebas · D2_C",
+      "sublabel": "A escucha · B se burla"
+    },
+    {
+      "id": "c1a",
+      "lane": "d3",
+      "col": 1,
+      "yOffset": -55,
+      "type": "frontend",
+      "label": "Camila conserva su voz",
+      "sublabel": "D3_A1"
+    },
+    {
+      "id": "c1b",
+      "lane": "d3",
+      "col": 1,
+      "yOffset": 55,
+      "type": "frontend",
+      "label": "Reparar la confidencia",
+      "sublabel": "D3_A2"
+    },
+    {
+      "id": "c2a",
+      "lane": "d3",
+      "col": 2,
+      "yOffset": -55,
+      "type": "frontend",
+      "label": "Acompañar a Mateo",
+      "sublabel": "D3_B1"
+    },
+    {
+      "id": "c2b",
+      "lane": "d3",
+      "col": 2,
+      "yOffset": 55,
+      "type": "frontend",
+      "label": "Escuchar otra vez",
+      "sublabel": "D3_B2"
+    },
+    {
+      "id": "c3a",
+      "lane": "d3",
+      "col": 3,
+      "yOffset": -55,
+      "type": "frontend",
+      "label": "Sebas marca su horario",
+      "sublabel": "D3_C1"
+    },
+    {
+      "id": "c3b",
+      "lane": "d3",
+      "col": 3,
+      "yOffset": 55,
+      "type": "frontend",
+      "label": "Volver a escuchar",
+      "sublabel": "I_D3_SEBAS"
+    },
+    {
+      "id": "c4a",
+      "lane": "d3",
+      "col": 4,
+      "yOffset": -55,
+      "type": "frontend",
+      "label": "Bruno sin reproches",
+      "sublabel": "I_D3_BRUNO"
+    },
+    {
+      "id": "c4b",
+      "lane": "d3",
+      "col": 4,
+      "yOffset": 55,
+      "type": "frontend",
+      "label": "Un grupo dividido",
+      "sublabel": "D3_C2 · Bruno"
+    },
+    {
+      "id": "e1a",
+      "lane": "d4",
+      "col": 1,
+      "yOffset": -55,
+      "type": "security",
+      "icon": "decision",
+      "label": "Plan con Camila",
+      "sublabel": "D4_A1 · A tutor · B privacidad"
+    },
+    {
+      "id": "e1b",
+      "lane": "d4",
+      "col": 1,
+      "yOffset": 55,
+      "type": "security",
+      "icon": "decision",
+      "label": "Reparar con Camila",
+      "sublabel": "D4_A2 · A repara · B espera"
+    },
+    {
+      "id": "e2a",
+      "lane": "d4",
+      "col": 2,
+      "yOffset": -55,
+      "type": "security",
+      "icon": "decision",
+      "label": "Presión visible",
+      "sublabel": "D4_B1 · A tutor · B privacidad"
+    },
+    {
+      "id": "e2b",
+      "lane": "d4",
+      "col": 2,
+      "yOffset": 55,
+      "type": "security",
+      "icon": "decision",
+      "label": "Aún se puede",
+      "sublabel": "D4_B2 · A apoyo · B posterga"
+    },
+    {
+      "id": "e3",
+      "lane": "d4",
+      "col": 3,
+      "type": "security",
+      "icon": "decision",
+      "label": "Sebas elige apoyo",
+      "sublabel": "D4_C1 · A adulto · B límite"
+    },
+    {
+      "id": "e4a",
+      "lane": "d4",
+      "col": 4,
+      "yOffset": -55,
+      "type": "frontend",
+      "label": "Lugar en el grupo",
+      "sublabel": "I_D4_BRUNO"
+    },
+    {
+      "id": "e4b",
+      "lane": "d4",
+      "col": 4,
+      "yOffset": 55,
+      "type": "security",
+      "icon": "decision",
+      "label": "Rectificar a tiempo",
+      "sublabel": "D4_C2 · A disculpa · B nada"
+    },
+    {
+      "id": "tut",
+      "lane": "acc",
+      "col": 3,
+      "type": "backend",
+      "label": "Tutoría",
+      "sublabel": "I_TUTOR · cualquier día"
+    },
+    {
+      "id": "lim",
+      "lane": "acc",
+      "col": 4,
+      "type": "backend",
+      "label": "PC · privacidad",
+      "sublabel": "I_LIMIT · Día 4"
+    },
+    {
+      "id": "cierre",
+      "lane": "fin",
+      "col": 3,
+      "type": "security",
+      "icon": "decision",
+      "label": "Al dormir el Día 4",
+      "sublabel": "¿qué hizo el grupo?"
+    },
+    {
+      "id": "chk",
+      "lane": "fin",
+      "col": 4,
+      "type": "security",
+      "icon": "decision",
+      "label": "Heridas del recreo",
+      "sublabel": "¿2+ B sin reparar?"
+    },
+    {
+      "id": "f01",
+      "lane": "fin",
+      "col": 2,
+      "type": "database",
+      "label": "F01 · Apoyo",
+      "sublabel": "siempre posible"
+    },
+    {
+      "id": "f02",
+      "lane": "fin",
+      "col": 5,
+      "type": "database",
+      "label": "F02 · Límite",
+      "sublabel": "grupo en confianza",
+      "yOffset": -50
+    },
+    {
+      "id": "f03",
+      "lane": "fin",
+      "col": 5,
+      "type": "database",
+      "label": "F03 · Seguimos aquí",
+      "sublabel": "pasos pendientes",
+      "yOffset": 50
+    }
+  ],
+  "edges": [
+    {
+      "id": "x1",
+      "from": "p0",
+      "to": "p1",
+      "role": "main"
+    },
+    {
+      "id": "x2",
+      "from": "p1",
+      "to": "p2",
+      "label": "PC por la tarde",
+      "role": "main"
+    },
+    {
+      "id": "x3",
+      "from": "p2",
+      "to": "p3",
+      "role": "main"
+    },
+    {
+      "id": "x4",
+      "from": "p3",
+      "to": "a0",
+      "label": "día 1",
+      "role": "return"
+    },
+    {
+      "id": "x5",
+      "from": "a0",
+      "to": "a1",
+      "label": "noche",
+      "role": "main"
+    },
+    {
+      "id": "x6",
+      "from": "a1",
+      "to": "a2a",
+      "label": "A",
+      "role": "branch"
+    },
+    {
+      "id": "x7",
+      "from": "a1",
+      "to": "a2c",
+      "label": "C",
+      "role": "branch"
+    },
+    {
+      "id": "x8",
+      "from": "a1",
+      "to": "a3",
+      "label": "B",
+      "role": "main"
+    },
+    {
+      "id": "x9",
+      "from": "a2a",
+      "to": "a3",
+      "role": "branch"
+    },
+    {
+      "id": "x10",
+      "from": "a2c",
+      "to": "a3",
+      "role": "branch"
+    },
+    {
+      "id": "x11",
+      "from": "a3",
+      "to": "b0",
+      "label": "día 2",
+      "role": "return"
+    },
+    {
+      "id": "x12",
+      "from": "b0",
+      "to": "b1",
+      "label": "en cualquier orden",
+      "role": "main"
+    },
+    {
+      "id": "x13",
+      "from": "b1",
+      "to": "b2",
+      "role": "main"
+    },
+    {
+      "id": "x14",
+      "from": "b2",
+      "to": "b3",
+      "role": "main"
+    },
+    {
+      "id": "y1",
+      "from": "b1",
+      "to": "c1a",
+      "label": "A",
+      "role": "branch"
+    },
+    {
+      "id": "y2",
+      "from": "b1",
+      "to": "c1b",
+      "label": "B",
+      "role": "branch"
+    },
+    {
+      "id": "y3",
+      "from": "b2",
+      "to": "c2a",
+      "label": "A",
+      "role": "branch"
+    },
+    {
+      "id": "y4",
+      "from": "b2",
+      "to": "c2b",
+      "label": "B",
+      "role": "branch"
+    },
+    {
+      "id": "y5",
+      "from": "b3",
+      "to": "c3a",
+      "label": "A",
+      "role": "main"
+    },
+    {
+      "id": "y6",
+      "from": "b3",
+      "to": "c3b",
+      "label": "B",
+      "role": "branch"
+    },
+    {
+      "id": "y7",
+      "from": "b3",
+      "to": "c4a",
+      "label": "A",
+      "role": "branch"
+    },
+    {
+      "id": "y8",
+      "from": "b3",
+      "to": "c4b",
+      "label": "B",
+      "role": "branch"
+    },
+    {
+      "id": "z1",
+      "from": "c1a",
+      "to": "e1a",
+      "role": "branch"
+    },
+    {
+      "id": "z2",
+      "from": "c1b",
+      "to": "e1b",
+      "role": "branch"
+    },
+    {
+      "id": "z3",
+      "from": "c2a",
+      "to": "e2a",
+      "role": "branch"
+    },
+    {
+      "id": "z4",
+      "from": "c2b",
+      "to": "e2b",
+      "role": "branch"
+    },
+    {
+      "id": "z5",
+      "from": "c3a",
+      "to": "e3",
+      "role": "main"
+    },
+    {
+      "id": "z6",
+      "from": "c3b",
+      "to": "e3",
+      "role": "branch"
+    },
+    {
+      "id": "z7",
+      "from": "c4a",
+      "to": "e4a",
+      "role": "branch"
+    },
+    {
+      "id": "z8",
+      "from": "c4b",
+      "to": "e4b",
+      "role": "branch"
+    },
+    {
+      "id": "w2",
+      "from": "e3",
+      "to": "lim",
+      "label": "B · límite",
+      "role": "main"
+    },
+    {
+      "id": "w3",
+      "from": "e3",
+      "to": "tut",
+      "label": "A · adulto",
+      "role": "branch"
+    },
+    {
+      "id": "w4",
+      "from": "tut",
+      "to": "cierre",
+      "label": "apoyo iniciado",
+      "role": "branch"
+    },
+    {
+      "id": "w5",
+      "from": "lim",
+      "to": "cierre",
+      "label": "límite hecho",
+      "role": "main"
+    },
+    {
+      "id": "v1",
+      "from": "cierre",
+      "to": "f01",
+      "label": "hubo apoyo",
+      "role": "branch"
+    },
+    {
+      "id": "v2",
+      "from": "cierre",
+      "to": "chk",
+      "label": "solo límite",
+      "role": "main"
+    },
+    {
+      "id": "v3",
+      "from": "chk",
+      "to": "f02",
+      "label": "no",
+      "role": "main"
+    },
+    {
+      "id": "v4",
+      "from": "chk",
+      "to": "f03",
+      "label": "sí",
+      "role": "branch"
+    },
+    {
+      "id": "v5",
+      "from": "cierre",
+      "to": "f03",
+      "label": "ninguna acción",
+      "role": "branch",
+      "route": "bottom-channel"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Cómo se lee",
+      "items": [
+        "Cada fila es un día. En el recreo del Día 2 Sofi habla con los cuatro amigos en cualquier orden; las respuestas A/B eligen la variante del Día 3 y del Día 4 de ese amigo.",
+        "La respuesta a Sebas (D2_C) también decide la escena de Bruno: si se le escuchó, Bruno se acerca sin reproches; si hubo burla, el grupo se divide.",
+        "La tutoría está disponible todos los días. Después de conocer un problema (por ejemplo, el secreto de Mateo), visitarla inicia el apoyo adulto."
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Un recorrido por cada final",
+      "items": [
+        "F01 · Apoyo iniciado: escuchar en el recreo (A, A, A) y en el Día 4 acompañar a Mateo a tutoría. También se llega con errores previos: pedir apoyo nunca se bloquea.",
+        "F02 · Límite y paso pendiente: responder con riesgo en el recreo (B, B, B), reparar en el Día 4 (A en D4_A2, D4_B2 y D4_C2) y revisar bloqueo y privacidad en la PC, sin ir a tutoría.",
+        "F03 · Seguimos aquí: no pedir apoyo ni hacer el límite; o hacer solo el límite con dos o más respuestas de riesgo del recreo sin reparar (por ejemplo, B, B, B y esperar en el Día 4)."
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Clasificación de cada respuesta",
+      "items": [
+        "Protectora: escuchar, pedir permiso, acordar límites, acompañar o reparar. Protectora con límite: elegir privacidad y bloqueo en el Día 4. De riesgo: exponer, minimizar, burlarse o esperar sin hacer nada.",
+        "El perfil final (Protectora, En aprendizaje o De riesgo) se muestra decisión por decisión, sin puntaje."
+      ]
+    }
+  ]
+}

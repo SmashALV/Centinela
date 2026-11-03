@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "930b0178-4f18-4ab3-8434-7915fe2193a5",
+  "status": "current",
+  "command": "deliver",
+  "type": "workflow",
+  "input": "E:\\GODOT\\grooming-2\\.archify\\workflow-ramas-conversacion-20261102\\candidate.json",
+  "output": "E:\\GODOT\\grooming-2\\.archify\\workflow-ramas-conversacion-20261102\\centinela-ramas-conversacion.html",
+  "specification": {
+    "sha256": "70a93ff715144728986246c66753c724de9efe8db03abf2a27e66f57a630402d",
+    "bytes": 13522
+  },
+  "artifact": {
+    "sha256": "d982d52afb6b425317f3924b347fca4ff59d8b99d89f4ab03d456d7858c2495d",
+    "bytes": 899297
+  }
+}

@@ -1,0 +1,389 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Arquitectura actual · Centinela 2.0 (noviembre 2026)",
+    "locale": "es",
+    "output": ".archify/architecture-centinela-v043-20261102/centinela-arquitectura-v043.html",
+    "quality_profile": "showcase"
+  },
+  "components": [
+    {
+      "id": "jugadora",
+      "type": "external",
+      "label": "Jugador/a",
+      "sublabel": "WASD · F · E · clic",
+      "icon": "person",
+      "pos": [
+        40,
+        48
+      ],
+      "size": [
+        150,
+        64
+      ]
+    },
+    {
+      "id": "main",
+      "type": "frontend",
+      "label": "Main.gd",
+      "sublabel": "menú · HUD · inventario · historia",
+      "pos": [
+        270,
+        40
+      ],
+      "size": [
+        230,
+        80
+      ]
+    },
+    {
+      "id": "rutina",
+      "type": "backend",
+      "label": "DailyRoutine.gd",
+      "sublabel": "etapas del día · bordes · dormir",
+      "pos": [
+        580,
+        40
+      ],
+      "size": [
+        220,
+        80
+      ]
+    },
+    {
+      "id": "mundo",
+      "type": "frontend",
+      "label": "World.gd · mapas",
+      "sublabel": "mapas día/noche · flecha · NPC",
+      "pos": [
+        940,
+        40
+      ],
+      "size": [
+        240,
+        80
+      ]
+    },
+    {
+      "id": "ui",
+      "type": "frontend",
+      "label": "ConversationUI · DesktopUI",
+      "sublabel": "novela visual · Discord · consejo",
+      "pos": [
+        40,
+        250
+      ],
+      "size": [
+        200,
+        80
+      ]
+    },
+    {
+      "id": "estado",
+      "type": "backend",
+      "label": "GameState",
+      "sublabel": "flags · inventario · coral_state",
+      "pos": [
+        330,
+        250
+      ],
+      "size": [
+        200,
+        80
+      ]
+    },
+    {
+      "id": "coral",
+      "type": "backend",
+      "label": "CoralStoryFlow.gd",
+      "sublabel": "escenas · clasificación · final",
+      "pos": [
+        940,
+        250
+      ],
+      "size": [
+        240,
+        80
+      ]
+    },
+    {
+      "id": "arena",
+      "type": "frontend",
+      "label": "MOBAArena",
+      "sublabel": "Arena 5v5 · 5 bajas o 60 s",
+      "pos": [
+        40,
+        460
+      ],
+      "size": [
+        200,
+        80
+      ]
+    },
+    {
+      "id": "guardado",
+      "type": "backend",
+      "label": "SaveManager",
+      "sublabel": "3 ranuras · rollback · eventos",
+      "pos": [
+        330,
+        460
+      ],
+      "size": [
+        200,
+        80
+      ]
+    },
+    {
+      "id": "audio",
+      "type": "backend",
+      "label": "AudioManager",
+      "sublabel": "campana · puerta · mochila · sueño",
+      "pos": [
+        600,
+        460
+      ],
+      "size": [
+        220,
+        80
+      ]
+    },
+    {
+      "id": "contenido",
+      "type": "database",
+      "label": "coral_story_v0_2.json",
+      "sublabel": "guion provisional D1–D4",
+      "pos": [
+        940,
+        460
+      ],
+      "size": [
+        240,
+        80
+      ]
+    },
+    {
+      "id": "local",
+      "type": "database",
+      "label": "Archivos user://",
+      "sublabel": "snapshot JSON + .bak",
+      "pos": [
+        40,
+        670
+      ],
+      "size": [
+        200,
+        80
+      ]
+    },
+    {
+      "id": "webbridge",
+      "type": "backend",
+      "label": "WebBridge.gd",
+      "sublabel": "puente hacia JavaScript",
+      "pos": [
+        330,
+        670
+      ],
+      "size": [
+        200,
+        80
+      ]
+    },
+    {
+      "id": "indexeddb",
+      "type": "database",
+      "label": "IndexedDB",
+      "sublabel": "ranuras · locks · validación",
+      "pos": [
+        640,
+        670
+      ],
+      "size": [
+        200,
+        80
+      ]
+    },
+    {
+      "id": "telemetria",
+      "type": "backend",
+      "label": "Telemetry.gd",
+      "sublabel": "hechos de juego sin texto libre",
+      "pos": [
+        600,
+        250
+      ],
+      "size": [
+        220,
+        80
+      ]
+    },
+    {
+      "id": "sync",
+      "type": "backend",
+      "label": "SyncManager",
+      "sublabel": "cola · reintentos · cierre",
+      "pos": [
+        940,
+        670
+      ],
+      "size": [
+        240,
+        80
+      ]
+    },
+    {
+      "id": "supabase",
+      "type": "external",
+      "label": "Supabase",
+      "sublabel": "Auth anónima · enabled=false",
+      "icon": "cloud",
+      "pos": [
+        940,
+        860
+      ],
+      "size": [
+        240,
+        80
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "entrada",
+      "from": "jugadora",
+      "to": "main",
+      "label": "juega",
+      "variant": "emphasis"
+    },
+    {
+      "id": "main-rutina",
+      "from": "main",
+      "to": "rutina",
+      "label": "etapa y lugar",
+      "variant": "emphasis"
+    },
+    {
+      "id": "rutina-mundo",
+      "from": "rutina",
+      "to": "mundo",
+      "label": "mapa y objetivos",
+      "variant": "emphasis"
+    },
+    {
+      "id": "main-ui",
+      "from": "main",
+      "to": "ui",
+      "label": "escenas"
+    },
+    {
+      "id": "main-estado",
+      "from": "main",
+      "to": "estado",
+      "label": "decisiones"
+    },
+    {
+      "id": "rutina-coral",
+      "from": "rutina",
+      "to": "coral",
+      "label": "charlas del recreo"
+    },
+    {
+      "id": "coral-contenido",
+      "from": "coral",
+      "to": "contenido",
+      "label": "lee escenas"
+    },
+    {
+      "id": "ui-arena",
+      "from": "ui",
+      "to": "arena",
+      "label": "clase elegida"
+    },
+    {
+      "id": "estado-guardado",
+      "from": "estado",
+      "to": "guardado",
+      "label": "snapshot"
+    },
+    {
+      "id": "arena-guardado",
+      "from": "arena",
+      "to": "guardado",
+      "label": "resultado"
+    },
+    {
+      "id": "rutina-audio",
+      "from": "rutina",
+      "to": "audio",
+      "label": "efectos por evento"
+    },
+    {
+      "id": "guardado-local",
+      "from": "guardado",
+      "to": "local",
+      "label": "escritorio"
+    },
+    {
+      "id": "guardado-web",
+      "from": "guardado",
+      "to": "webbridge",
+      "label": "navegador"
+    },
+    {
+      "id": "web-idb",
+      "from": "webbridge",
+      "to": "indexeddb",
+      "label": "transacción"
+    },
+    {
+      "id": "guardado-telemetria",
+      "from": "guardado",
+      "to": "telemetria",
+      "label": "deriva eventos"
+    },
+    {
+      "id": "idb-sync",
+      "from": "indexeddb",
+      "to": "sync",
+      "label": "cola local"
+    },
+    {
+      "id": "sync-supabase",
+      "from": "sync",
+      "to": "supabase",
+      "label": "opcional",
+      "variant": "dashed"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Recorrido de un día",
+      "items": [
+        "DailyRoutine es una máquina de etapas: mañana en el cuarto (mochila al inventario) → desayuno → calle → recreo con 4 amigos → clase → despedida → cena → Discord y Arena 5v5 → dormir.",
+        "Cada cambio de etapa pasa por go(): foto del estado, cambio, guardado y vuelta atrás si falla. World avisa con señales cuando se pulsa F o se llega a un borde.",
+        "El cuarto de Sofi y la tutoría tienen mapas propios con colisiones; de noche el cuarto usa su mapa nocturno y las escenas eligen fondos de atardecer o noche."
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Historia y reglas educativas",
+      "items": [
+        "El guion coral (JSON) define D1–D4: lobby con Kairo, tres decisiones del recreo en D2, consecuencias en D3 y plan final en D4.",
+        "Cada respuesta se clasifica (protectora, con límite o de riesgo). Final: apoyo adulto → F01; solo límite digital y menos de 2 heridas del recreo sin reparar → F02; si no, F03.",
+        "El tutor aparece en tutoría y ofrece un consejo en cada decisión sin elegir por el jugador."
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Persistencia, telemetría y siguiente paso",
+      "items": [
+        "SaveManager guarda la partida y, en web, los eventos de telemetría en la misma transacción IndexedDB. SyncManager los enviaría a Supabase, hoy desactivado (enabled=false).",
+        "La telemetría está en desarrollo, todavía sin commit en el repositorio.",
+        "La propuesta modular (docs/ARQUITECTURA_MODULAR_PROPUESTA.md) divide Main.gd (2220 líneas) en módulos de menú, HUD, historia, reglas, mapas e indicadores, sin cambiar la jugabilidad."
+      ]
+    }
+  ]
+}

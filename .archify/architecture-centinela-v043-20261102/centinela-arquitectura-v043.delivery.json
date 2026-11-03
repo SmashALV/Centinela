@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "6895255d-a52f-49d1-956e-6adeb47dffde",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "E:\\GODOT\\grooming-2\\.archify\\architecture-centinela-v043-20261102\\candidate.json",
+  "output": "E:\\GODOT\\grooming-2\\.archify\\architecture-centinela-v043-20261102\\centinela-arquitectura-v043.html",
+  "specification": {
+    "sha256": "5642858e607e12f87fed4faccaa539229b13f09b1e6ed6bdf77f317c1e182539",
+    "bytes": 8392
+  },
+  "artifact": {
+    "sha256": "33e86687778260fe022930bc4fd45aab62ddf9f01cf2d579244a9e0033274f3c",
+    "bytes": 868200
+  }
+}
