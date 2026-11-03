@@ -29,3 +29,10 @@ Las partidas de escritorio están en `%APPDATA%/Godot/app_userdata/Centinela 2.0
 Están implementadas las correcciones jugables de las revisiones recientes. Sigue pendiente la revisión docente del cierre educativo y cualquier decisión académica sobre el protocolo de aplicación. El backend remoto y el dashboard no forman parte de esta validación de Windows; el juego guarda localmente y no calcula puntuación educativa.
 
 Para registrar un problema conviene anotar la jornada, el personaje, la opción elegida y si ocurrió al pausar o reanudar, junto con una captura de pantalla.
+
+## Exportación tras la migración modular · 03-11-2026
+
+- **Ejecutable:** `build/windows/Centinela_Modular_2026-11-03/Centinela_Rutina.exe` (219 MB, paquete incluido). SHA-256 `2b25fb2e032ff4d7bf2dec5bd3e66cf2e4c09ec3e7d48fb18ea0af26223ce58d`.
+- **Contenido:** el preset Windows Validation incluye ahora `data/routine/*.json` y `data/maps/*.json`, además del guion narrativo.
+- **Comprobación del paquete:** se exportó el mismo contenido como `.pck` y se abrió con Godot 4.7.2 (`--main-pack`). Los tres JSON están dentro. `RoutineCatalog` valida las 7 escenas de la rutina; `MapCatalog` valida los 14 mapas y carga sus 14 fondos; la regla del final responde igual que en el proyecto.
+- **Arranque:** el ejecutable se abrió en ventana y se cerró solo tras unos segundos (`--quit-after`), con código de salida 0 y sin errores en su registro. No se jugó un recorrido completo con el ejecutable.
