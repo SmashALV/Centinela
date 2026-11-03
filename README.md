@@ -33,7 +33,7 @@ La suite devuelve código distinto de cero cuando falla una comprobación. Se ha
 El preset **Windows Validation** genera un ejecutable de 64 bits con los recursos incluidos. La construcción y sus comprobaciones están en [la entrega Windows del 29-10-2026](docs/calidad/WINDOWS_VALIDATION_BUILD_2026-10-29.md). Funciona con guardado local y conserva las tres ranuras. El contenido educativo sigue sujeto a revisión docente.
 
 ```powershell
-& 'E:\GODOT\Godot_v4.7.2-stable_win64.exe\Godot_v4.7.2-stable_win64_console.exe' --headless --path . --export-release 'Windows Validation' 'build/windows/Centinela_0.40.0_Rutina_2026-10-29/Centinela_Rutina.exe'
+& 'E:\GODOT\Godot_v4.7.2-stable_win64.exe\Godot_v4.7.2-stable_win64_console.exe' --headless --path . --export-release 'Windows Validation' 'build/windows/Centinela_Modular_2026-11-03/Centinela_Rutina.exe'
 ```
 
 ## Versión Web
