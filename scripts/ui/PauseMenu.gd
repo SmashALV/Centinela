@@ -16,22 +16,22 @@ func show_pause() -> void:
 
 func render_pause() -> void:
 	main.modal_kind = "pause"
-	main._clear_modal()
-	main._modal_heading("PAUSA", "pause")
-	var body: VBoxContainer = main._preview_content()
-	main._preview_text(body, "Tu progreso se guarda en este dispositivo.", 15)
+	main.ui_kit.clear_modal()
+	main.ui_kit.modal_heading("PAUSA", "pause")
+	var body: VBoxContainer = main.ui_kit.content_box()
+	main.ui_kit.add_text(body, "Tu progreso se guarda en este dispositivo.", 15)
 	if SyncManager.configured:
-		main._preview_button(body, "Reintentar sincronización", SyncManager.retry_now)
-	var continue_button: Button = main._preview_button(body, "Continuar", resume_pause)
+		main.ui_kit.add_button(body, "Reintentar sincronización", SyncManager.retry_now)
+	var continue_button: Button = main.ui_kit.add_button(body, "Continuar", resume_pause)
 	continue_button.grab_focus()
 	var size_label: String = {"small": "Pequeño", "normal": "Mediano", "large": "Grande"}[GameState.text_size]
-	main._preview_button(body, "Tamaño de texto: " + size_label, cycle_text_size)
-	main._preview_button(body, "Música: %d %%" % GameState.music_volume, func(): cycle_audio("music"))
-	main._preview_button(body, "Efectos: %d %%" % GameState.effects_volume, func(): cycle_audio("effects"))
+	main.ui_kit.add_button(body, "Tamaño de texto: " + size_label, cycle_text_size)
+	main.ui_kit.add_button(body, "Música: %d %%" % GameState.music_volume, func(): cycle_audio("music"))
+	main.ui_kit.add_button(body, "Efectos: %d %%" % GameState.effects_volume, func(): cycle_audio("effects"))
 	var speed_label: String = {"slow": "Lenta", "normal": "Normal", "fast": "Rápida"}[GameState.dialogue_speed]
-	main._preview_button(body, "Velocidad de diálogo: " + speed_label, cycle_dialogue_speed)
-	main._preview_button(body, "Guardar", main._manual_save, "save")
-	main._preview_button(body, "Menú", main._return_to_menu)
+	main.ui_kit.add_button(body, "Velocidad de diálogo: " + speed_label, cycle_dialogue_speed)
+	main.ui_kit.add_button(body, "Guardar", main._manual_save, "save")
+	main.ui_kit.add_button(body, "Menú", main._return_to_menu)
 
 func cycle_text_size() -> void:
 	if main.save_in_progress:
@@ -43,7 +43,7 @@ func cycle_text_size() -> void:
 		"normal": GameState.text_size = "large"
 		_: GameState.text_size = "small"
 	if await SaveManager.save_slot_async():
-		main._refresh_static_fonts()
+		main.ui_kit.refresh_static_fonts()
 		if main.is_inside_tree():
 			render_pause()
 	else:
@@ -88,36 +88,36 @@ func resume_pause() -> void:
 	if main.phase_load_after_pause:
 		main.phase_load_after_pause = false
 		main.modal_kind = ""
-		main._load_phase()
+		main.router.load_phase()
 		if main.daily.active():
 			main.conversation_ui.restore_reading_state(main.paused_reading)
 			main.paused_reading.clear()
 			main.modal_before_pause = ""
 			return
-		if not GameState.dialogue_key.is_empty(): main._resume_saved_dialogue()
-		elif GameState.phase in ["bedroom", "courtyard", "computer"] and not GameState.flags.has("d0_guide_active"): main._close_modal()
+		if not GameState.dialogue_key.is_empty(): main.day0.resume_saved_dialogue()
+		elif GameState.phase in ["bedroom", "courtyard", "computer"] and not GameState.flags.has("d0_guide_active"): main.ui_kit.close_modal()
 		main.conversation_ui.restore_reading_state(main.paused_reading)
 		main.paused_reading.clear()
 		main.modal_before_pause = ""
 		return
 	match main.modal_before_pause:
-		"prologue": main._render_prologue()
-		"stage_guide": main._render_stage_guide()
+		"prologue": main.day0.render_prologue()
+		"stage_guide": main.day0.render_stage_guide()
 		"phone": main.phone_modal.render_phone()
 		"objective": main.objective_modal.render_objective()
-		"class": main._render_class()
-		"desktop": main._render_desktop()
-		"discord_history": main._render_discord_history(main.desktop_direct)
-		"dialogue": main._render_dialogue(true)
-		"dialogue_history": main._render_dialogue_history()
-		"result": main._show_result()
+		"class": main.computer.render_class()
+		"desktop": main.computer.render_desktop()
+		"discord_history": main.computer.render_discord_history(main.desktop_direct)
+		"dialogue": main.day0.render_dialogue(true)
+		"dialogue_history": main.day0.render_dialogue_history()
+		"result": main.computer.show_result()
 		"day_intro": main.legacy.render_day_intro()
 		"preview": main.legacy.render_preview()
 		"preview_unplaced": main.legacy.render_unplaced_preview()
 		"coral": main.coral.render()
 		"routine": main.daily._render_scene()
 		"sleep": main.daily._render_sleep()
-		_: main._close_modal()
+		_: main.ui_kit.close_modal()
 	main.conversation_ui.restore_reading_state(main.paused_reading)
 	main.paused_reading.clear()
 	main.modal_before_pause = ""

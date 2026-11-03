@@ -11,27 +11,27 @@ func show_objective() -> void:
 
 func render_objective() -> void:
 	main.modal_kind = "objective"
-	main._clear_modal()
-	main._modal_heading("OBJETIVO", "objective")
-	main._modal_text(("Orientación: " if GameState.phase != "coral" else "") + main._objective_text(), 19)
+	main.ui_kit.clear_modal()
+	main.ui_kit.modal_heading("OBJETIVO", "objective")
+	main.ui_kit.modal_text(("Orientación: " if GameState.phase != "coral" else "") + main.hud_view.objective_text(), 19)
 	if GameState.phase == "coral":
 		var state: Dictionary = GameState.coral_state
 		var day_key: String = str(state.get("day", 1))
 		var requests: Dictionary = state.get("hint_requests", {})
 		var shown: String = str(requests.get(day_key, ""))
 		if not shown.is_empty():
-			main._modal_text((main.daily.objective() if main.daily.active() else main.coral_flow.navigation_hint(state)) if shown == "nav" else main.coral_flow.educational_hint(state, 1 if shown == "h1" else 2), 15)
-		main._button("Pista de orientación", func(): coral_request_hint("nav"))
-		main._button("Pista para observar", func(): coral_request_hint("h1"))
-		main._button("Pista para comprender", func(): coral_request_hint("h2"))
+			main.ui_kit.modal_text((main.daily.objective() if main.daily.active() else main.coral_flow.navigation_hint(state)) if shown == "nav" else main.coral_flow.educational_hint(state, 1 if shown == "h1" else 2), 15)
+		main.ui_kit.make_button("Pista de orientación", func(): coral_request_hint("nav"))
+		main.ui_kit.make_button("Pista para observar", func(): coral_request_hint("h1"))
+		main.ui_kit.make_button("Pista para comprender", func(): coral_request_hint("h2"))
 	else:
 		if GameState.phase in ["bedroom", "courtyard", "computer"]:
-			if GameState.hint_level > 0: main._modal_text(d0_educational_hint(GameState.hint_level), 15)
-			main._button("H1 · Observa", func(): set_d0_hint(1))
-			main._button("H2 · Comprende", func(): set_d0_hint(2))
+			if GameState.hint_level > 0: main.ui_kit.modal_text(d0_educational_hint(GameState.hint_level), 15)
+			main.ui_kit.make_button("H1 · Observa", func(): set_d0_hint(1))
+			main.ui_kit.make_button("H2 · Comprende", func(): set_d0_hint(2))
 		else:
-			main._button("Pista", advance_hint)
-	main._button("Cerrar", main._close_modal)
+			main.ui_kit.make_button("Pista", advance_hint)
+	main.ui_kit.make_button("Cerrar", main.ui_kit.close_modal)
 
 func d0_educational_hint(level: int) -> String:
 	if level == 1:

@@ -7,6 +7,13 @@ const DraftFlowScript = preload("res://scripts/narrative/PlayableDraftFlow.gd")
 const CoralFlowScript = preload("res://scripts/narrative/CoralStoryFlow.gd")
 const PreviewFlowScript = preload("res://scripts/legacy/PreviewFlow.gd")
 const CoralControllerScript = preload("res://scripts/story/CoralController.gd")
+const UiKitScript = preload("res://scripts/ui/UiKit.gd")
+const MainMenuScript = preload("res://scripts/ui/MainMenu.gd")
+const HudScript = preload("res://scripts/ui/Hud.gd")
+const InventoryScript = preload("res://scripts/game/Inventory.gd")
+const Day0FlowScript = preload("res://scripts/story/Day0Flow.gd")
+const ComputerScreensScript = preload("res://scripts/ui/ComputerScreens.gd")
+const PhaseRouterScript = preload("res://scripts/game/PhaseRouter.gd")
 const PauseMenuScript = preload("res://scripts/ui/PauseMenu.gd")
 const PhoneModalScript = preload("res://scripts/ui/PhoneModal.gd")
 const ObjectiveModalScript = preload("res://scripts/ui/ObjectiveModal.gd")
@@ -88,6 +95,13 @@ var pause_menu: RefCounted  # scripts/ui/PauseMenu.gd
 var phone_modal: RefCounted  # scripts/ui/PhoneModal.gd
 var objective_modal: RefCounted  # scripts/ui/ObjectiveModal.gd
 var coral: RefCounted  # scripts/story/CoralController.gd
+var ui_kit: RefCounted  # scripts/ui/UiKit.gd
+var menu: RefCounted  # scripts/ui/MainMenu.gd
+var hud_view: RefCounted  # scripts/ui/Hud.gd
+var inventory: RefCounted  # scripts/game/Inventory.gd
+var day0: RefCounted  # scripts/story/Day0Flow.gd
+var computer: RefCounted  # scripts/ui/ComputerScreens.gd
+var router: RefCounted  # scripts/game/PhaseRouter.gd
 var dialogue_key := ""
 var dialogue_choice := ""
 var dialogue_text_label: Label
@@ -99,6 +113,20 @@ var window_too_small := false
 var window_check_elapsed := 0.0
 
 func _ready() -> void:
+	ui_kit = UiKitScript.new()
+	ui_kit.main = self
+	menu = MainMenuScript.new()
+	menu.main = self
+	hud_view = HudScript.new()
+	hud_view.main = self
+	inventory = InventoryScript.new()
+	inventory.main = self
+	day0 = Day0FlowScript.new()
+	day0.main = self
+	computer = ComputerScreensScript.new()
+	computer.main = self
+	router = PhaseRouterScript.new()
+	router.main = self
 	SaveManager.lock_lost.connect(_on_lock_lost)
 	dialogue_story = NarrativeScript.new()
 	preview_catalog = PreviewCatalogScript.new()
@@ -145,18 +173,18 @@ func _ready() -> void:
 	menu_background.size = Vector2(768, 448)
 	menu_background.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	canvas.add_child(menu_background)
-	hud_icon = _screen_icon("objective", Vector2(5, 12), 22)
-	hud = _label(Vector2(30, 10), Vector2(718, 42), 16)
-	_build_inventory_panel()
-	prompt_icon = _screen_icon("interact", Vector2(5, 402), 24)
-	prompt = _label(Vector2(30, 402), Vector2(718, 34), 17)
-	toast = _label(Vector2(140, 354), Vector2(488, 40), 15)
+	hud_icon = ui_kit.make_screen_icon("objective", Vector2(5, 12), 22)
+	hud = ui_kit.make_label(Vector2(30, 10), Vector2(718, 42), 16)
+	hud_view.build_inventory_panel()
+	prompt_icon = ui_kit.make_screen_icon("interact", Vector2(5, 402), 24)
+	prompt = ui_kit.make_label(Vector2(30, 402), Vector2(718, 34), 17)
+	toast = ui_kit.make_label(Vector2(140, 354), Vector2(488, 40), 15)
 	toast.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	modal = PanelContainer.new()
 	modal.position = Vector2(126, 66)
 	modal.custom_minimum_size = Vector2(516, 310)
 	modal.size = Vector2(516, 310)
-	modal.add_theme_stylebox_override("panel", _panel_style())
+	modal.add_theme_stylebox_override("panel", ui_kit.panel_style())
 	canvas.add_child(modal)
 	modal_box = VBoxContainer.new()
 	modal_box.add_theme_constant_override("separation", 11)
@@ -167,7 +195,7 @@ func _ready() -> void:
 	canvas.add_child(desktop_ui)
 	conversation_ui.auto_guard = func(): return not save_in_progress and not window_too_small and modal_kind not in ["pause", "menu"]
 	window_guard_layer = DisplayGuardScript.make_overlay(self)
-	_show_menu()
+	menu.show()
 	var return_to_result: bool = GameState.returning_from_moba
 	GameState.returning_from_moba = false
 	if not GameState.code.is_empty():
@@ -175,7 +203,7 @@ func _ready() -> void:
 		AudioManager.enter_context("explore")
 	_check_window_size()
 	if return_to_result and GameState.phase == "result":
-		_start_slot(GameState.slot)
+		menu.start_slot(GameState.slot)
 
 func _process(delta: float) -> void:
 	window_check_elapsed += delta
@@ -220,15 +248,15 @@ func _unhandled_input(event: InputEvent) -> void:
 			if modal_kind == "pause":
 				pause_menu.resume_pause()
 			elif modal_kind == "slot_confirm":
-				_show_menu()
+				menu.show()
 			elif modal_kind == "dialogue_history":
-				_render_dialogue(true)
-			elif modal_kind == "discord_history": _render_desktop()
+				day0.render_dialogue(true)
+			elif modal_kind == "discord_history": computer.render_desktop()
 			else:
-				_close_modal()
+				ui_kit.close_modal()
 			get_viewport().set_input_as_handled()
 	elif modal_kind == "phone" and event.is_action_pressed("phone"):
-		_close_modal()
+		ui_kit.close_modal()
 		get_viewport().set_input_as_handled()
 	elif modal_kind == "coral" and event is InputEventKey and event.pressed and not event.echo:
 		if GameState.coral_state.get("mode") == "scene" and event.keycode in [KEY_1, KEY_2, KEY_3]:
@@ -251,7 +279,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				get_viewport().set_input_as_handled()
 	elif modal_kind == "dialogue" and event is InputEventKey and event.pressed and not event.echo:
 		if is_instance_valid(dialogue_text_label) and dialogue_visible < dialogue_text_label.text.length() and event.keycode in [KEY_1, KEY_2, KEY_3, KEY_ENTER, KEY_KP_ENTER]:
-			_reveal_dialogue()
+			day0.reveal_dialogue()
 			get_viewport().set_input_as_handled()
 			return
 		var choice_index := -1
@@ -262,12 +290,12 @@ func _unhandled_input(event: InputEvent) -> void:
 			KEY_ENTER, KEY_KP_ENTER:
 				if dialogue_story.current_node().get("choices", []).is_empty():
 					if dialogue_story.current_node().get("next", null) != null:
-						_advance_dialogue()
+						day0.advance_dialogue()
 					else:
-						_complete_dialogue()
+						day0.complete_dialogue()
 		var choices: Array = dialogue_story.current_node().get("choices", [])
 		if choice_index >= 0 and choice_index < choices.size():
-			_request_dialogue_choice(str(choices[choice_index].choice_id))
+			day0.request_dialogue_choice(str(choices[choice_index].choice_id))
 			get_viewport().set_input_as_handled()
 	elif modal_kind == "":
 		if event.is_action_pressed("interact"):
@@ -288,484 +316,6 @@ func _check_window_size() -> void:
 	if window_too_small and modal_kind not in ["menu", "pause"]:
 		pause_menu.show_pause()
 
-func _label(pos: Vector2, dimensions: Vector2, font_size: int) -> Label:
-	var label := Label.new()
-	label.position = pos
-	label.size = dimensions
-	label.add_theme_font_size_override("font_size", _scaled_text_size(font_size))
-	label.add_theme_color_override("font_color", Color("fff3df"))
-	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	canvas.add_child(label)
-	return label
-
-func _screen_icon(key: String, pos: Vector2, icon_size: int) -> TextureRect:
-	var icon := TextureRect.new()
-	icon.texture = UI_ICONS[key]
-	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	icon.position = pos
-	icon.size = Vector2(icon_size, icon_size)
-	icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	canvas.add_child(icon)
-	return icon
-
-func _scaled_text_size(base: int) -> int:
-	match GameState.text_size:
-		"small": return maxi(12, roundi(base * 0.9))
-		"large": return roundi(base * 1.3)
-	return base
-
-func _refresh_static_fonts() -> void:
-	hud.add_theme_font_size_override("font_size", _scaled_text_size(16))
-	prompt.add_theme_font_size_override("font_size", _scaled_text_size(17))
-	toast.add_theme_font_size_override("font_size", _scaled_text_size(15))
-
-func _panel_style() -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color("594060")
-	style.border_color = Color("d5a4ca")
-	style.set_border_width_all(3)
-	style.set_content_margin_all(20)
-	return style
-
-func _clear_modal() -> void:
-	if is_instance_valid(desktop_ui): desktop_ui.clear_view()
-	if is_instance_valid(conversation_ui):
-		conversation_ui.clear_view()
-	prompt.visible = true
-	hud.visible = not GameState.code.is_empty()
-	hud_icon.visible = hud.visible
-	menu_background.visible = false
-	modal.position = Vector2(70, 38)
-	modal.custom_minimum_size = Vector2(628, 372)
-	modal.size = Vector2(628, 372)
-	for child in modal_box.get_children():
-		modal_box.remove_child(child)
-		child.queue_free()
-	modal.visible = true
-	world.enabled = false
-
-func _close_modal() -> void:
-	if modal_kind in ["phone", "objective", "class", "desktop", "discord_history"] and not GameState.ui_modal.is_empty():
-		if save_in_progress:
-			return
-		save_in_progress = true
-		var previous: String = GameState.ui_modal
-		GameState.ui_modal = ""
-		if not await SaveManager.save_slot_async():
-			GameState.ui_modal = previous
-			save_in_progress = false
-			_toast("No se pudo guardar el cierre; reintenta")
-			return
-		save_in_progress = false
-	modal_kind = ""
-	if is_instance_valid(desktop_ui): desktop_ui.clear_view()
-	modal.visible = false
-	if is_instance_valid(conversation_ui):
-		conversation_ui.clear_view()
-	prompt.visible = true
-	menu_background.visible = false
-	world.enabled = true
-	hud.visible = not GameState.code.is_empty()
-	hud_icon.visible = hud.visible
-
-func _begin_conversation_presentation() -> void:
-	_clear_modal()
-	modal.visible = false
-	hud.visible = false
-	hud_icon.visible = false
-	prompt.visible = false
-	prompt_icon.visible = false
-
-func _modal_text(value: String, size: int = 18) -> void:
-	var label := Label.new()
-	label.text = value
-	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	label.custom_minimum_size.y = 38
-	label.add_theme_font_size_override("font_size", _scaled_text_size(size))
-	label.add_theme_color_override("font_color", Color("fff3df"))
-	modal_box.add_child(label)
-
-func _modal_heading(value: String, icon_key: String, size: int = 23) -> void:
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 10)
-	modal_box.add_child(row)
-	var icon := TextureRect.new()
-	icon.texture = UI_ICONS[icon_key]
-	icon.custom_minimum_size = Vector2(32, 32)
-	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	row.add_child(icon)
-	var label := Label.new()
-	label.text = value
-	label.add_theme_font_size_override("font_size", _scaled_text_size(size))
-	label.add_theme_color_override("font_color", Color("fff3df"))
-	row.add_child(label)
-
-func _button(value: String, callback: Callable, icon_key: String = "", parent: Control = null) -> Button:
-	var button := Button.new()
-	button.text = value
-	button.custom_minimum_size.y = 34
-	button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	if not icon_key.is_empty():
-		button.icon = UI_ICONS[icon_key]
-		button.expand_icon = true
-	button.add_theme_font_size_override("font_size", _scaled_text_size(16))
-	button.pressed.connect(callback)
-	if parent == null:
-		modal_box.add_child(button)
-	else:
-		parent.add_child(button)
-	return button
-
-func _show_menu() -> void:
-	paused_reading.clear()
-	phase_load_after_pause = false
-	if is_instance_valid(desktop_ui): desktop_ui.clear_view()
-	AudioManager.set_music_paused(false)
-	dialogue_key = ""
-	modal_kind = "menu"
-	_clear_modal()
-	menu_background.visible = true
-	hud_icon.visible = false
-	hud.visible = false
-	_modal_heading("CENTINELA 2.0", "controls", 24)
-	_modal_text("Acompaña a Sofi y sus amigos desde el primer día.", 15)
-	var rows: Array[Dictionary] = []
-	for i in range(1, 4):
-		var chosen := i
-		var label := "Ranura %d · cargando..." % i if OS.has_feature("web") else SaveManager.slot_summary(i)
-		var row := HBoxContainer.new()
-		row.add_theme_constant_override("separation", 6)
-		row.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-		row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		row.custom_minimum_size.y = 34
-		modal_box.add_child(row)
-		var play := _button(label, func(): _start_slot(chosen), "", row)
-		play.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		var redo := _button("Rehacer", func(): _confirm_slot_action(chosen, true), "", row)
-		var remove := _button("Borrar", func(): _confirm_slot_action(chosen, false), "", row)
-		redo.custom_minimum_size.x = 94
-		remove.custom_minimum_size.x = 94
-		var occupied := SaveManager.slot_exists(i)
-		play.disabled = OS.has_feature("web")
-		redo.disabled = OS.has_feature("web") or not occupied
-		remove.disabled = OS.has_feature("web") or not occupied
-		rows.append({"play": play, "redo": redo, "remove": remove})
-	if OS.has_feature("web"):
-		_refresh_web_menu(rows)
-	else:
-		rows[0].play.grab_focus()
-
-func _refresh_web_menu(rows: Array[Dictionary]) -> void:
-	var response: Dictionary = await SaveManager.list_slots_async()
-	if not is_inside_tree() or modal_kind != "menu":
-		return
-	if not response.get("success", false):
-		_modal_text("No se pudo leer IndexedDB: " + SaveManager.last_error, 15)
-		return
-	var records: Dictionary = {}
-	for record in response.result:
-		records[int(record.slot)] = record
-	for i in 3:
-		var slot_number := i + 1
-		if records.has(slot_number):
-			rows[i].play.text = "Ranura %d · Partida guardada" % slot_number
-		else:
-			rows[i].play.text = "Ranura %d · nueva" % slot_number
-		rows[i].play.disabled = false
-		rows[i].redo.disabled = not records.has(slot_number)
-		rows[i].remove.disabled = not records.has(slot_number)
-	rows[0].play.grab_focus()
-
-func _confirm_slot_action(chosen: int, redo: bool) -> void:
-	if slot_loading:
-		return
-	modal_kind = "slot_confirm"
-	_clear_modal()
-	menu_background.visible = true
-	hud_icon.visible = false
-	hud.visible = false
-	_modal_heading("REHACER RANURA %d" % chosen if redo else "BORRAR RANURA %d" % chosen, "save")
-	_modal_text("Empezarás de nuevo desde el comienzo. Se perderá el progreso local de esta ranura." if redo else "Se eliminará el guardado local de esta ranura y quedará vacía.", 17)
-	var cancel := _button("Cancelar", _show_menu)
-	cancel.grab_focus()
-	_button("Sí, rehacer ranura" if redo else "Sí, borrar ranura", func(): _apply_slot_action(chosen, redo))
-
-func _apply_slot_action(chosen: int, redo: bool) -> void:
-	if slot_loading:
-		return
-	slot_loading = true
-	SyncManager.on_slot_closed()
-	var previous := GameState.snapshot()
-	var replacement: Dictionary = {}
-	if redo:
-		GameState.new_game(chosen)
-		daily.initialize()
-		replacement = GameState.snapshot()
-	var succeeded := await SaveManager.clear_slot_async(chosen, replacement)
-	slot_loading = false
-	if not is_inside_tree():
-		return
-	if not succeeded:
-		GameState.restore(previous)
-		_show_menu()
-		_toast("No se pudo modificar la ranura: " + SaveManager.last_error)
-		return
-	_show_menu()
-	if redo:
-		_start_slot(chosen, true, true)
-	else:
-		_toast("Ranura %d eliminada" % chosen)
-
-func _start_slot(chosen: int, upgrade_routine := true, fresh_slot := false) -> void:
-	if slot_loading:
-		return
-	slot_loading = true
-	var recovered_local := false
-	var resumed := not fresh_slot
-	if OS.has_feature("web"):
-		if not await SaveManager.acquire_slot_async(chosen):
-			slot_loading = false
-			_toast("No se pudo abrir la ranura: " + SaveManager.last_error)
-			return
-		var response: Dictionary = await SaveManager.load_slot_data_async(chosen)
-		if not is_inside_tree():
-			return
-		if not response.get("success", false):
-			slot_loading = false
-			_toast("No se pudo leer la partida: " + SaveManager.last_error)
-			await SaveManager.release_slot_async()
-			return
-		if response.result == null:
-			GameState.new_game(chosen)
-			resumed = false
-			if upgrade_routine: daily.initialize()
-			if not await SaveManager.save_slot_async():
-				slot_loading = false
-				_toast("No se pudo crear la partida")
-				await SaveManager.release_slot_async()
-				return
-		elif typeof(response.result) != TYPE_DICTIONARY or not GameState.restore(response.result):
-			slot_loading = false
-			_toast("Ranura incompatible o dañada; no se sobrescribió")
-			await SaveManager.release_slot_async()
-			return
-	else:
-		if SaveManager.slot_exists(chosen):
-			if not SaveManager.load_slot(chosen):
-				slot_loading = false
-				_toast("Ranura incompatible o dañada; no se sobrescribió")
-				return
-			recovered_local = SaveManager.recovered_slot == chosen
-		else:
-			GameState.new_game(chosen)
-			resumed = false
-			if upgrade_routine: daily.initialize()
-			if not SaveManager.save_slot():
-				slot_loading = false
-				_toast("No se pudo crear la partida")
-				return
-	slot_loading = false
-	if upgrade_routine and not daily.active() and GameState.phase in ["bedroom", "courtyard", "computer", "result", "coral", "moba"] and not GameState.coral_state.get("mode") in ["ending", "summary"]:
-		var old_phase: String = GameState.phase
-		var resumed_day: int = int(GameState.coral_state.get("day", 0))
-		daily.initialize(resumed_day)
-		if old_phase == "courtyard" or old_phase == "coral":
-			daily.state().stage = "arrival"
-			daily.state().place = "computer" if resumed_day == 1 else "school"
-		elif old_phase in ["computer", "result", "moba"]:
-			daily.state().stage = "evening"
-			daily.state().place = "bedroom"
-		daily.state().messages_checked = true
-		if not await SaveManager.save_slot_async():
-			_toast("No se pudo actualizar la rutina de esta ranura")
-			_show_menu()
-			return
-	await SaveManager.begin_telemetry_session(resumed)
-	if not is_inside_tree():
-		return
-	SyncManager.on_slot_opened()
-	AudioManager.apply_preferences()
-	if GameState.phase != "moba":
-		AudioManager.enter_context("explore")
-	_refresh_static_fonts()
-	if GameState.phase == "moba":
-		get_tree().change_scene_to_file("res://scenes/moba/MOBAArena.tscn")
-		return
-	_load_phase()
-	if daily.active():
-		if not GameState.dialogue_key.is_empty(): _resume_saved_dialogue()
-		elif GameState.ui_modal == "desktop": _render_desktop()
-		elif GameState.ui_modal == "class": _render_class()
-		elif GameState.ui_modal == "phone": phone_modal.render_phone()
-		elif GameState.ui_modal == "objective": objective_modal.render_objective()
-		return
-	if not GameState.dialogue_key.is_empty():
-		if not _resume_saved_dialogue():
-			_show_menu()
-			_toast("No se pudo reanudar el diálogo guardado")
-	elif not GameState.ui_modal.is_empty():
-		match GameState.ui_modal:
-			"phone": phone_modal.render_phone()
-			"objective": objective_modal.render_objective()
-			"class": _render_class()
-			"desktop": _render_desktop()
-	elif not str(GameState.flags.get("d0_guide_active", "")).is_empty():
-		_render_stage_guide()
-	elif GameState.phase == "bedroom" and not GameState.flags.get("prologue_seen", false) and not GameState.flags.get("wakeup_seen", false):
-		_render_prologue()
-	elif GameState.phase == "bedroom" and not GameState.flags.get("wakeup_seen", false):
-		_show_dialogue("wakeup")
-	elif GameState.phase == "bedroom" and not GameState.flags.get("d0_guide_bedroom_seen", false):
-		_begin_stage_guide("bedroom")
-	elif GameState.phase not in ["result", "preview", "coral"]:
-		_close_modal()
-	if recovered_local:
-		_toast("Partida recuperada de una copia local")
-
-func _load_phase() -> void:
-	if modal_kind == "pause":
-		phase_load_after_pause = true
-		return
-	if is_instance_valid(conversation_ui):
-		conversation_ui.clear_view()
-	prompt.visible = true
-	menu_background.visible = false
-	hud_icon.visible = true
-	hud.visible = true
-	if daily.active():
-		daily.load_view()
-		return
-	var world_phase := GameState.phase
-	if world_phase == "result":
-		world_phase = "computer"
-	elif world_phase == "preview":
-		world_phase = legacy.draft_world_key() if GameState.flags.get("draft_mode", false) else "courtyard"
-	elif world_phase == "coral":
-		world_phase = coral_flow.world_key(GameState.coral_state)
-	world.configure(world_phase, GameState.player_position)
-	if GameState.phase == "coral":
-		world.configure_story_targets(coral.world_targets(), coral.primary_target())
-	_update_hud()
-	if GameState.phase == "courtyard" and GameState.flags.get("friends", false) and not GameState.flags.get("d0_departure_seen", false):
-		world.begin_departures()
-	if not str(GameState.flags.get("d0_guide_active", "")).is_empty():
-		_render_stage_guide()
-	elif GameState.phase == "result":
-		_show_result()
-	elif GameState.phase == "preview":
-		if GameState.flags.get("draft_exploring", false):
-			if GameState.flags.has("draft_intro_step"):
-				legacy.render_day_intro()
-			else:
-				modal_kind = ""
-				modal.visible = false
-				world.enabled = true
-		else:
-			legacy.render_preview()
-	elif GameState.phase == "coral":
-		coral.render()
-
-func _build_inventory_panel() -> void:
-	# Hijo del HUD: se oculta junto con él en menús y conversaciones.
-	inventory_panel = PanelContainer.new()
-	inventory_panel.name = "InventoryPanel"
-	inventory_panel.position = Vector2(560, 352)
-	inventory_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color("10192bd9")
-	style.border_color = Color("f5d479")
-	style.set_border_width_all(1)
-	style.set_corner_radius_all(8)
-	style.set_content_margin_all(5)
-	inventory_panel.add_theme_stylebox_override("panel", style)
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 6)
-	inventory_panel.add_child(row)
-	var icon := TextureRect.new()
-	icon.texture = WorldScript.OBJECT_SPRITES.backpack
-	icon.custom_minimum_size = Vector2(26, 26)
-	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	row.add_child(icon)
-	inventory_label = Label.new()
-	inventory_label.name = "InventoryText"
-	inventory_label.add_theme_font_size_override("font_size", 13)
-	inventory_label.add_theme_color_override("font_color", Color("fff3df"))
-	row.add_child(inventory_label)
-	hud.add_child(inventory_panel)
-	inventory_panel.visible = false
-
-func _refresh_inventory() -> void:
-	if not is_instance_valid(inventory_panel): return
-	var items: Array = GameState.flags.get("inventory", [])
-	inventory_panel.visible = not items.is_empty()
-	inventory_label.text = "Inventario: " + ", ".join(items.map(func(item): return str(item).capitalize()))
-
-func _pick_up_item(item: String, flag: String, message: String) -> void:
-	if save_in_progress: return
-	if GameState.has_item(item):
-		_toast("Ya llevas la " + item + " en tu inventario")
-		return
-	var previous: Dictionary = GameState.snapshot()
-	GameState.add_item(item)
-	GameState.flags[flag] = true
-	save_in_progress = true
-	world.enabled = false
-	if await SaveManager.save_slot_async():
-		save_in_progress = false
-		if not is_inside_tree(): return
-		# El objeto desaparece del mapa: deja de ser objetivo y de dibujarse.
-		world.objects.erase(flag)
-		if daily.active(): world.configure_story_targets(daily.targets(), daily._primary_target())
-		_update_hud()
-		AudioManager.play_effect("pickup")
-		world.enabled = modal_kind == ""
-		_toast(message)
-	else:
-		GameState.restore(previous)
-		save_in_progress = false
-		if modal_kind == "": world.enabled = true
-		_toast("Error al guardar")
-
-func _update_hud() -> void:
-	_refresh_inventory()
-	if daily.active():
-		hud.text = "DÍA %d · %s" % [int(daily.state().day), daily.objective()]
-		return
-	if GameState.phase == "coral":
-		hud.text = "DÍA %d · %s" % [int(GameState.coral_state.get("day", 1)), _objective_text()]
-		return
-	if GameState.phase == "preview":
-		if GameState.flags.get("draft_exploring", false):
-			var day_number: int = int(GameState.preview_scene.substr(1, 1))
-			hud.text = "DÍA %d · %s" % [day_number, _objective_text()]
-		else:
-			var active_scene: Dictionary = preview_catalog.get_scene(GameState.preview_scene)
-			hud.text = legacy.scene_title(active_scene)
-		return
-	var place: String = {"bedroom": "HABITACIÓN", "courtyard": "PATIO", "computer": "COMPUTADORA", "result": "RESULTADO"}.get(GameState.phase, GameState.phase.to_upper())
-	hud.text = "DÍA 0 · %s | %s" % [place, _objective_text()]
-
-func _objective_text() -> String:
-	if daily.active(): return daily.objective()
-	match GameState.phase:
-		"bedroom":
-			if not GameState.flags.get("alarm", false): return "Usa la alarma"
-			if not GameState.flags.get("backpack", false): return "Recoge la mochila"
-			return "Ve a la puerta"
-		"courtyard":
-			if not GameState.flags.get("friends", false): return "Acércate al grupo"
-			return "Ve a la salida"
-		"computer": return "Usa la computadora"
-		"result": return "Continúa la historia D1–D4"
-		"preview": return "Habla con Mateo" if GameState.flags.get("draft_exploring", false) else "Continúa la conversación"
-		"coral": return coral_flow.objective(GameState.coral_state)
-	return ""
-
 func _on_interacted(target: String) -> void:
 	if daily.active():
 		if target != "backpack": AudioManager.play_effect("interact")
@@ -779,135 +329,33 @@ func _on_interacted(target: String) -> void:
 				legacy.commit_preview(GameState.preview_scene, 0)
 		"bedroom":
 			if target == "backpack":
-				_pick_up_item("mochila", "backpack", "Mochila guardada en el inventario")
+				inventory.pick_up("mochila", "backpack", "Mochila guardada en el inventario")
 			elif target == "alarm":
-				_commit_flag(target, "Interacción registrada: " + world.target_label(target))
+				day0.commit_flag(target, "Interacción registrada: " + world.target_label(target))
 			elif target == "door":
 				if not GameState.flags.get("alarm", false) or not GameState.flags.get("backpack", false):
 					_toast("Completa la alarma y la mochila primero")
 				else:
-					_transition("courtyard", Vector2(140, 300))
+					day0.transition("courtyard", Vector2(140, 300))
 			else:
-				if target in ["photo", "desk"]: _inspect_d0(target)
+				if target in ["photo", "desk"]: day0.inspect(target)
 		"courtyard":
 			if target == "friends":
-				if not GameState.flags.get("friends", false): _show_dialogue("courtyard")
+				if not GameState.flags.get("friends", false): day0.show_dialogue("courtyard")
 			elif target == "exit":
 				if GameState.flags.get("friends", false):
-					_transition("computer", Vector2(384, 320))
+					day0.transition("computer", Vector2(384, 320))
 				else:
 					_toast("Primero acércate al grupo")
 			elif target == "tutoria":
-				_inspect_d0("tutoria")
+				day0.inspect("tutoria")
 		"computer":
 			if target == "pc":
-				_show_desktop()
-
-func _begin_stage_guide(place: String) -> void:
-	if save_in_progress: return
-	var previous: Dictionary = GameState.snapshot()
-	GameState.flags.d0_guide_active = place
-	save_in_progress = true
-	if await SaveManager.save_slot_async():
-		save_in_progress = false
-		_render_stage_guide()
-	else:
-		GameState.restore(previous)
-		save_in_progress = false
-		_toast("No se pudo guardar la guía")
-
-func _render_stage_guide() -> void:
-	modal_kind = "stage_guide"
-	_begin_conversation_presentation()
-	var place: String = str(GameState.flags.get("d0_guide_active", GameState.phase))
-	var title: String = {"bedroom": "Antes de salir", "courtyard": "Un momento con tus amigos", "computer": "De vuelta en casa"}.get(place, "")
-	var message: String = {
-		"bedroom": "Sofi se prepara para ir al colegio. Muévete con WASD, acércate a la alarma y pulsa F. Después recoge la mochila y busca la puerta. La marca dorada indica dónde seguir; puedes mirar otros objetos antes de salir.",
-		"courtyard": "Antes de entrar a clase, Sofi se encuentra con sus amigos en el patio. Acércate al grupo y pulsa F para conversar. Al terminar, sus amigos se despedirán y podrás ir hacia la salida.",
-		"computer": "Pasaron las clases. Por la tarde, Sofi vuelve a casa, termina sus tareas y enciende la computadora. Sus amigos la esperan en el chat para preparar una partida. Acércate a la PC y pulsa F."
-	}.get(place, "")
-	conversation_ui.show_stage_card(title, message, _finish_stage_guide, _scaled_text_size(18))
-
-func _finish_stage_guide() -> bool:
-	if save_in_progress or modal_kind != "stage_guide": return false
-	var previous: Dictionary = GameState.snapshot()
-	GameState.flags["d0_guide_" + GameState.phase + "_seen"] = true
-	GameState.flags.erase("d0_guide_active")
-	save_in_progress = true
-	if await SaveManager.save_slot_async():
-		save_in_progress = false
-		_close_modal()
-		return true
-	GameState.restore(previous)
-	save_in_progress = false
-	return false
+				computer.show_desktop()
 
 func _on_departure_finished() -> void:
 	GameState.flags.d0_departure_seen = true
 	_autosave()
-
-func _transition(next_phase: String, position: Vector2) -> void:
-	var old_phase: String = GameState.phase
-	var old_position: Vector2 = GameState.player_position
-	var old_flags: Dictionary = GameState.flags.duplicate(true)
-	if next_phase in ["courtyard", "computer"] and not GameState.flags.get("d0_guide_" + next_phase + "_seen", false): GameState.flags.d0_guide_active = next_phase
-	GameState.phase = next_phase
-	GameState.player_position = position
-	world.enabled = false
-	if await SaveManager.save_slot_async():
-		if not is_inside_tree():
-			return
-		_load_phase()
-		AudioManager.play_effect("confirm")
-		world.enabled = str(GameState.flags.get("d0_guide_active", "")).is_empty()
-	else:
-		GameState.flags = old_flags
-		GameState.phase = old_phase
-		GameState.player_position = old_position
-		if modal_kind == "":
-			world.enabled = true
-		_toast("Error al guardar. Reintenta la transición.")
-
-func _commit_flag(flag: String, message: String) -> void:
-	var old_flags := GameState.flags.duplicate(true)
-	GameState.flags[flag] = true
-	world.enabled = false
-	if await SaveManager.save_slot_async():
-		if not is_inside_tree():
-			return
-		_update_hud()
-		AudioManager.play_effect("interact")
-		world.enabled = true
-		_toast(message)
-	else:
-		GameState.flags = old_flags
-		if modal_kind == "":
-			world.enabled = true
-		_toast("Error al guardar")
-
-func _inspect_d0(target: String) -> void:
-	if save_in_progress: return
-	var flag_name: String = "d0_" + target + "_seen"
-	if not GameState.flags.get(flag_name, false):
-		var previous: Dictionary = GameState.snapshot()
-		GameState.flags[flag_name] = true
-		save_in_progress = true
-		if not await SaveManager.save_slot_async():
-			GameState.restore(previous)
-			save_in_progress = false
-			_toast("No se pudo guardar la observación")
-			return
-		save_in_progress = false
-	_clear_modal()
-	modal_kind = "observation"
-	_modal_heading("SOFI OBSERVA", "objective")
-	var descriptions := {
-		"photo": "Sofi mira una foto con Mateo, Camila, Bruno y Sebas. Juegan juntos desde hace tiempo, aunque cada uno necesita su propio espacio y sus propios horarios.",
-		"desk": "En su escritorio, Sofi recuerda el acuerdo del grupo: avisar cuando alguien se desconecte, no compartir datos de otra persona y aceptar un no sin insistir.",
-		"tutoria": "El cartel de tutoría recuerda que se puede hablar con una persona adulta de confianza aun sin tener todas las respuestas. Pedir apoyo es una opción disponible desde el comienzo."
-	}
-	_modal_text(str(descriptions.get(target, "")), 18)
-	_button("Volver", _close_modal)
 
 func _autosave() -> void:
 	if not await SaveManager.save_slot_async() and is_inside_tree():
@@ -918,7 +366,7 @@ func _manual_save() -> void:
 
 func _on_lock_lost() -> void:
 	SyncManager.on_slot_closed()
-	_show_menu()
+	menu.show()
 	_toast("Esta partida está abierta en otra pestaña")
 
 func _toast(message: String) -> void:
@@ -952,388 +400,4 @@ func _return_to_menu() -> void:
 	SyncManager.on_slot_closed()
 	await SaveManager.release_slot_async()
 	if is_inside_tree():
-		_show_menu()
-
-func _render_prologue() -> void:
-	modal_kind = "prologue"
-	_begin_conversation_presentation()
-	conversation_ui.show_prologue("\n\n".join(PROLOGUE_LINES), _advance_prologue, _scaled_text_size(18))
-
-func _advance_prologue() -> void:
-	if save_in_progress or modal_kind != "prologue": return
-	save_in_progress = true
-	var previous: Dictionary = GameState.flags.duplicate(true)
-	GameState.flags.erase("prologue_step")
-	GameState.flags.prologue_seen = true
-	if await SaveManager.save_slot_async():
-		save_in_progress = false
-		if is_inside_tree(): _show_dialogue("wakeup")
-	else:
-		GameState.flags = previous
-		save_in_progress = false
-		_toast("No se pudo guardar el prólogo; reintentando")
-
-func _show_desktop() -> void:
-	if daily.active() and not daily.can_use_pc():
-		_toast("La computadora está en tu habitación o en la sala de cómputo")
-		return
-	await _open_ui_modal("desktop", Callable(self, "_render_desktop"))
-
-func _render_desktop() -> void:
-	modal_kind = "desktop"
-	_clear_modal()
-	modal.visible = false
-	hud.visible = false
-	hud_icon.visible = false
-	prompt.visible = false
-	desktop_ui.show_desktop(self)
-	return
-
-func _inspect_profile() -> void:
-	if save_in_progress or GameState.flags.get("d0_profile_private", false): return
-	var previous: Dictionary = GameState.snapshot()
-	GameState.flags.d0_profile_private = true
-	save_in_progress = true
-	if await SaveManager.save_slot_async():
-		save_in_progress = false
-		_render_desktop()
-	else:
-		GameState.restore(previous)
-		save_in_progress = false
-		_toast("No se pudo guardar la revisión de privacidad")
-
-func _open_desktop_chat() -> void:
-	if daily.active() and daily.state().stage != "evening":
-		_render_discord_history()
-		return
-	if daily.active() and int(daily.state().day) > 0:
-		if daily.state().stage == "evening":
-			if int(daily.state().day) == 1 and not GameState.coral_state.actions.has("D1_LOBBY_DONE"):
-				coral.begin_scene("D1_GATE")
-			elif not daily.state().chat_seen: daily.begin_scene("evening_chat")
-			else: _render_discord_history()
-		else: _render_discord_history()
-		return
-	if GameState.flags.get("d0_chat_done", false):
-		_render_discord_history()
-	else:
-		_show_dialogue("group_chat")
-
-func _render_discord_history(direct := false) -> void:
-	desktop_direct = direct
-	modal_kind = "discord_history"
-	_begin_conversation_presentation()
-	var messages: Array = []
-	for message in GameState.phone_messages:
-		if (message.get("channel", "group") == "mateo") == direct: messages.append(message)
-	if direct:
-		conversation_ui.show_direct_chat("Mateo", messages, [], Callable(), "", _scaled_text_size(18), "Todavía no hay mensajes privados." if messages.is_empty() else "")
-		conversation_ui._button("Escritorio", Rect2(626, 9, 121, 32), _render_desktop, 13)
-	else:
-		conversation_ui.show_chat("los-chicos", messages, [], Callable(), "", _render_desktop, _scaled_text_size(18), "Todavía no hay mensajes." if messages.is_empty() else "", "Escritorio")
-	conversation_ui._button("Los chicos" if direct else "Mateo", Rect2(485, 9, 132, 32), func(): _render_discord_history(not direct), 13)
-
-func _show_class() -> void:
-	if daily.active() and not daily.can_play():
-		_toast("Revisa Discord después de cenar para preparar la partida")
-		return
-	await _open_ui_modal("class", Callable(self, "_render_class"))
-
-func _render_class() -> void:
-	modal_kind = "class"
-	_clear_modal()
-	_modal_heading("ELIGE CLASE · MOBA", "ability")
-	for hero_class in ["Atacante", "Defensor", "Soporte"]:
-		var chosen: String = hero_class
-		var class_button := _button(hero_class, func(): _start_moba(chosen), "class_" + {"Atacante": "attacker", "Defensor": "defender", "Soporte": "support"}[hero_class])
-		class_button.custom_minimum_size.y = 54
-		if hero_class == "Atacante":
-			class_button.grab_focus()
-	_button("Volver al escritorio", _show_desktop)
-
-func _show_dialogue(key: String) -> void:
-	if save_in_progress:
-		return
-	var errors: Array[String] = dialogue_story.load_story(DAY_0_PREVIEW, true)
-	if not errors.is_empty() or not dialogue_story.start_at(key):
-		_toast("No se pudo abrir la conversación")
-		return
-	save_in_progress = true
-	var previous := GameState.snapshot()
-	GameState.dialogue_key = key
-	GameState.dialogue_position = dialogue_story.position
-	GameState.dialogue_choice = ""
-	GameState.dialogue_history = []
-	GameState.ui_modal = ""
-	if await SaveManager.save_slot_async():
-		dialogue_key = key
-		dialogue_choice = ""
-		dialogue_visible = 0.0
-		if is_inside_tree():
-			_render_dialogue()
-	else:
-		GameState.restore(previous)
-		_toast("No se pudo guardar el diálogo; reintenta")
-	save_in_progress = false
-
-func _resume_saved_dialogue() -> bool:
-	var errors: Array[String] = dialogue_story.load_story(DAY_0_PREVIEW, true)
-	if not errors.is_empty() or GameState.dialogue_position >= dialogue_story.data.get("nodes", []).size():
-		return false
-	dialogue_story.position = GameState.dialogue_position
-	dialogue_key = GameState.dialogue_key
-	dialogue_choice = GameState.dialogue_choice
-	dialogue_visible = 0.0
-	_render_dialogue()
-	return true
-
-func _render_dialogue(preserve_reveal: bool = false) -> void:
-	if modal_kind == "pause":
-		modal_before_pause = "dialogue"
-		return
-	modal_kind = "dialogue"
-	var node: Dictionary = dialogue_story.current_node()
-	if not preserve_reveal:
-		dialogue_visible = 0.0
-	var reaction: Dictionary = D0_CHAT_REACTIONS.get(dialogue_choice, {}) if dialogue_key == "group_chat" and node.get("speaker") == "Sofi" else {}
-	var message: String = str(reaction.get("text", node.get("text", "")))
-	var speaker: String = str(reaction.get("speaker", node.get("speaker", "")))
-	dialogue_visible = float(message.length())
-	var revealing: bool = false
-	var choices: Array = node.get("choices", [])
-	var options: Array = []
-	if not revealing:
-		for i in choices.size():
-			var choice_id: String = str(choices[i].choice_id)
-			options.append({"label": "%d · %s" % [i + 1, choices[i].text], "action": func(): _request_dialogue_choice(choice_id)})
-	var next_action: Callable = _reveal_dialogue if revealing else _advance_dialogue if node.get("next", null) != null else _complete_dialogue
-	var next_label: String = "Mostrar" if revealing else "Continuar"
-	_begin_conversation_presentation()
-	if dialogue_key == "group_chat":
-		var messages: Array = []
-		for position in GameState.dialogue_history:
-			var past: Dictionary = dialogue_story.data.nodes[int(position)]
-			if not str(past.get("text", "")).is_empty():
-				messages.append({"speaker": past.speaker, "text": past.text})
-		if not reaction.is_empty():
-			messages.append({"speaker": node.speaker, "text": node.text})
-		if not message.is_empty():
-			messages.append({"speaker": speaker, "text": message})
-		dialogue_text_label = conversation_ui.show_chat("los-chicos", messages, options, next_action, next_label, _render_dialogue_history, _scaled_text_size(16))
-		if message.is_empty():
-			dialogue_text_label = null
-	else:
-		var partner: String = "Sofi" if dialogue_key == "courtyard" and speaker != "Sofi" else "Mateo" if dialogue_key == "courtyard" else ""
-		dialogue_text_label = conversation_ui.show_scene("bedroom" if dialogue_key == "wakeup" else "courtyard", "Día 0 · " + ("Habitación" if dialogue_key == "wakeup" else "Patio"), speaker, message, options, next_action, next_label, speaker, partner, false, _scaled_text_size(18), "", _render_dialogue_history)
-	if is_instance_valid(dialogue_text_label):
-		dialogue_visible = float(dialogue_text_label.text.length())
-		dialogue_text_label.visible_characters = dialogue_text_label.text.length()
-
-func _reveal_dialogue() -> void:
-	dialogue_visible = float(dialogue_text_label.text.length()) if is_instance_valid(dialogue_text_label) else 0.0
-	_render_dialogue(true)
-
-func _render_dialogue_history() -> void:
-	modal_kind = "dialogue_history"
-	_clear_modal()
-	_modal_heading("HISTORIAL · conversación actual", "history", 20)
-	var body := _preview_content()
-	var positions: Array = GameState.dialogue_history.duplicate()
-	if positions.is_empty():
-		_preview_text(body, "Todavía no hay líneas anteriores en esta conversación.", 16)
-	for position in positions:
-		if int(position) < 0 or int(position) >= dialogue_story.data.get("nodes", []).size():
-			continue
-		var line: Dictionary = dialogue_story.data.nodes[int(position)]
-		if str(line.get("text", "")).is_empty():
-			continue
-		_preview_text(body, "%s\n%s" % [line.get("speaker", ""), ConversationUIScript.dialogue_text(str(line.get("text", "")))], 17)
-	_preview_button(body, "Volver al diálogo", func(): _render_dialogue(true)).grab_focus()
-
-func _request_dialogue_choice(choice_id: String) -> bool:
-	if save_in_progress or modal_kind != "dialogue":
-		return false
-	for choice in dialogue_story.current_node().get("choices", []):
-		if str(choice.get("choice_id", "")) == choice_id:
-			return await _choose_dialogue(choice_id)
-	return false
-
-func _advance_dialogue() -> void:
-	if save_in_progress:
-		return
-	var previous_position: int = dialogue_story.position
-	var previous_history: Array = GameState.dialogue_history.duplicate()
-	if not dialogue_story.advance():
-		return
-	save_in_progress = true
-	GameState.dialogue_position = dialogue_story.position
-	GameState.dialogue_history.append(previous_position)
-	if await SaveManager.save_slot_async():
-		if is_inside_tree():
-			AudioManager.play_effect("confirm")
-			_render_dialogue()
-	else:
-		dialogue_story.position = previous_position
-		GameState.dialogue_position = previous_position
-		GameState.dialogue_history = previous_history
-		_toast("No se pudo guardar el avance; reintenta")
-	save_in_progress = false
-
-func _choose_dialogue(choice_id: String) -> bool:
-	if save_in_progress:
-		return false
-	var previous_position: int = dialogue_story.position
-	var previous_history: Array = GameState.dialogue_history.duplicate()
-	if not dialogue_story.advance(choice_id):
-		return false
-	save_in_progress = true
-	GameState.dialogue_position = dialogue_story.position
-	GameState.dialogue_choice = choice_id
-	GameState.dialogue_history.append(previous_position)
-	if await SaveManager.save_slot_async():
-		dialogue_choice = choice_id
-		if is_inside_tree():
-			AudioManager.play_effect("confirm")
-			_render_dialogue()
-		save_in_progress = false
-		return true
-	else:
-		dialogue_story.position = previous_position
-		GameState.dialogue_position = previous_position
-		GameState.dialogue_choice = dialogue_choice
-		GameState.dialogue_history = previous_history
-		_toast("No se pudo guardar la opción; reintenta")
-	save_in_progress = false
-	return false
-
-func _complete_dialogue() -> void:
-	if save_in_progress:
-		return
-	save_in_progress = true
-	var previous := GameState.snapshot()
-	match dialogue_key:
-		"wakeup":
-			GameState.flags.wakeup_seen = true
-			if not GameState.flags.get("d0_guide_bedroom_seen", false): GameState.flags.d0_guide_active = "bedroom"
-		"courtyard": GameState.flags.friends = true
-		"group_chat":
-			if dialogue_choice.is_empty():
-				save_in_progress = false
-				return
-			GameState.flags.d0_chat_done = true
-			GameState.flags.d0_chat_choice = dialogue_choice
-			GameState.phone_messages = []
-			for i in range(14, 19):
-				var node: Dictionary = dialogue_story.data.nodes[i]
-				GameState.phone_messages.append({"speaker": node.speaker, "text": node.text})
-			var answer: Dictionary = dialogue_story.current_node()
-			GameState.phone_messages.append({"speaker": answer.speaker, "text": answer.text})
-			var reply: Dictionary = D0_CHAT_REACTIONS.get(dialogue_choice, {})
-			if not reply.is_empty():
-				GameState.phone_messages.append({"speaker": reply.speaker, "text": reply.text})
-	GameState.dialogue_key = ""
-	GameState.dialogue_position = 0
-	GameState.dialogue_choice = ""
-	GameState.dialogue_history = []
-	if not await SaveManager.save_slot_async():
-		save_in_progress = false
-		GameState.restore(previous)
-		_toast("No se pudo guardar el diálogo; reintenta")
-		return
-	save_in_progress = false
-	_update_hud()
-	var finished_key := dialogue_key
-	dialogue_key = ""
-	if modal_kind == "pause":
-		if finished_key == "group_chat": _show_desktop()
-		else: phase_load_after_pause = true
-		return
-	if finished_key == "group_chat":
-		_show_desktop()
-	else:
-		_close_modal()
-		_load_phase()
-
-func _start_moba(hero_class: String) -> void:
-	if daily.active() and not daily.can_play(): return
-	if save_in_progress:
-		return
-	save_in_progress = true
-	var previous_match: Dictionary = GameState.snapshot()
-	GameState.moba_class = hero_class
-	GameState.phase = "moba"
-	GameState.ui_modal = ""
-	if await SaveManager.save_slot_async():
-		save_in_progress = false
-		get_tree().change_scene_to_file("res://scenes/moba/MOBAArena.tscn")
-	else:
-		save_in_progress = false
-		GameState.restore(previous_match)
-		_toast("No se pudo guardar la clase")
-
-func _show_result() -> void:
-	modal_kind = "result"
-	_begin_conversation_presentation()
-	if GameState.flags.get("d1_interlude_active", false):
-		conversation_ui.show_scene("computer_lab", "Día 1 · Un nuevo jugador", "Narrador", draft_flow.connector("D1_02_A"), [], coral.start_story, "Continuar", "Sofi", "", false, _scaled_text_size(18))
-		return
-	var note: String = "Partida finalizada · " + GameState.moba_result.capitalize()
-	var messages: Array = [{"speaker": "Camila", "text": draft_flow.camila_reaction(GameState.moba_result, GameState.moba_class)}]
-	conversation_ui.show_chat("los-chicos", messages, [], coral.show_d1_interlude, "Continuar", Callable(), _scaled_text_size(16), note)
-
-func _preview_content() -> VBoxContainer:
-	var scroll := ScrollContainer.new()
-	scroll.custom_minimum_size = Vector2(565, 256)
-	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	modal_box.add_child(scroll)
-	var body := VBoxContainer.new()
-	body.custom_minimum_size.x = 555
-	body.add_theme_constant_override("separation", 10)
-	scroll.add_child(body)
-	return body
-
-func _preview_text(parent: Container, value: String, size: int = 16, width: int = 545) -> Label:
-	var label := Label.new()
-	label.text = value
-	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	label.custom_minimum_size.x = width
-	label.add_theme_font_size_override("font_size", _scaled_text_size(size))
-	label.add_theme_color_override("font_color", Color("fff3df"))
-	parent.add_child(label)
-	return label
-
-func _preview_button(parent: VBoxContainer, value: String, callback: Callable, icon_key: String = "") -> Button:
-	var button := Button.new()
-	button.text = value
-	button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	button.custom_minimum_size = Vector2(545, 44)
-	if not icon_key.is_empty():
-		button.icon = UI_ICONS[icon_key]
-		button.expand_icon = true
-	button.add_theme_font_size_override("font_size", _scaled_text_size(16))
-	button.pressed.connect(callback)
-	parent.add_child(button)
-	return button
-
-func _scene_sprite_key(speaker: String, scene_id: String, choice: String = "") -> String:
-	if speaker == "Mateo" and scene_id in ["D4_B1", "D4_B2", "D4_A1", "D4_A2"]: return "Mateo_alarmed"
-	if speaker == "Mateo" and scene_id in ["D2_B", "D3_B1", "D3_B2"]: return "Mateo_worried"
-	if speaker == "Sofi" and (scene_id.begins_with("D3_") or scene_id.begins_with("D4_")): return "Sofi_concerned"
-	if speaker == "Sofi" and scene_id in ["D3_01_A", "D4_01_A", "D4_02_A", "D4_03_A", "F03"]:
-		return "Sofi_concerned"
-	if speaker == "Mateo":
-		if choice == "A" and scene_id in ["D3_01_A", "D4_01_A", "D4_02_A", "D4_03_A"]:
-			return "Mateo"
-		if scene_id in ["D4_01_A", "F03"]:
-			return "Mateo_alarmed"
-		if scene_id in ["D2_03_A", "D2_04_A", "D3_01_A", "D4_02_A", "D4_03_A", "F02"]:
-			return "Mateo_worried"
-	return speaker
-
-func _conversation_background() -> String:
-	if daily.active():
-		var place: String = str(daily.state().place)
-		if daily.is_evening() and place in ["bedroom", "living", "street", "school"]:
-			return {"bedroom": "bedroom_night", "living": "living_night", "street": "street_sunset", "school": "courtyard_sunset"}[place]
-		return {"bedroom": "bedroom", "living": "living", "street": "street", "school": "courtyard", "classroom": "classroom", "computer": "computer_lab", "tutor": "tutor_office"}.get(place, "courtyard")
-	return ConversationUIScript.background_for_world(str(world.scene_key))
+		menu.show()

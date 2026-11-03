@@ -14,7 +14,7 @@ func _label(value: String, rect: Rect2, font_size: int, color := Color("fff7ff")
 	label.position = rect.position
 	label.size = rect.size
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	label.add_theme_font_size_override("font_size", owner_main._scaled_text_size(font_size))
+	label.add_theme_font_size_override("font_size", owner_main.ui_kit.scaled_text_size(font_size))
 	label.add_theme_color_override("font_color", color)
 	add_child(label)
 	return label
@@ -41,7 +41,7 @@ func _app(title: String, icon: String, position_value: Vector2, action: Callable
 	button.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	button.vertical_icon_alignment = VERTICAL_ALIGNMENT_TOP
 	button.add_theme_constant_override("icon_max_width", 43)
-	button.add_theme_font_size_override("font_size", owner_main._scaled_text_size(14))
+	button.add_theme_font_size_override("font_size", owner_main.ui_kit.scaled_text_size(14))
 	button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	var style := StyleBoxFlat.new()
 	style.bg_color = Color("392c59", 0.64)
@@ -77,8 +77,8 @@ func show_desktop(main: Node) -> void:
 	_label("Sala de cómputo · Sesión de Sofi" if school_pc else "Sofi · Mi espacio", Rect2(22, 9, 490, 26), 17)
 	var time_value: String = "20:15" if main.daily.active() and main.daily.is_evening() else "07:10"
 	_label(time_value, Rect2(670, 9, 80, 26), 16).horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	var discord := _app("Discord", "discord", Vector2(23, 60), main._open_desktop_chat)
-	var play := _app("Arena 5v5", "arena", Vector2(151, 60), main._show_class)
+	var discord := _app("Discord", "discord", Vector2(23, 60), main.computer.open_desktop_chat)
+	var play := _app("Arena 5v5", "arena", Vector2(151, 60), main.computer.show_class)
 	play.disabled = not main.daily.can_play() if main.daily.active() else not GameState.flags.get("d0_chat_done", false)
 	play.tooltip_text = "Revisa Discord después de cenar" if play.disabled else "Primero en lograr 5 bajas · máximo 60 segundos"
 	_app("Mis archivos", "files", Vector2(23, 178), Callable(), true)
@@ -94,10 +94,10 @@ func show_desktop(main: Node) -> void:
 	if main.daily.active() and int(main.daily.state().day) == 4: privacy.text = "Bloqueo y privacidad"
 	privacy.position = Vector2(434, 292)
 	privacy.size = Vector2(277, 48)
-	privacy.add_theme_font_size_override("font_size", owner_main._scaled_text_size(15))
+	privacy.add_theme_font_size_override("font_size", owner_main.ui_kit.scaled_text_size(15))
 	privacy.pressed.connect(func():
 		if main.daily.active() and int(main.daily.state().day) == 4: main.coral.begin_scene("I_LIMIT")
-		else: main._inspect_profile())
+		else: main.computer.inspect_profile())
 	add_child(privacy)
 	_panel(Rect2(294, 400, 452, 40), Color("30233d", 0.94))
 	_label("Discord  ·  Arena 5v5", Rect2(310, 410, 230, 24), 14)
@@ -106,7 +106,7 @@ func show_desktop(main: Node) -> void:
 	close.text = "Apagar pantalla"
 	close.position = Vector2(558, 404)
 	close.size = Vector2(177, 33)
-	close.add_theme_font_size_override("font_size", owner_main._scaled_text_size(13))
-	close.pressed.connect(main._close_modal)
+	close.add_theme_font_size_override("font_size", owner_main.ui_kit.scaled_text_size(13))
+	close.pressed.connect(main.ui_kit.close_modal)
 	add_child(close)
 	discord.grab_focus()

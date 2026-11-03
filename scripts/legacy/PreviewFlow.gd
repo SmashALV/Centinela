@@ -31,12 +31,12 @@ func render_day_intro() -> void:
 		push_error("Presentación diaria inválida: " + scene_id)
 		return
 	main.modal_kind = "day_intro"
-	main._begin_conversation_presentation()
+	main.ui_kit.begin_conversation_presentation()
 	var scene: Dictionary = main.preview_catalog.get_scene(scene_id)
 	var title: String = "Día %d · %s" % [int(scene.get("day", 1)), scene_title(scene)]
-	var background: String = main._conversation_background()
+	var background: String = main.router.conversation_background()
 	main.conversation_ui.show_scene(background, title, "Narrador", str(introduction[step]), [], advance_day_intro,
-		"Continuar", "Sofi", "", false, main._scaled_text_size(18))
+		"Continuar", "Sofi", "", false, main.ui_kit.scaled_text_size(18))
 
 func advance_day_intro() -> bool:
 	if main.save_in_progress or GameState.phase != "preview" or not GameState.flags.get("draft_mode", false) or not GameState.flags.get("draft_exploring", false) or not GameState.flags.has("draft_intro_step"):
@@ -50,7 +50,7 @@ func advance_day_intro() -> bool:
 	main.save_in_progress = true
 	if await SaveManager.save_slot_async():
 		main.save_in_progress = false
-		main._load_phase()
+		main.router.load_phase()
 		return true
 	GameState.restore(previous)
 	main.save_in_progress = false
@@ -81,7 +81,7 @@ func commit_preview(next_scene: String, next_step: int, choice_key: String = "",
 	if await SaveManager.save_slot_async():
 		main.save_in_progress = false
 		if main.is_inside_tree():
-			main._load_phase()
+			main.router.load_phase()
 		return true
 	else:
 		GameState.restore(previous)
@@ -103,12 +103,12 @@ func preview_line(parent: VBoxContainer, line: Dictionary) -> void:
 		parent.add_child(card)
 		var message_box := VBoxContainer.new()
 		card.add_child(message_box)
-		main._preview_text(message_box, "CHAT MOSTRADO POR MATEO" if GameState.preview_scene == "D2_03_A" else "MENSAJE RECUPERADO", 13, 515)
-		main._preview_text(message_box, speaker, 16, 515)
-		main._preview_text(message_box, "«" + ConversationUIScript.dialogue_text(str(line.get("text", ""))) + "»", 18, 515)
+		main.ui_kit.add_text(message_box, "CHAT MOSTRADO POR MATEO" if GameState.preview_scene == "D2_03_A" else "MENSAJE RECUPERADO", 13, 515)
+		main.ui_kit.add_text(message_box, speaker, 16, 515)
+		main.ui_kit.add_text(message_box, "«" + ConversationUIScript.dialogue_text(str(line.get("text", ""))) + "»", 18, 515)
 	else:
-		main._preview_text(parent, speaker, 18)
-		main._preview_text(parent, "«" + ConversationUIScript.dialogue_text(str(line.get("text", ""))) + "»", 19)
+		main.ui_kit.add_text(parent, speaker, 18)
+		main.ui_kit.add_text(parent, "«" + ConversationUIScript.dialogue_text(str(line.get("text", ""))) + "»", 19)
 
 func scene_title(scene: Dictionary) -> String:
 	var title: String = str(scene.get("title", "Historia"))
@@ -168,8 +168,8 @@ func preview_next_action(scene_id: String) -> Callable:
 func render_preview_story(scene_id: String, draft_mode: bool) -> void:
 	var scene: Dictionary = main.preview_catalog.get_scene(scene_id)
 	if scene.is_empty():
-		main._modal_heading("ESCENA", "dialogue")
-		main._modal_text("Esta escena no está disponible.")
+		main.ui_kit.modal_heading("ESCENA", "dialogue")
+		main.ui_kit.modal_text("Esta escena no está disponible.")
 		return
 	var step: int = GameState.preview_step
 	var parts: Dictionary = scene_parts(scene_id, draft_mode)
@@ -223,7 +223,7 @@ func render_preview_story(scene_id: String, draft_mode: bool) -> void:
 	var note: String = main.draft_flow.connector(scene_id) if draft_mode and step == 0 and scene_id != "D1_02_A" else ""
 	if draft_mode and step == 0 and scene_id == "F01_A":
 		note = main.draft_flow.f01_context(str(GameState.preview_choices.get("D4_03_A", "")))
-	main._begin_conversation_presentation()
+	main.ui_kit.begin_conversation_presentation()
 	if scene_id == "D1_02_A":
 		var messages: Array = []
 		for i in range(mini(step, lines.size())):
@@ -237,7 +237,7 @@ func render_preview_story(scene_id: String, draft_mode: bool) -> void:
 			messages.append(current)
 		elif step > lines.size():
 			messages.append(current)
-		main.conversation_ui.show_chat("lobby-de-juego", messages, options, next_action, next_label, additional, main._scaled_text_size(16), note, "Escena adicional")
+		main.conversation_ui.show_chat("lobby-de-juego", messages, options, next_action, next_label, additional, main.ui_kit.scaled_text_size(16), note, "Escena adicional")
 		return
 	if draft_mode and scene_id in ["D1_03_A", "D2_03_A"]:
 		var messages: Array = []
@@ -251,32 +251,32 @@ func render_preview_story(scene_id: String, draft_mode: bool) -> void:
 		if not current.is_empty() and (step < lines.size() or step > lines.size()):
 			messages.append(current)
 		main.conversation_ui.show_direct_chat("Mateo", messages, options, next_action, next_label,
-			main._scaled_text_size(16), note)
+			main.ui_kit.scaled_text_size(16), note)
 		return
 	var raw_speaker: String = str(current.get("speaker", "Sofi"))
 	var speaker: String = raw_speaker.get_slice(" (", 0)
 	var is_message: bool = "(mensaje" in raw_speaker
-	var active: String = main._scene_sprite_key(speaker, scene_id, selected)
+	var active: String = main.ui_kit.scene_sprite_key(speaker, scene_id, selected)
 	var partner: String = "Sofi_concerned" if scene_id.begins_with("D4") or scene_id.begins_with("D3") else "Sofi"
 	if speaker == "Sofi":
-		partner = main._scene_sprite_key("Mateo", scene_id)
+		partner = main.ui_kit.scene_sprite_key("Mateo", scene_id)
 	elif speaker == "Kairo" and is_message:
-		active = main._scene_sprite_key("Mateo", scene_id)
+		active = main.ui_kit.scene_sprite_key("Mateo", scene_id)
 	if speaker not in ["Sofi", "Mateo", "Kairo", "Camila", "Bruno", "Sebas"]:
 		active = ""
 		partner = ""
-	var background: String = main._conversation_background()
-	main.conversation_ui.show_scene(background, title, raw_speaker, str(current.get("text", "")), options, next_action, next_label, active, partner, is_message, main._scaled_text_size(18), note, additional, "Escena adicional")
+	var background: String = main.router.conversation_background()
+	main.conversation_ui.show_scene(background, title, raw_speaker, str(current.get("text", "")), options, next_action, next_label, active, partner, is_message, main.ui_kit.scaled_text_size(18), note, additional, "Escena adicional")
 
 func render_preview() -> void:
 	main.modal_kind = "preview"
-	main._clear_modal()
+	main.ui_kit.clear_modal()
 	var draft_mode: bool = GameState.flags.get("draft_mode", false)
-	main._modal_heading("LA HISTORIA DE SOFI", "dialogue", 20)
+	main.ui_kit.modal_heading("LA HISTORIA DE SOFI", "dialogue", 20)
 	if main.preview_catalog.scenes.is_empty():
-		main._modal_text("No se pudo abrir esta escena.", 16)
+		main.ui_kit.modal_text("No se pudo abrir esta escena.", 16)
 		return
-	var body: VBoxContainer = main._preview_content()
+	var body: VBoxContainer = main.ui_kit.content_box()
 	var scene_id: String = GameState.preview_scene
 	if scene_id == "ENDINGS_INDEX":
 		if draft_mode and GameState.preview_step == 2 and GameState.flags.get("draft_completed", false):
@@ -285,29 +285,29 @@ func render_preview() -> void:
 		if GameState.preview_step == 1 and GameState.flags.get("preview_reviewed", false):
 			render_preview_summary(body)
 			return
-		main._preview_text(body, "OTRAS HISTORIAS", 21)
-		main._preview_text(body, "Puedes visitar otras escenas de esta historia.", 15)
+		main.ui_kit.add_text(body, "OTRAS HISTORIAS", 21)
+		main.ui_kit.add_text(body, "Puedes visitar otras escenas de esta historia.", 15)
 		for ending_id in PreviewCatalogScript.ENDING_ORDER:
 			var chosen: String = ending_id
 			var ending: Dictionary = main.preview_catalog.get_scene(chosen)
-			main._preview_button(body, scene_title(ending), func(): commit_preview(chosen, 0))
-		main._preview_button(body, "Volver al menú", main._return_to_menu)
+			main.ui_kit.add_button(body, scene_title(ending), func(): commit_preview(chosen, 0))
+		main.ui_kit.add_button(body, "Volver al menú", main._return_to_menu)
 		return
 	render_preview_story(scene_id, draft_mode)
 
 func render_draft_summary(body: VBoxContainer) -> void:
-	main._preview_text(body, "FIN DE LA HISTORIA", 21)
+	main.ui_kit.add_text(body, "FIN DE LA HISTORIA", 21)
 	var ending_name: String = {"F01": "Buscar apoyo", "F02": "Poner un límite", "F03": "Una decisión pendiente"}.get(str(GameState.flags.get("draft_ending", "")), "La historia continúa")
-	main._preview_text(body, ending_name, 19)
-	main._preview_text(body, "Sofi y Mateo llegaron hasta aquí juntos. Puedes volver a recorrer sus decisiones.", 15)
-	main._preview_text(body, "Resultado de la partida: " + GameState.moba_result + " · clase: " + GameState.moba_class, 15)
+	main.ui_kit.add_text(body, ending_name, 19)
+	main.ui_kit.add_text(body, "Sofi y Mateo llegaron hasta aquí juntos. Puedes volver a recorrer sus decisiones.", 15)
+	main.ui_kit.add_text(body, "Resultado de la partida: " + GameState.moba_result + " · clase: " + GameState.moba_class, 15)
 	for scene_id in DraftFlowScript.MAIN_IDS:
 		var selected: String = str(GameState.preview_choices.get(scene_id, ""))
 		if not selected.is_empty():
 			var selected_scene: Dictionary = main.preview_catalog.get_scene(scene_id)
-			main._preview_text(body, "Día %d · %s: opción %s" % [int(selected_scene.get("day", 0)), scene_title(selected_scene), selected], 15)
-	main._preview_button(body, "Volver a vivir los Días 1–4", start_playable_draft)
-	main._preview_button(body, "Volver al menú", main._return_to_menu)
+			main.ui_kit.add_text(body, "Día %d · %s: opción %s" % [int(selected_scene.get("day", 0)), scene_title(selected_scene), selected], 15)
+	main.ui_kit.add_button(body, "Volver a vivir los Días 1–4", start_playable_draft)
+	main.ui_kit.add_button(body, "Volver al menú", main._return_to_menu)
 
 func draft_terminal_step(scene_id: String) -> int:
 	var parts: Dictionary = scene_parts(scene_id, true)
@@ -329,10 +329,10 @@ func finish_draft() -> bool:
 	return false
 
 func render_preview_summary(body: VBoxContainer) -> void:
-	main._preview_text(body, "HISTORIA RECORRIDA", 21)
-	main._preview_text(body, "Puedes regresar a las escenas y explorar otras decisiones.", 15)
-	main._preview_text(body, "Resultado del MOBA: " + GameState.moba_result, 16)
-	main._preview_text(body, "Respuestas literales guardadas en esta ranura:", 16)
+	main.ui_kit.add_text(body, "HISTORIA RECORRIDA", 21)
+	main.ui_kit.add_text(body, "Puedes regresar a las escenas y explorar otras decisiones.", 15)
+	main.ui_kit.add_text(body, "Resultado del MOBA: " + GameState.moba_result, 16)
+	main.ui_kit.add_text(body, "Respuestas literales guardadas en esta ranura:", 16)
 	var any_choice := false
 	for scene_id in PreviewCatalogScript.MAIN_ORDER:
 		var selected: String = str(GameState.preview_choices.get(scene_id, ""))
@@ -341,14 +341,14 @@ func render_preview_summary(body: VBoxContainer) -> void:
 		var scene: Dictionary = main.preview_catalog.get_scene(scene_id)
 		for choice in scene.get("choices", []):
 			if str(choice.get("key", "")) == selected:
-				main._preview_text(body, "Día %d · %s: %s" % [int(scene.get("day", 0)), scene_title(scene), choice.get("text", "")], 15)
+				main.ui_kit.add_text(body, "Día %d · %s: %s" % [int(scene.get("day", 0)), scene_title(scene), choice.get("text", "")], 15)
 				any_choice = true
 				break
 	if not any_choice:
-		main._preview_text(body, "Todavía no elegiste ninguna respuesta en estas escenas.", 15)
-	main._preview_button(body, "Volver al Día 1", func(): commit_preview("D1_02_A", 0))
-	main._preview_button(body, "Ver otras escenas", func(): commit_preview("ENDINGS_INDEX", 0))
-	main._preview_button(body, "Volver al menú", main._return_to_menu)
+		main.ui_kit.add_text(body, "Todavía no elegiste ninguna respuesta en estas escenas.", 15)
+	main.ui_kit.add_button(body, "Volver al Día 1", func(): commit_preview("D1_02_A", 0))
+	main.ui_kit.add_button(body, "Ver otras escenas", func(): commit_preview("ENDINGS_INDEX", 0))
+	main.ui_kit.add_button(body, "Volver al menú", main._return_to_menu)
 
 func finish_preview() -> bool:
 	if not PreviewCatalogScript.ENDING_ORDER.has(GameState.preview_scene):
@@ -359,13 +359,13 @@ func finish_preview() -> bool:
 
 func render_unplaced_preview() -> void:
 	main.modal_kind = "preview_unplaced"
-	main._clear_modal()
-	main._modal_heading("ESCENA ADICIONAL", "history", 17)
-	var body: VBoxContainer = main._preview_content()
+	main.ui_kit.clear_modal()
+	main.ui_kit.modal_heading("ESCENA ADICIONAL", "history", 17)
+	var body: VBoxContainer = main.ui_kit.content_box()
 	var scene: Dictionary = main.preview_catalog.get_scene(GameState.preview_scene)
 	for line in scene.get("unplaced_lines", []):
 		preview_line(body, line)
-	main._preview_button(body, "Volver a la escena", render_preview)
+	main.ui_kit.add_button(body, "Volver a la escena", render_preview)
 
 func request_preview_choice(scene_id: String, key: String) -> bool:
 	if main.save_in_progress or main.modal_kind != "preview" or GameState.preview_scene != scene_id:

@@ -20,8 +20,8 @@ func _run() -> void:
 	SaveManager.save_slot()
 	var code: String = GameState.code
 	for place in ["bedroom", "courtyard", "computer"]:
-		if place == "bedroom": await main._begin_stage_guide(place)
-		else: await main._transition(place, Vector2(180, 315))
+		if place == "bedroom": await main.day0.begin_stage_guide(place)
+		else: await main.day0.transition(place, Vector2(180, 315))
 		check(main.modal_kind == "stage_guide" and not main.world.enabled, "guía antes del movimiento: " + place)
 		var before: Vector2 = main.world.player_pos
 		main.world._physics_process(1.0)
@@ -33,18 +33,18 @@ func _run() -> void:
 		main.pause_menu.show_pause()
 		main.pause_menu.resume_pause()
 		check(main.modal_kind == "stage_guide", "pausa conserva guía: " + place)
-		check(await main._finish_stage_guide() and main.world.enabled, "guía terminada habilita exploración: " + place)
-		main._update_hud()
+		check(await main.day0.finish_stage_guide() and main.world.enabled, "guía terminada habilita exploración: " + place)
+		main.hud_view.update()
 		check(not main.hud.text.contains(code), "código interno oculto en HUD: " + place)
 	main.pause_menu.show_pause()
 	var pause_text := ""
 	for label in main.modal.find_children("*", "Label", true, false): pause_text += label.text
 	check(not pause_text.contains(code), "código interno oculto en pausa")
 	check(not SaveManager.slot_summary(1).contains(code) and GameState.code == code, "ranura mantiene código sin mostrarlo")
-	main._close_modal()
+	main.ui_kit.close_modal()
 	GameState.phase = "courtyard"
 	GameState.flags.friends = true
-	main._load_phase()
+	main.router.load_phase()
 	check(main.world.departures.size() == 4, "cuatro despedidas activas")
 	var starts: Dictionary = main.world.departures.duplicate(true)
 	var destinations := {}

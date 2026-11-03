@@ -27,7 +27,7 @@ func _run() -> void:
 	get_tree().root.add_child(main)
 	GameState.new_game(1)
 	SaveManager.save_slot()
-	main._start_slot(1)
+	main.menu.start_slot(1)
 	var ui: Control = main.conversation_ui
 	ui.auto_remaining = 13.25
 	ui.auto_duration = 31.0
@@ -83,7 +83,7 @@ func _run() -> void:
 		check(ui.restore_reading_state(state), "relectura conserva identidad de chat")
 		for frame in range(3): await get_tree().process_frame
 		check(ui.get_node("ReadingScroll").scroll_vertical == int(state.ReadingScroll), "desplazamiento de chat se recupera")
-	ui.show_scene("courtyard", "", "Sofi", "", [{"label": "Te escucho; tú decides.", "action": func(): choices += 1}], main._advance_dialogue, "", "Sofi", "Mateo", false, 18)
+	ui.show_scene("courtyard", "", "Sofi", "", [{"label": "Te escucho; tú decides.", "action": func(): choices += 1}], main.day0.advance_dialogue, "", "Sofi", "Mateo", false, 18)
 	click(ui, Vector2(240, 320))
 	check(choices == 0 and not ui.auto_action.is_valid(), "clic general no selecciona una decisión")
 	var button: Button = ui.find_children("*", "Button", true, false)[0]
@@ -95,7 +95,7 @@ func _run() -> void:
 	GameState.coral_state = main.coral_flow.new_state()
 	GameState.coral_state.mode = "explore"
 	main.modal_kind = ""
-	main._load_phase()
+	main.router.load_phase()
 	await main.coral.begin_scene("I_D1_CAMILA")
 	check(ui.find_child("VNBackground", true, false).texture.resource_path == "res://assets/vn/computer_lab.png", "Día 1 presenta conversaciones dentro de la sala de cómputo")
 	remaining = ui.auto_remaining - 0.3
@@ -109,7 +109,7 @@ func _run() -> void:
 	check(main.modal_kind == "pause", "la pausa espera si hay un guardado en curso")
 	main.save_in_progress = false
 	GameState.coral_state.step = 1
-	main._load_phase()
+	main.router.load_phase()
 	check(main.modal_kind == "pause" and main.phase_load_after_pause, "un avance confirmado no cierra la pausa")
 	main.pause_menu.resume_pause()
 	check(main.modal_kind == "coral" and ui.auto_remaining == ui.auto_duration, "al retomar, la nueva línea recibe su propio tiempo")

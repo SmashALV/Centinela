@@ -100,7 +100,7 @@ func _run() -> void:
 				if not SaveManager.load_slot(1) or GameState.snapshot() != saved:
 					_fail("reanudación entre compañeros")
 					return
-				story._load_phase()
+				story.router.load_phase()
 			if day == 1:
 				if not await _play_scene(story, "D1_GATE", "A"):
 					_fail("lobby")

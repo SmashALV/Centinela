@@ -14,7 +14,7 @@ func show_d1_interlude() -> bool:
 	GameState.flags.d1_interlude_active = true
 	if await SaveManager.save_slot_async():
 		main.save_in_progress = false
-		main._show_result()
+		main.computer.show_result()
 		return true
 	GameState.flags.erase("d1_interlude_active")
 	main.save_in_progress = false
@@ -49,7 +49,7 @@ func save(previous: Dictionary) -> bool:
 	if await SaveManager.save_slot_async():
 		main.save_in_progress = false
 		if main.is_inside_tree():
-			main._load_phase()
+			main.router.load_phase()
 		return true
 	GameState.restore(previous)
 	main.save_in_progress = false
@@ -217,17 +217,17 @@ func render() -> void:
 	var state: Dictionary = GameState.coral_state
 	var mode: String = str(state.get("mode", "explore"))
 	if mode == "explore":
-		main._close_modal()
+		main.ui_kit.close_modal()
 		return
 	if mode == "summary":
 		render_summary()
 		return
 	main.modal_kind = "coral"
-	main._begin_conversation_presentation()
+	main.ui_kit.begin_conversation_presentation()
 	if mode == "intro":
 		var intro: Array = main.coral_flow.content.get("day_intros", {}).get(str(state.day), [])
 		if int(state.step) >= intro.size(): return
-		main.conversation_ui.show_scene(main._conversation_background(), "Día %d" % state.day, "Narrador", str(intro[int(state.step)]), [], advance, "Continuar", "Sofi", "", false, main._scaled_text_size(18))
+		main.conversation_ui.show_scene(main.router.conversation_background(), "Día %d" % state.day, "Narrador", str(intro[int(state.step)]), [], advance, "Continuar", "Sofi", "", false, main.ui_kit.scaled_text_size(18))
 		return
 	var scene_id: String = str(state.get("node", ""))
 	var scene: Dictionary = main.coral_flow.scene(scene_id, main.preview_catalog, main.draft_flow, state)
@@ -250,7 +250,7 @@ func render() -> void:
 		return
 	var presentation: String = str(scene.get("presentation", "vn"))
 	if presentation in ["group", "dm"] and str(current.get("speaker", "")) == "Narrador" and options.is_empty():
-		main.conversation_ui.show_scene(main._conversation_background(), "Día %d · %s" % [int(scene.get("day", state.day)), str(scene.get("title", "Historia"))], "Narrador", str(current.get("text", "")), [], next_action, "Continuar", "Sofi", "", false, main._scaled_text_size(18))
+		main.conversation_ui.show_scene(main.router.conversation_background(), "Día %d · %s" % [int(scene.get("day", state.day)), str(scene.get("title", "Historia"))], "Narrador", str(current.get("text", "")), [], next_action, "Continuar", "Sofi", "", false, main.ui_kit.scaled_text_size(18))
 		return
 	if presentation in ["group", "dm"]:
 		var messages: Array = lines.slice(0, mini(int(state.step) + 1, lines.size())) if mode != "reaction" else lines.duplicate(true)
@@ -266,37 +266,37 @@ func render() -> void:
 				system_note = str(message.get("text", ""))
 				messages.erase(message)
 		if presentation == "group":
-			main.conversation_ui.show_chat("lobby-de-juego", messages, options, next_action, "Continuar", Callable(), main._scaled_text_size(15), system_note)
+			main.conversation_ui.show_chat("lobby-de-juego", messages, options, next_action, "Continuar", Callable(), main.ui_kit.scaled_text_size(15), system_note)
 		else:
-			main.conversation_ui.show_direct_chat("Mateo", messages, options, next_action, "Continuar", main._scaled_text_size(15), system_note)
+			main.conversation_ui.show_direct_chat("Mateo", messages, options, next_action, "Continuar", main.ui_kit.scaled_text_size(15), system_note)
 		return
 	var speaker: String = str(current.get("speaker", "Narrador"))
 	var actor: String = str(scene.get("actor", ""))
 	if actor.is_empty() and scene_id.begins_with("I_D1_"): actor = scene_id.trim_prefix("I_D1_").capitalize()
-	var sprite: String = main._scene_sprite_key(speaker, scene_id, selected)
-	if "(mensaje)" in speaker and not actor.is_empty(): sprite = main._scene_sprite_key(actor, scene_id, selected)
+	var sprite: String = main.ui_kit.scene_sprite_key(speaker, scene_id, selected)
+	if "(mensaje)" in speaker and not actor.is_empty(): sprite = main.ui_kit.scene_sprite_key(actor, scene_id, selected)
 	if not ConversationUIScript.SPRITES.has(sprite): sprite = speaker if ConversationUIScript.SPRITES.has(speaker) else actor
 	var partner: String = "Sofi" if speaker != "Sofi" and actor != "Sofi" else actor
 	if speaker == "Narrador": sprite = "Sofi"
-	var background: String = main._conversation_background()
-	main.conversation_ui.show_scene(background, "Día %d · %s" % [int(scene.get("day", state.day)), str(scene.get("title", "Historia"))], speaker, str(current.get("text", "")), options, next_action, "Continuar", sprite, partner, "(mensaje)" in speaker, main._scaled_text_size(18))
+	var background: String = main.router.conversation_background()
+	main.conversation_ui.show_scene(background, "Día %d · %s" % [int(scene.get("day", state.day)), str(scene.get("title", "Historia"))], speaker, str(current.get("text", "")), options, next_action, "Continuar", sprite, partner, "(mensaje)" in speaker, main.ui_kit.scaled_text_size(18))
 
 func render_summary() -> void:
 	main.modal_kind = "coral"
-	main._clear_modal()
-	main._modal_heading("HISTORIA CONCLUIDA", "result")
-	var body: VBoxContainer = main._preview_content()
+	main.ui_kit.clear_modal()
+	main.ui_kit.modal_heading("HISTORIA CONCLUIDA", "result")
+	var body: VBoxContainer = main.ui_kit.content_box()
 	var ending: String = str(GameState.coral_state.get("ending", "F03"))
 	var description: String = {"F01": "Se inició una conversación de apoyo con una persona adulta.", "F02": "Se ajustó la privacidad o el contacto con permiso.", "F03": "Hay pasos de protección pendientes; aún se puede pedir ayuda."}.get(ending, "")
-	main._preview_text(body, description, 20)
-	main._preview_text(body, "Sofi pudo escuchar a todo el grupo. Sus respuestas cambiaron la confianza de cada compañero y las acciones que concretaron juntos.", 16)
+	main.ui_kit.add_text(body, description, 20)
+	main.ui_kit.add_text(body, "Sofi pudo escuchar a todo el grupo. Sus respuestas cambiaron la confianza de cada compañero y las acciones que concretaron juntos.", 16)
 	var profile: Dictionary = main.coral_flow.behavior_profile(GameState.coral_state)
-	main._preview_text(body, "Clasificación del comportamiento: %s (%d protectoras, %d con límite, %d de riesgo)" % [profile.label, profile.counts.protectora, profile.counts.limite, profile.counts.riesgo], 17)
+	main.ui_kit.add_text(body, "Clasificación del comportamiento: %s (%d protectoras, %d con límite, %d de riesgo)" % [profile.label, profile.counts.protectora, profile.counts.limite, profile.counts.riesgo], 17)
 	for detail in profile.details:
-		main._preview_text(body, "· %s: %s" % [detail.name, detail.label], 14)
+		main.ui_kit.add_text(body, "· %s: %s" % [detail.name, detail.label], 14)
 	if int(profile.unrepaired_recess) >= 2 and ending == "F03" and GameState.coral_state.get("limit_completed", false):
-		main._preview_text(body, "Las respuestas del recreo sin reparar impidieron que el límite acordado sostuviera al grupo.", 15)
-	main._preview_button(body, "Volver al menú", main._return_to_menu)
+		main.ui_kit.add_text(body, "Las respuestas del recreo sin reparar impidieron que el límite acordado sostuviera al grupo.", 15)
+	main.ui_kit.add_button(body, "Volver al menú", main._return_to_menu)
 
 func show_tutor_advice(scene_id: String) -> void:
 	var state: Dictionary = GameState.coral_state

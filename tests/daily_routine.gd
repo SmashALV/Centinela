@@ -36,9 +36,9 @@ func d0_dialogue() -> void:
 	for line in 45:
 		if GameState.dialogue_key.is_empty(): return
 		var node: Dictionary = main.dialogue_story.current_node()
-		if not node.get("choices", []).is_empty(): await main._choose_dialogue(str(node.choices[0].choice_id))
-		elif node.get("next", null) == null: await main._complete_dialogue()
-		else: await main._advance_dialogue()
+		if not node.get("choices", []).is_empty(): await main.day0.choose_dialogue(str(node.choices[0].choice_id))
+		elif node.get("next", null) == null: await main.day0.complete_dialogue()
+		else: await main.day0.advance_dialogue()
 	check(false, "D0 no entra en bucle")
 
 func edge(direction: String, expected_place: String, expected_stage: String) -> void:
@@ -69,12 +69,12 @@ func _run() -> void:
 		GameState.moba_class = "Atacante"
 		SaveManager.save_slot()
 		main.modal_kind = ""
-		main._load_phase()
+		main.router.load_phase()
 		for day in range(5):
 			check(int(main.daily.state().day) == day and main.daily.state().place == "bedroom", "día %d comienza en la habitación" % day)
 			if day > 0: await routine_scene()
 			await main._open_ui_modal("phone", main.phone_modal.render_phone)
-			await main._close_modal()
+			await main.ui_kit.close_modal()
 			main.daily.interact("backpack")
 			await settle()
 			check(GameState.has_item("mochila") and not main.world.objects.has("backpack"), "la mochila pasa al inventario y desaparece del cuarto")
@@ -120,7 +120,7 @@ func _run() -> void:
 			await routine_scene()
 			await edge("left", "bedroom", "evening")
 			if day == 0:
-				main._open_desktop_chat()
+				main.computer.open_desktop_chat()
 				await d0_dialogue()
 			elif day == 1: await coral_scene("D1_GATE", "A")
 			else:
@@ -128,19 +128,19 @@ func _run() -> void:
 				await routine_scene()
 			if day == 4 and ending == "F02": await coral_scene("I_LIMIT")
 			check(main.daily.can_play(), "partida habilitada después de cenar y conversar")
-			main._render_desktop()
+			main.computer.render_desktop()
 			check(main.desktop_ui.get_node("Wallpaper").texture != null and main.desktop_ui.find_child("App_Discord", true, false) != null, "escritorio con fondo y Discord")
 			check(GameState.restore(GameState.snapshot()), "guardado válido en escritorio")
-			main._render_discord_history()
+			main.computer.render_discord_history()
 			check(main.conversation_ui.get_node_or_null("ChannelSidebar") != null, "Discord conserva presentación de canal")
-			main._render_discord_history(true)
+			main.computer.render_discord_history(true)
 			check(main.conversation_ui.get_node_or_null("DirectSidebar") != null, "Discord permite consultar privado de Mateo")
 			# El combate se prueba en RunTests. Aquí verificamos su retorno confirmado a la rutina.
 			GameState.phase = "result"
 			GameState.ui_modal = ""
 			GameState.moba_result = "victoria"
 			main.modal_kind = ""
-			main._load_phase()
+			main.router.load_phase()
 			await routine_scene()
 			check(main.daily.state().stage == "bedtime" and not main.daily.can_play(), "una partida devuelve a casa y al descanso")
 			await main.daily.go("sleep", "bedroom", Vector2(155, 208))

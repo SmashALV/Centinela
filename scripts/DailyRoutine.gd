@@ -123,19 +123,19 @@ func load_view() -> void:
 	main.world.edge_routes = edges()
 	if state().stage == "farewell" and GameState.flags.get("farewell_done", false): main.world.begin_departures()
 	main.world.hide_player = state().stage == "sleep"
-	main._update_hud()
+	main.hud_view.update()
 	if state().stage == "sleep":
 		_render_sleep()
 		return
 	if not GameState.dialogue_key.is_empty():
-		main._resume_saved_dialogue()
+		main.day0.resume_saved_dialogue()
 	elif int(state().day) == 0 and state().stage == "morning" and not GameState.flags.get("prologue_seen", false):
-		main._render_prologue()
+		main.day0.render_prologue()
 	elif int(state().day) == 0 and state().stage == "morning" and not GameState.flags.get("wakeup_seen", false):
-		main._show_dialogue("wakeup")
+		main.day0.show_dialogue("wakeup")
 	elif not str(state().scene).is_empty(): _render_scene()
 	elif int(state().day) > 0 and GameState.coral_state.get("mode") != "explore": main.coral.render()
-	else: main._close_modal()
+	else: main.ui_kit.close_modal()
 
 func _primary_target() -> String:
 	match str(state().stage):
@@ -167,12 +167,12 @@ func _commit(previous: Dictionary) -> bool:
 		GameState.restore(previous)
 		main.save_in_progress = false
 		if main.modal_kind == "pause": main.phase_load_after_pause = true
-		else: main._load_phase()
+		else: main.router.load_phase()
 		main._toast("No se pudo guardar el avance. Reintenta")
 		return false
 	main.save_in_progress = false
 	if main.modal_kind == "pause": main.phase_load_after_pause = true
-	else: main._load_phase()
+	else: main.router.load_phase()
 	return true
 
 func _phase_for_place() -> void:
@@ -237,10 +237,10 @@ func _school_ready() -> bool:
 func interact(target: String) -> void:
 	if main.save_in_progress: return
 	match target:
-		"backpack": main._pick_up_item("mochila", "backpack", "Mochila guardada en el inventario")
-		"photo": main._inspect_d0("photo")
+		"backpack": main.inventory.pick_up("mochila", "backpack", "Mochila guardada en el inventario")
+		"photo": main.day0.inspect("photo")
 		"pc":
-			if can_use_pc(): main._show_desktop()
+			if can_use_pc(): main.computer.show_desktop()
 		"meal":
 			if state().stage in ["breakfast", "dinner"]: begin_scene("breakfast" if state().stage == "breakfast" else "dinner")
 		"lesson":
@@ -249,13 +249,13 @@ func interact(target: String) -> void:
 			if state().stage == "bedtime": go("sleep", "bedroom", Vector2(155, 208))
 			else: main._toast("Todavía no es hora de dormir")
 		"tutoria":
-			if int(state().day) == 0: main._inspect_d0("tutoria")
+			if int(state().day) == 0: main.day0.inspect("tutoria")
 			else: main.coral.interact(target)
 		"friends":
 			if state().stage == "farewell": begin_scene("goodbye")
 			elif int(state().day) == 0:
 				if GameState.flags.get("friends", false): main._toast("El grupo está listo. Entra a clase por arriba")
-				else: main._show_dialogue("courtyard")
+				else: main.day0.show_dialogue("courtyard")
 		_:
 			if int(state().day) > 0: main.coral.interact(target)
 
@@ -278,16 +278,16 @@ func _render_scene() -> void:
 	var lines: Array = _lines()
 	if lines.is_empty(): return
 	main.modal_kind = "routine"
-	main._begin_conversation_presentation()
+	main.ui_kit.begin_conversation_presentation()
 	var index: int = mini(int(state().step), lines.size() - 1)
 	var line: Dictionary = lines[index]
 	# La campana suena justo cuando el narrador la menciona, no después.
 	if "campana" in str(line.text).to_lower(): AudioManager.play_effect("school_bell")
 	if state().scene in ["evening_chat", "match_reply"]:
-		main.conversation_ui.show_chat("los-chicos", lines.slice(0, index + 1), [], advance_scene, "", Callable(), main._scaled_text_size(18))
+		main.conversation_ui.show_chat("los-chicos", lines.slice(0, index + 1), [], advance_scene, "", Callable(), main.ui_kit.scaled_text_size(18))
 	else:
 		var speaker: String = str(line.speaker)
-		main.conversation_ui.show_scene(main._conversation_background(), "Día %d" % int(state().day), speaker, str(line.text), [], advance_scene, "", speaker if speaker != "Narrador" else "Sofi", "Sofi" if speaker not in ["Sofi", "Narrador"] else "", false, main._scaled_text_size(18))
+		main.conversation_ui.show_scene(main.router.conversation_background(), "Día %d" % int(state().day), speaker, str(line.text), [], advance_scene, "", speaker if speaker != "Narrador" else "Sofi", "Sofi" if speaker not in ["Sofi", "Narrador"] else "", false, main.ui_kit.scaled_text_size(18))
 
 func advance_scene() -> bool:
 	if main.save_in_progress: return false
@@ -325,7 +325,7 @@ func _lines_for_chat() -> Array:
 
 func _render_sleep() -> void:
 	main.modal_kind = "sleep"
-	main._begin_conversation_presentation()
+	main.ui_kit.begin_conversation_presentation()
 	sleep_elapsed = 0.0
 	AudioManager.play_effect("sleep")
 	sleep_overlay = Control.new()

@@ -17,7 +17,7 @@ func _run() -> void:
 	get_tree().root.add_child(main)
 	GameState.new_game(1)
 	SaveManager.save_slot()
-	main._start_slot(1)
+	main.menu.start_slot(1)
 	var ui: Control = main.conversation_ui
 	check(ui.find_child("PrologueText", true, false).text == preload("res://scripts/ConversationUI.gd").dialogue_text("\n\n".join(main.PROLOGUE_LINES)), "introducción completa en una pantalla")
 	check(ui.find_children("*", "Button", true, false).is_empty(), "introducción sin botón continuar")
@@ -48,7 +48,7 @@ func _run() -> void:
 	check(ui.find_child("SpeakerName", true, false) == null, "narración sin etiqueta de narrador")
 	ui.show_scene("courtyard", "", "Narrador", "La tarde continúa.", [], Callable(), "", "Sofi", "Sofi", false, 18)
 	check(ui.find_children("Sprite_sofi_*", "TextureRect", true, false).size() == 1, "un personaje no aparece duplicado al narrar")
-	ui.show_scene("courtyard", "", "Sofi", "", [{"label": "Escuchar", "action": func(): pass}], main._advance_dialogue, "", "Sofi", "Mateo", false, 18)
+	ui.show_scene("courtyard", "", "Sofi", "", [{"label": "Escuchar", "action": func(): pass}], main.day0.advance_dialogue, "", "Sofi", "Mateo", false, 18)
 	ui._process(100.0)
 	check(not ui.auto_action.is_valid() and GameState.dialogue_position == before + 1, "decisión espera al jugador")
 	SaveManager.delete_slot(1)

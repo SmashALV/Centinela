@@ -48,7 +48,7 @@ func _run() -> void:
 		if not SaveManager.save_slot():
 			_fail("no se pudo crear la partida " + route)
 			return
-		story._load_phase()
+		story.router.load_phase()
 		if not await _press_button(story, "Continuar") or not GameState.flags.get("d1_interlude_active", false):
 			_fail("no se abrió el interludio en ruta " + route)
 			return
