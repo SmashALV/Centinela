@@ -31,16 +31,16 @@ func _run() -> void:
 	var ui: Control = main.conversation_ui
 	ui.auto_remaining = 13.25
 	ui.auto_duration = 31.0
-	main._show_pause()
+	main.pause_menu.show_pause()
 	ui._process(100.0)
-	main._render_pause()
-	main._resume_pause()
+	main.pause_menu.render_pause()
+	main.pause_menu.resume_pause()
 	check(is_equal_approx(ui.auto_remaining, 13.25) and is_equal_approx(ui.auto_duration, 31.0), "pausa conserva segundos y duración de la introducción")
 	ui._process(0.4)
 	var remaining: float = ui.auto_remaining
 	main._notification(NOTIFICATION_APPLICATION_FOCUS_OUT)
-	await main._cycle_text_size()
-	main._resume_pause()
+	await main.pause_menu.cycle_text_size()
+	main.pause_menu.resume_pause()
 	check(is_equal_approx(ui.auto_remaining, remaining), "Alt Tab y cambio de tamaño no reinician el contador")
 	click(ui, Vector2(200, 200))
 	for frame in range(30):
@@ -59,8 +59,8 @@ func _run() -> void:
 	check(GameState.dialogue_position == position + 1, "doble clic no salta otra línea ni elige una respuesta")
 	remaining = ui.auto_remaining - 0.2
 	ui.auto_remaining = remaining
-	main._show_pause()
-	main._resume_pause()
+	main.pause_menu.show_pause()
+	main.pause_menu.resume_pause()
 	check(is_equal_approx(ui.auto_remaining, remaining), "parlamento D0 conserva su tiempo al pausar")
 	check(not ui.can_click_advance(Vector2(680, 25)), "botón de historial no adelanta el diálogo")
 	check(UI.dialogue_text("Sí; te escucho: tú decides.") == "Sí. Te escucho. Tú decides.", "puntuación hablada sin dos puntos ni punto y coma")
@@ -100,18 +100,18 @@ func _run() -> void:
 	check(ui.find_child("VNBackground", true, false).texture.resource_path == "res://assets/vn/computer_lab.png", "Día 1 presenta conversaciones dentro de la sala de cómputo")
 	remaining = ui.auto_remaining - 0.3
 	ui.auto_remaining = remaining
-	main._show_pause()
-	main._resume_pause()
+	main.pause_menu.show_pause()
+	main.pause_menu.resume_pause()
 	check(is_equal_approx(ui.auto_remaining, remaining), "conversación D1 conserva su contador")
-	main._show_pause()
+	main.pause_menu.show_pause()
 	main.save_in_progress = true
-	main._resume_pause()
+	main.pause_menu.resume_pause()
 	check(main.modal_kind == "pause", "la pausa espera si hay un guardado en curso")
 	main.save_in_progress = false
 	GameState.coral_state.step = 1
 	main._load_phase()
 	check(main.modal_kind == "pause" and main.phase_load_after_pause, "un avance confirmado no cierra la pausa")
-	main._resume_pause()
+	main.pause_menu.resume_pause()
 	check(main.modal_kind == "coral" and ui.auto_remaining == ui.auto_duration, "al retomar, la nueva línea recibe su propio tiempo")
 	var old_state: Dictionary = ui.capture_reading_state()
 	ui.show_scene("courtyard", "Otra escena", "Sofi", "Un texto distinto.", [], main._coral_advance, "", "Sofi", "", false, 18)

@@ -212,6 +212,21 @@ Cada paso es un commit independiente. Se aplican cuatro reglas:
 
 ---
 
+## 7. Avance de la migración
+
+| Paso | Estado | Resultado |
+|---|---|---|
+| 1 · Código heredado → `scripts/legacy/PreviewFlow.gd` | ✅ Hecho (02-11-2026) | 19 funciones fuera de `Main`. Las pruebas usan `main.legacy.*` |
+| 2 · Pausa, celular y objetivo → `scripts/ui/` | ✅ Hecho (02-11-2026) | `PauseMenu.gd`, `PhoneModal.gd`, `ObjectiveModal.gd`. `Main` usa `pause_menu`, `phone_modal` y `objective_modal` |
+| 3 · Reglas y consejos → `scripts/story/` | ✅ Hecho (02-11-2026) | `BehaviorRules.gd` y `TutorAdvice.gd` como funciones puras. `CoralStoryFlow` conserva puentes de una línea |
+| 4 · `CoralController` | Pendiente | |
+| 5 · Textos de la rutina → JSON | Pendiente | |
+| 6 · Mapas → `MapCatalog` + JSON | Pendiente | |
+| 7 · `TargetMarkers` y `ActorAnimator` | Pendiente | |
+| 8 · `Main` como coordinador | Pendiente | |
+
+`Main.gd` bajó de 2221 a 1633 líneas. En cada paso pasaron las 8 suites de Godot con los mismos resultados que antes del cambio (488, 1449, 1, 24, 33, 5, 5 y 12 comprobaciones). La jugabilidad y el formato del guardado no cambiaron.
+
 ## 7. Diagramas
 
 - Arquitectura actual: `.archify/architecture-centinela-v043-20261102/centinela-arquitectura-v043.html`

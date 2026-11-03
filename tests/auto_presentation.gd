@@ -30,10 +30,10 @@ func _run() -> void:
 	check(GameState.flags.get("prologue_seen", false) and GameState.dialogue_key == "wakeup", "introducción avanza y guarda sin interacción")
 	check(main.dialogue_text_label.visible_characters == main.dialogue_text_label.text.length(), "parlamento visible completo")
 	var before: int = GameState.dialogue_position
-	main._show_pause()
+	main.pause_menu.show_pause()
 	ui._process(100.0)
 	check(GameState.dialogue_position == before and not ui.auto_action.is_valid(), "pausa detiene avance automático")
-	main._resume_pause()
+	main.pause_menu.resume_pause()
 	ui.auto_remaining = 0.01
 	ui._process(0.02)
 	for frame in range(60):

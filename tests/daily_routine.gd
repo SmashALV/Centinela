@@ -71,7 +71,7 @@ func _run() -> void:
 		for day in range(5):
 			check(int(main.daily.state().day) == day and main.daily.state().place == "bedroom", "día %d comienza en la habitación" % day)
 			if day > 0: await routine_scene()
-			await main._open_ui_modal("phone", main._render_phone)
+			await main._open_ui_modal("phone", main.phone_modal.render_phone)
 			await main._close_modal()
 			main.daily.interact("backpack")
 			await settle()

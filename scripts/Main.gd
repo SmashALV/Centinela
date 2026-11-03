@@ -6,6 +6,9 @@ const PreviewCatalogScript = preload("res://scripts/narrative/RecoveredPreviewCa
 const DraftFlowScript = preload("res://scripts/narrative/PlayableDraftFlow.gd")
 const CoralFlowScript = preload("res://scripts/narrative/CoralStoryFlow.gd")
 const PreviewFlowScript = preload("res://scripts/legacy/PreviewFlow.gd")
+const PauseMenuScript = preload("res://scripts/ui/PauseMenu.gd")
+const PhoneModalScript = preload("res://scripts/ui/PhoneModal.gd")
+const ObjectiveModalScript = preload("res://scripts/ui/ObjectiveModal.gd")
 const DisplayGuardScript = preload("res://scripts/DisplayGuard.gd")
 const ConversationUIScript = preload("res://scripts/ConversationUI.gd")
 const DailyRoutineScript = preload("res://scripts/DailyRoutine.gd")
@@ -80,6 +83,9 @@ var preview_catalog: RefCounted
 var draft_flow: RefCounted
 var coral_flow: RefCounted
 var legacy: RefCounted  # Vista previa y borrador heredados (scripts/legacy/PreviewFlow.gd)
+var pause_menu: RefCounted  # scripts/ui/PauseMenu.gd
+var phone_modal: RefCounted  # scripts/ui/PhoneModal.gd
+var objective_modal: RefCounted  # scripts/ui/ObjectiveModal.gd
 var dialogue_key := ""
 var dialogue_choice := ""
 var dialogue_text_label: Label
@@ -106,6 +112,12 @@ func _ready() -> void:
 		preview_catalog.scenes["D1_03_A"] = draft_flow.d1_private_scene()
 	legacy = PreviewFlowScript.new()
 	legacy.main = self
+	pause_menu = PauseMenuScript.new()
+	pause_menu.main = self
+	phone_modal = PhoneModalScript.new()
+	phone_modal.main = self
+	objective_modal = ObjectiveModalScript.new()
+	objective_modal.main = self
 	coral_flow = CoralFlowScript.new()
 	var coral_errors: Array[String] = coral_flow.load_story()
 	if not coral_errors.is_empty():
@@ -195,14 +207,14 @@ func _process(delta: float) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("pause_game") and modal_kind not in ["menu", "slot_confirm"]:
 		if modal_kind == "pause":
-			_resume_pause()
+			pause_menu.resume_pause()
 		else:
-			_show_pause()
+			pause_menu.show_pause()
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("ui_cancel"):
 		if ["phone", "objective", "pause", "class", "desktop", "discord_history", "slot_confirm", "dialogue_history", "observation"].has(modal_kind):
 			if modal_kind == "pause":
-				_resume_pause()
+				pause_menu.resume_pause()
 			elif modal_kind == "slot_confirm":
 				_show_menu()
 			elif modal_kind == "dialogue_history":
@@ -257,20 +269,20 @@ func _unhandled_input(event: InputEvent) -> void:
 		if event.is_action_pressed("interact"):
 			world.interact()
 		elif event.is_action_pressed("phone"):
-			_show_phone()
+			phone_modal.show_phone()
 		elif event.is_action_pressed("objective"):
-			_show_objective()
+			objective_modal.show_objective()
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_APPLICATION_FOCUS_OUT and is_instance_valid(modal):
 		if modal_kind != "menu" and modal_kind != "pause":
-			_show_pause()
+			pause_menu.show_pause()
 
 func _check_window_size() -> void:
 	window_too_small = DisplayGuardScript.too_small(DisplayGuardScript.window_size())
 	window_guard_layer.visible = window_too_small
 	if window_too_small and modal_kind not in ["menu", "pause"]:
-		_show_pause()
+		pause_menu.show_pause()
 
 func _label(pos: Vector2, dimensions: Vector2, font_size: int) -> Label:
 	var label := Label.new()
@@ -584,8 +596,8 @@ func _start_slot(chosen: int, upgrade_routine := true, fresh_slot := false) -> v
 		if not GameState.dialogue_key.is_empty(): _resume_saved_dialogue()
 		elif GameState.ui_modal == "desktop": _render_desktop()
 		elif GameState.ui_modal == "class": _render_class()
-		elif GameState.ui_modal == "phone": _render_phone()
-		elif GameState.ui_modal == "objective": _render_objective()
+		elif GameState.ui_modal == "phone": phone_modal.render_phone()
+		elif GameState.ui_modal == "objective": objective_modal.render_objective()
 		return
 	if not GameState.dialogue_key.is_empty():
 		if not _resume_saved_dialogue():
@@ -593,8 +605,8 @@ func _start_slot(chosen: int, upgrade_routine := true, fresh_slot := false) -> v
 			_toast("No se pudo reanudar el diálogo guardado")
 	elif not GameState.ui_modal.is_empty():
 		match GameState.ui_modal:
-			"phone": _render_phone()
-			"objective": _render_objective()
+			"phone": phone_modal.render_phone()
+			"objective": objective_modal.render_objective()
 			"class": _render_class()
 			"desktop": _render_desktop()
 	elif not str(GameState.flags.get("d0_guide_active", "")).is_empty():
@@ -909,9 +921,6 @@ func _toast(message: String) -> void:
 	toast.text = message
 	toast_time = 3.5
 
-func _show_phone() -> void:
-	await _open_ui_modal("phone", Callable(self, "_render_phone"))
-
 func _open_ui_modal(kind: String, renderer: Callable) -> void:
 	if save_in_progress:
 		return
@@ -935,234 +944,11 @@ func _open_ui_modal(kind: String, renderer: Callable) -> void:
 		_toast("No se pudo abrir el panel; reintenta")
 	save_in_progress = false
 
-func _render_phone() -> void:
-	modal_kind = "phone"
-	_clear_modal()
-	_modal_heading("CELULAR · chats y contactos", "phone")
-	var body := _preview_content()
-	if GameState.phone_messages.is_empty():
-		_preview_text(body, "No hay mensajes nuevos. El grupo se conectará esta noche.", 16)
-	else:
-		_preview_text(body, "Los chicos", 15)
-		for message in GameState.phone_messages:
-			if message.get("channel", "group") == "mateo": continue
-			_preview_text(body, "%s\n%s" % [message.get("speaker", ""), ConversationUIScript.dialogue_text(str(message.get("text", "")))], 14)
-		var private_messages: Array = GameState.phone_messages.filter(func(message): return message.get("channel", "group") == "mateo")
-		if not private_messages.is_empty(): _preview_text(body, "Mateo · Mensajes directos", 15)
-		for message in private_messages:
-			_preview_text(body, "%s\n%s" % [message.get("speaker", ""), ConversationUIScript.dialogue_text(str(message.get("text", "")))], 14)
-	if GameState.flags.get("draft_mode", false):
-		if GameState.preview_choices.has("D2_03_A"):
-			_preview_text(body, "La captura la mostró Mateo en su propio teléfono. No se guardó en el celular de Sofi.", 15)
-		elif GameState.flags.get("draft_exploring", false) and GameState.preview_scene == "D2_03_A":
-			_preview_text(body, "Mateo tiene una captura en su propio teléfono. Acércate a él para verla.", 15)
-	if GameState.phase == "coral":
-		var facts: Array = GameState.coral_state.get("observed", [])
-		_preview_text(body, "LIBRETA DE SOFI", 16)
-		var fact_labels := {"camila_request_shared": "Camila recibió una pregunta sobre los horarios de Mateo y pidió discreción.", "mateo_secret_shared": "Mateo mostró un regalo vinculado a una petición de secreto que lo incomoda.", "sebas_fatigue_observed": "Sebas contó que teme perder ayuda en el juego si no sigue el horario de Kairo."}
-		if facts.is_empty(): _preview_text(body, "Todavía no hay hechos registrados.", 14)
-		for fact in facts:
-			_preview_text(body, str(fact_labels.get(fact, "Una conversación quedó registrada.")), 14)
-		_preview_text(body, "Esta libreta distingue lo observado de las suposiciones. No necesitas recopilar pruebas para ofrecer apoyo.", 14)
-	_button("Cerrar", _close_modal)
-
-func _show_objective() -> void:
-	await _open_ui_modal("objective", Callable(self, "_render_objective"))
-
-func _render_objective() -> void:
-	modal_kind = "objective"
-	_clear_modal()
-	_modal_heading("OBJETIVO", "objective")
-	_modal_text(("Orientación: " if GameState.phase != "coral" else "") + _objective_text(), 19)
-	if GameState.phase == "coral":
-		var state: Dictionary = GameState.coral_state
-		var day_key: String = str(state.get("day", 1))
-		var requests: Dictionary = state.get("hint_requests", {})
-		var shown: String = str(requests.get(day_key, ""))
-		if not shown.is_empty():
-			_modal_text((daily.objective() if daily.active() else coral_flow.navigation_hint(state)) if shown == "nav" else coral_flow.educational_hint(state, 1 if shown == "h1" else 2), 15)
-		_button("Pista de orientación", func(): _coral_request_hint("nav"))
-		_button("Pista para observar", func(): _coral_request_hint("h1"))
-		_button("Pista para comprender", func(): _coral_request_hint("h2"))
-	else:
-		if GameState.phase in ["bedroom", "courtyard", "computer"]:
-			if GameState.hint_level > 0: _modal_text(_d0_educational_hint(GameState.hint_level), 15)
-			_button("H1 · Observa", func(): _set_d0_hint(1))
-			_button("H2 · Comprende", func(): _set_d0_hint(2))
-		else:
-			_button("Pista", _advance_hint)
-	_button("Cerrar", _close_modal)
-
-func _d0_educational_hint(level: int) -> String:
-	if level == 1:
-		return "¿Qué podría ver alguien nuevo sobre Sofi? ¿Con quién puede hablar si una conversación le incomoda?"
-	return "Revisar privacidad, cuidar los horarios y mantener cerca a personas de confianza ayuda a reconocer y poner límites a una presión futura."
-
-func _set_d0_hint(level: int) -> void:
-	if save_in_progress: return
-	var previous: int = GameState.hint_level
-	GameState.hint_level = level
-	save_in_progress = true
-	if await SaveManager.save_slot_async():
-		save_in_progress = false
-		_render_objective()
-	else:
-		GameState.hint_level = previous
-		save_in_progress = false
-		_toast("No se pudo guardar la pista")
-
-func _coral_request_hint(kind: String) -> void:
-	if save_in_progress or GameState.phase != "coral": return
-	var previous: Dictionary = GameState.snapshot()
-	GameState.coral_state.hint_requests[str(GameState.coral_state.day)] = kind
-	var hint_action: String = "HINT_D%d_%s" % [int(GameState.coral_state.day), kind]
-	if not GameState.coral_state.actions.has(hint_action): GameState.coral_state.actions.append(hint_action)
-	save_in_progress = true
-	if await SaveManager.save_slot_async():
-		save_in_progress = false
-		_render_objective()
-	else:
-		GameState.restore(previous)
-		save_in_progress = false
-		_toast("No se pudo guardar la pista")
-
-func _advance_hint() -> void:
-	if save_in_progress:
-		return
-	save_in_progress = true
-	var previous: int = GameState.hint_level
-	GameState.hint_level = mini(previous + 1, 2)
-	if await SaveManager.save_slot_async():
-		if GameState.flags.get("draft_exploring", false):
-			_toast("Busca a Mateo en el escenario" if GameState.hint_level == 1 else "Acércate a Mateo y pulsa F")
-		else:
-			_toast("Busca el objeto señalado" if GameState.hint_level == 1 else "Acércate al objeto marcado y pulsa F")
-	else:
-		GameState.hint_level = previous
-		_toast("No se pudo guardar la pista; reintenta")
-	save_in_progress = false
-
-func _show_pause() -> void:
-	if modal_kind == "pause": return
-	paused_reading = conversation_ui.capture_reading_state()
-	modal_before_pause = modal_kind
-	SaveManager.queue_telemetry("pause")
-	AudioManager.set_music_paused(true)
-	_render_pause()
-
-func _render_pause() -> void:
-	modal_kind = "pause"
-	_clear_modal()
-	_modal_heading("PAUSA", "pause")
-	var body := _preview_content()
-	_preview_text(body, "Tu progreso se guarda en este dispositivo.", 15)
-	if SyncManager.configured:
-		_preview_button(body, "Reintentar sincronización", SyncManager.retry_now)
-	var continue_button := _preview_button(body, "Continuar", _resume_pause)
-	continue_button.grab_focus()
-	var size_label: String = {"small": "Pequeño", "normal": "Mediano", "large": "Grande"}[GameState.text_size]
-	_preview_button(body, "Tamaño de texto: " + size_label, _cycle_text_size)
-	_preview_button(body, "Música: %d %%" % GameState.music_volume, func(): _cycle_audio("music"))
-	_preview_button(body, "Efectos: %d %%" % GameState.effects_volume, func(): _cycle_audio("effects"))
-	var speed_label: String = {"slow": "Lenta", "normal": "Normal", "fast": "Rápida"}[GameState.dialogue_speed]
-	_preview_button(body, "Velocidad de diálogo: " + speed_label, _cycle_dialogue_speed)
-	_preview_button(body, "Guardar", _manual_save, "save")
-	_preview_button(body, "Menú", _return_to_menu)
-
-func _cycle_text_size() -> void:
-	if save_in_progress:
-		return
-	save_in_progress = true
-	var previous: String = GameState.text_size
-	match previous:
-		"small": GameState.text_size = "normal"
-		"normal": GameState.text_size = "large"
-		_: GameState.text_size = "small"
-	if await SaveManager.save_slot_async():
-		_refresh_static_fonts()
-		if is_inside_tree():
-			_render_pause()
-	else:
-		GameState.text_size = previous
-		_toast("No se pudo guardar el tamaño de texto")
-	save_in_progress = false
-
-func _cycle_audio(which: String) -> void:
-	if save_in_progress:
-		return
-	save_in_progress = true
-	var saved: bool = await AudioManager.cycle_level(which)
-	save_in_progress = false
-	if saved:
-		if is_inside_tree():
-			_render_pause()
-	else:
-		_toast("No se pudo guardar el ajuste de audio")
-
-func _cycle_dialogue_speed() -> void:
-	if save_in_progress:
-		return
-	save_in_progress = true
-	var previous: String = GameState.dialogue_speed
-	match previous:
-		"slow": GameState.dialogue_speed = "normal"
-		"normal": GameState.dialogue_speed = "fast"
-		_: GameState.dialogue_speed = "slow"
-	if await SaveManager.save_slot_async():
-		if is_inside_tree():
-			_render_pause()
-	else:
-		GameState.dialogue_speed = previous
-		_toast("No se pudo guardar la velocidad de diálogo")
-	save_in_progress = false
-
 func _return_to_menu() -> void:
 	SyncManager.on_slot_closed()
 	await SaveManager.release_slot_async()
 	if is_inside_tree():
 		_show_menu()
-
-func _resume_pause() -> void:
-	if window_too_small or save_in_progress:
-		return
-	AudioManager.set_music_paused(false)
-	modal_kind = modal_before_pause
-	if phase_load_after_pause:
-		phase_load_after_pause = false
-		modal_kind = ""
-		_load_phase()
-		if daily.active():
-			conversation_ui.restore_reading_state(paused_reading)
-			paused_reading.clear()
-			modal_before_pause = ""
-			return
-		if not GameState.dialogue_key.is_empty(): _resume_saved_dialogue()
-		elif GameState.phase in ["bedroom", "courtyard", "computer"] and not GameState.flags.has("d0_guide_active"): _close_modal()
-		conversation_ui.restore_reading_state(paused_reading)
-		paused_reading.clear()
-		modal_before_pause = ""
-		return
-	match modal_before_pause:
-		"prologue": _render_prologue()
-		"stage_guide": _render_stage_guide()
-		"phone": _render_phone()
-		"objective": _render_objective()
-		"class": _render_class()
-		"desktop": _render_desktop()
-		"discord_history": _render_discord_history(desktop_direct)
-		"dialogue": _render_dialogue(true)
-		"dialogue_history": _render_dialogue_history()
-		"result": _show_result()
-		"day_intro": legacy.render_day_intro()
-		"preview": legacy.render_preview()
-		"preview_unplaced": legacy.render_unplaced_preview()
-		"coral": _render_coral()
-		"routine": daily._render_scene()
-		"sleep": daily._render_sleep()
-		_: _close_modal()
-	conversation_ui.restore_reading_state(paused_reading)
-	paused_reading.clear()
-	modal_before_pause = ""
 
 func _render_prologue() -> void:
 	modal_kind = "prologue"

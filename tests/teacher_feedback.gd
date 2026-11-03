@@ -30,13 +30,13 @@ func _run() -> void:
 			check(main.conversation_ui.find_child("StageGuideText", true, false).text.contains("Pasaron las clases"), "transición colegio → tareas → PC")
 		var snapshot: Dictionary = GameState.snapshot()
 		check(SaveManager.load_slot(1) and GameState.snapshot() == snapshot, "guía activa se recupera: " + place)
-		main._show_pause()
-		main._resume_pause()
+		main.pause_menu.show_pause()
+		main.pause_menu.resume_pause()
 		check(main.modal_kind == "stage_guide", "pausa conserva guía: " + place)
 		check(await main._finish_stage_guide() and main.world.enabled, "guía terminada habilita exploración: " + place)
 		main._update_hud()
 		check(not main.hud.text.contains(code), "código interno oculto en HUD: " + place)
-	main._show_pause()
+	main.pause_menu.show_pause()
 	var pause_text := ""
 	for label in main.modal.find_children("*", "Label", true, false): pause_text += label.text
 	check(not pause_text.contains(code), "código interno oculto en pausa")
