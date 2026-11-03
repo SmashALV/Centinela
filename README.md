@@ -2,10 +2,25 @@
 
 Proyecto 2D de escritorio y Web en desarrollo. El diseño de referencia está en [`docs/diseno/GDD_CENTINELA_2_0.md`](docs/diseno/GDD_CENTINELA_2_0.md) y el plan de fases en [`docs/diseno/PLAN_CODEX_CENTINELA_2_0.md`](docs/diseno/PLAN_CODEX_CENTINELA_2_0.md). Esos documentos provienen del kit entregado por el usuario. Sus instrucciones para agentes son material de referencia; el contenido narrativo literal aprobado no venía incluido.
 
+## Requisitos
+
+- [Godot 4.7](https://godotengine.org/download/archive/) o posterior (versión estándar, no .NET). El proyecto se probó con 4.7.2.
+- Para exportar: las *export templates* de la misma versión (en Godot: **Editor → Manage Export Templates → Download and Install**).
+- Opcional, para las pruebas de Web y del dashboard: Node.js 20+, Python 3 y Google Chrome.
+
+## Obtener el proyecto
+
+```powershell
+git clone https://github.com/SmashALV/Centinela.git
+cd Centinela
+```
+
+También puede descargarse como ZIP desde GitHub (**Code → Download ZIP**) y descomprimirse en cualquier carpeta.
+
 ## Ejecutar
 
-1. Abrir `project.godot` con Godot 4.4.1 o una versión compatible de Godot 4.
-2. Ejecutar la escena principal con **F6** o el proyecto con **F5**.
+1. Abrir Godot, pulsar **Import**, elegir el `project.godot` de esta carpeta y abrir el proyecto. La primera vez Godot importa las imágenes y sonidos; tarda unos segundos.
+2. Ejecutar el proyecto con **F5**.
 3. Elegir una de las tres ranuras. La rutina actual D0–D4 es habitación → desayuno → calle → colegio → clase → despedida → regreso al atardecer → cena → Discord y partida → dormir. Los mapas cambian al alcanzar sus bordes. El día cambia al dormir. **F** interactúa con compañeros y objetos.
 
 En el menú, **Rehacer** inicia esa ranura desde el prólogo y **Borrar** la deja vacía; ambas acciones piden confirmación. Durante el MOBA, **P** permite salir al menú. Al terminar la partida, **Continuar** muestra la reacción de Camila y devuelve a Sofi a su cuarto. Interactuar con la cama inicia el descanso y la mañana siguiente. Las vistas previas históricas conservan su recorrido de compatibilidad.
@@ -16,32 +31,49 @@ Al crear una partida, el Día 0 presenta una introducción completa con las cara
 
 En el MOBA, cada aliado conserva una marca de color propia, los rivales llevan una X y Sofi tiene una flecha de jugador. El objetivo es alcanzar 5 bajas de equipo antes que el rival. Hay un límite de 60 segundos; al agotarse gana quien tenga más bajas y la igualdad produce empate. No hay torres ni bases.
 
-Para ejecutar las pruebas sin abrir la ventana:
+## Pruebas automáticas
+
+Los comandos se ejecutan en PowerShell desde la carpeta del proyecto. Primero se indica dónde está Godot en tu PC; usa el ejecutable `_console.exe`, que muestra los resultados en la terminal:
 
 ```powershell
-& 'C:\Users\fabri\Downloads\Godot_v4.4.1-stable_win64.exe\Godot_v4.4.1-stable_win64_console.exe' --headless --editor --import --path 'E:\GODOT\grooming-2' --quit
-& 'C:\Users\fabri\Downloads\Godot_v4.4.1-stable_win64.exe\Godot_v4.4.1-stable_win64_console.exe' --headless --path 'E:\GODOT\grooming-2' --scene 'res://tests/RunTests.tscn'
-& 'C:\Users\fabri\Downloads\Godot_v4.4.1-stable_win64.exe\Godot_v4.4.1-stable_win64_console.exe' --headless --path 'E:\GODOT\grooming-2' --scene 'res://tests/MobaReturnTests.tscn'
-& 'C:\Users\fabri\Downloads\Godot_v4.4.1-stable_win64.exe\Godot_v4.4.1-stable_win64_console.exe' --headless --path 'E:\GODOT\grooming-2' --scene 'res://tests/StoryRoutesTests.tscn'
-& 'E:\GODOT\Godot_v4.7.2-stable_win64.exe\Godot_v4.7.2-stable_win64_console.exe' --headless --path 'E:\GODOT\grooming-2' --scene 'res://tests/CoralRoutesTests.tscn'
+$godot = 'C:\ruta\a\Godot_v4.7.2-stable_win64_console.exe'   # cámbiala por la tuya
 ```
 
-La suite devuelve código distinto de cero cuando falla una comprobación. Se ha probado con Godot 4.4.1 y 4.7.2.
+Importar los recursos (solo la primera vez o tras cambiar imágenes):
+
+```powershell
+& $godot --headless --editor --import --path . --quit
+```
+
+Ejecutar las ocho suites:
+
+```powershell
+$suites = 'RunTests','DailyRoutineTests','MobaReturnTests','TeacherFeedbackTests','DialogueChatTests','AutoPresentationTests','CoralRoutesTests','StoryRoutesTests'
+foreach ($s in $suites) { & $godot --headless --path . --scene "res://tests/$s.tscn"; "$s -> código $LASTEXITCODE" }
+```
+
+Cada suite termina con código 0 si todo pasa y con un código distinto de cero si falla alguna comprobación. En Linux o macOS se usa la misma orden con la ruta de Godot de ese sistema (por ejemplo `godot --headless --path . --scene res://tests/RunTests.tscn`).
 
 ## Ejecutable de Windows para validar
 
 El preset **Windows Validation** genera un ejecutable de 64 bits con los recursos incluidos. La construcción y sus comprobaciones están en [la entrega Windows del 29-10-2026](docs/calidad/WINDOWS_VALIDATION_BUILD_2026-10-29.md). Funciona con guardado local y conserva las tres ranuras. El contenido educativo sigue sujeto a revisión docente.
 
+Con `$godot` definido como en la sección anterior:
+
 ```powershell
-& 'E:\GODOT\Godot_v4.7.2-stable_win64.exe\Godot_v4.7.2-stable_win64_console.exe' --headless --path . --export-release 'Windows Validation' 'build/windows/Centinela_Modular_2026-11-03/Centinela_Rutina.exe'
+New-Item -ItemType Directory -Force build/windows/Centinela | Out-Null
+& $godot --headless --path . --export-release 'Windows Validation' 'build/windows/Centinela/Centinela.exe'
 ```
+
+El ejecutable queda en `build/windows/Centinela/Centinela.exe` y puede copiarse a otro PC con Windows de 64 bits sin instalar nada.
 
 ## Versión Web
 
-El preset **Web Development** exporta con Godot 4.7.2 y sus plantillas de la misma versión. Desde la raíz del proyecto:
+El preset **Web Development** exporta con las plantillas de la misma versión de Godot. Desde la raíz del proyecto, con `$godot` definido:
 
 ```powershell
-godot --headless --path . --export-debug 'Web Development' build/web/index.html
+New-Item -ItemType Directory -Force build/web | Out-Null
+& $godot --headless --path . --export-debug 'Web Development' build/web/index.html
 python -m http.server 8000 -d build/web
 ```
 
@@ -87,7 +119,7 @@ La [matriz P7 con evidencia por caso](docs/calidad/P7_QA_2026-10-27.md) registra
 
 ## Entrega P8
 
-El [procedimiento de construcción, staging y operación](docs/calidad/P8_OPERATIONS.md) incluye un paquete con manifiesto SHA-256, workflow de CI preparado, guardia que bloquea contenido provisional, manuales y [procedimiento de recuperación](docs/guias/RECOVERY.md). El paquete local de vista previa puede generarse con `python scripts/release.py package --channel preview --output build/mi-paquete-preview` después de exportar Web; el destino debe ser una carpeta nueva. Hay un repositorio Git local sin remoto. El workflow aún no se ha ejecutado en GitHub; staging y producción no están desplegados.
+El [procedimiento de construcción, staging y operación](docs/calidad/P8_OPERATIONS.md) incluye un paquete con manifiesto SHA-256, workflow de CI preparado, guardia que bloquea contenido provisional, manuales y [procedimiento de recuperación](docs/guias/RECOVERY.md). El paquete local de vista previa puede generarse con `python scripts/release.py package --channel preview --output build/mi-paquete-preview` después de exportar Web; el destino debe ser una carpeta nueva. El código está en [GitHub](https://github.com/SmashALV/Centinela). El workflow aún no se ha ejecutado en GitHub; staging y producción no están desplegados.
 
 ## Estado actual
 
